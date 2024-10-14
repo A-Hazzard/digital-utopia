@@ -1,0 +1,67 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --dark: #16171a;
+  --darker: #141010;
+  --light: #eeeeee;
+  --orange: #ff5722;
+  --font-family: "Montserrat", sans-serif;
+}
+
+body {
+  font-family: var(--font-family);
+  font-weight: 400;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .font-semibold {
+    font-weight: 600;
+  }
+
+  .font-bold {
+    font-weight: 700;
+  }
+
+  /* Color utilities */
+  .text-orange {
+    color: var(--orange);
+  }
+
+  .text-dark {
+    color: var(--dark);
+  }
+
+  .text-light {
+    color: var(--light);
+  }
+
+  .bg-orange {
+    background-color: var(--orange);
+  }
+
+  .bg-light {
+    background-color: var(--light);
+  }
+
+  .bg-dark {
+    background-color: var(--dark);
+  }
+
+  .bg-darker {
+    background-color: var(--darker);
+  }
+}
