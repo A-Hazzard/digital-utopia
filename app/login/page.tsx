@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { auth } from "../../firebase";
 import styles from "./login.module.css";
 
-export default function Page() {
+export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState<boolean | null>(null);
