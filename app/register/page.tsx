@@ -126,7 +126,7 @@ export default function Page() {
           </form>
 
           <p className="mt-4 text-dark">
-            Don't have an account?
+            Don@apos;t have an account?
             <a
               href="/login"
               className="text-orange underline ml-1 hover:text-opacity-80"
