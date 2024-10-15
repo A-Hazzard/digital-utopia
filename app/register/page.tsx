@@ -64,25 +64,28 @@ export default function Page() {
   if (!user && isPageLoading) {
     return null;
   }
-
+//TODO MAKE INTO A LAYOUT COMPONENT
   return (
-    <div className="mt-8 text-dark">
-      <section className="flex flex-col justify-start items-start p-5">
+    <div className="flex flex-col lg:flex-row-reverse text-dark lg:h-screen">
+      <section className="lg:w-1/2 flex flex-col justify-start px-5 pt-20 2xl:pt-32">
         <Link href="/">
           <Image
             src="/logo.svg"
             alt="digital utopia logo"
-            className="w-60"
+            className="w-60 2xl:w-80"
             width={100}
             height={100}
           />
         </Link>
 
-        <div className="w-full max-w-md mx-auto mt-8">
-          <h1 className="text-xl mb-8 text-dark">
+        <div className="w-full 2xl:w-4/12 mt-8">
+          <h1 className="text-xl mb-8 text-dark 2xl:text-3xl">
             Let&apos;s Get You Registered!
           </h1>
-          <form onSubmit={handleRegister} className="flex flex-col gap-2">
+          <form
+            onSubmit={handleRegister}
+            className="flex flex-col gap-2 2xl:gap-4"
+          >
             <div>
               <Input
                 label="Name"
@@ -91,6 +94,7 @@ export default function Page() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                className="2xl:text-xl"
               />
             </div>
             <div>
@@ -102,6 +106,7 @@ export default function Page() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="2xl:text-xl"
               />
             </div>
             <div>
@@ -113,21 +118,21 @@ export default function Page() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="2xl:text-xl"
               />
             </div>
-            {error && <p className="text-red-500">{error}</p>}{" "}
-            {/* Display error message */}
+            {error && <p className="text-red-500 2xl:text-lg">{error}</p>}
             <Button
               type="submit"
-              className="mt-2 w-full bg-dark text-light"
+              className="mt-2 w-full bg-dark text-light 2xl:text-xl 2xl:py-3"
               isLoading={isLoading}
             >
               Register
             </Button>
           </form>
 
-          <p className="mt-4 text-dark">
-            Don@apos;t have an account?
+          <p className="mt-4 text-dark 2xl:text-lg 2xl:mt-6">
+            Already have an account?
             <a
               href="/login"
               className="text-orange underline ml-1 hover:text-opacity-80"
@@ -139,20 +144,20 @@ export default function Page() {
       </section>
 
       <section
-        className={`relative overflow-hidden h-[60vh] pt-10 bg-dark ${styles.diagonalLines}`}
+        className={`relative overflow-hidden h-[60vh] pt-10 lg:h-screen lg:w-1/2 xl:pt-24 bg-dark ${styles.diagonalLines}`}
       >
-        <div className="ml-4 md:ml-20 relative z-10">
-          <h2 className="text-xl text-light">
+        <div className="ml-4 md:ml-20 xl:ml-32 relative z-10">
+          <h2 className="text-xl text-light 2xl:text-3xl">
             - Dive in to boost your portfolio
           </h2>
-          <p className="text-sm text-light">
+          <p className="text-sm text-light 2xl:text-xl">
             your gateway to financial independence and profitable trading
           </p>
         </div>
         <Image
           src="/dashboard.svg"
           alt="dashboard preview"
-          className="w-full mt-10 ml-40 relative z-10"
+          className="w-full mt-10 ml-40 xl:ml-60 relative z-10"
           width={100}
           height={100}
         />

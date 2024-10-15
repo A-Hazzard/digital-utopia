@@ -71,25 +71,26 @@ export default function Page() {
   if (!user && isPageLoading) {
     return null; // Optionally, you can show a loading spinner here
   }
+  //TODO MAKE INTO A LAYOUT COMPONENT
 
   return (
-    <div className="mt-8 text-dark">
-      <section className="flex flex-col justify-start p-5">
+    <div className="flex flex-col lg:flex-row-reverse text-dark lg:h-screen">
+      <section className="lg:w-1/2 flex flex-col justify-start px-5 pt-20 2xl:pt-32">
         <Link href="/">
           <Image
             src="/logo.svg"
             alt="digital utopia logo"
-            className="w-60"
+            className="w-60 2xl:w-80"
             width={100}
             height={100}
           />
         </Link>
 
-        <div className="w-full mt-8">
-          <h1 className="text-xl mb-8 text-dark">
+        <div className="w-full mt-8 ">
+          <h1 className="text-xl mb-8 text-dark 2xl:text-3xl">
             Let&apos;s Get You Back On Track!
           </h1>
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6 2xl:space-y-8">
             <div>
               <Input
                 isClearable
@@ -99,6 +100,7 @@ export default function Page() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="2xl:text-xl"
               />
             </div>
             {isPasswordLogin && (
@@ -111,14 +113,14 @@ export default function Page() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  className="2xl:text-xl"
                 />
               </div>
             )}
-            {error && <p className="text-red-500">{error}</p>}{" "}
-            {/* Display error message */}
+            {error && <p className="text-red-500 2xl:text-lg">{error}</p>}
             <Button
               type="submit"
-              className="w-full bg-darker text-light py-2 px-4 rounded-md hover:bg-opacity-90 transition duration-300"
+              className="w-full bg-darker text-light py-2 px-4 rounded-md hover:bg-opacity-90 transition duration-300 2xl:text-xl 2xl:py-3"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -133,7 +135,7 @@ export default function Page() {
               )}
             </Button>
           </form>
-          <p className="mt-4 text-sm text-dark">
+          <p className="mt-4 text-sm text-dark 2xl:text-lg 2xl:mt-6">
             {isPasswordLogin
               ? "Want to log in without a password?"
               : "Want to log in with a password?"}
@@ -144,7 +146,7 @@ export default function Page() {
               {isPasswordLogin ? "Use Email Link" : "Use Password"}
             </button>
           </p>
-          <p className="mt-4 text-dark">
+          <p className="mt-4 text-dark 2xl:text-lg 2xl:mt-6">
             Don&apos;t have an account?
             <a
               href="/register"
@@ -156,19 +158,21 @@ export default function Page() {
         </div>
       </section>
 
-      <section className={`relative overflow-hidden h-[60vh] pt-10 bg-dark ${styles.diagonalLines}`}>
-        <div className="ml-4 md:ml-20 relative z-10">
-          <h2 className="text-xl text-light">
+      <section
+        className={`relative overflow-hidden h-[60vh] pt-10 lg:h-screen lg:w-1/2 xl:pt-24 bg-dark ${styles.diagonalLines}`}
+      >
+        <div className="ml-4 md:ml-20 xl:ml-32 relative z-10">
+          <h2 className="text-xl text-light 2xl:text-3xl">
             - Dive in to boost your portfolio
           </h2>
-          <p className="text-sm text-light">
+          <p className="text-sm text-light 2xl:text-xl">
             your gateway to financial independence and profitable trading
           </p>
         </div>
         <Image
           src="/dashboard.svg"
           alt="dashboard preview"
-          className="w-full mt-10 ml-40 relative z-10"
+          className="w-full mt-10 ml-40 xl:ml-60 relative z-10"
           width={100}
           height={100}
         />
