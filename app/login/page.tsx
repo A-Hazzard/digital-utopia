@@ -163,7 +163,7 @@ export default function Page() {
       >
         <div className="ml-4 md:ml-20 xl:ml-32 relative z-10">
           <h2 className="text-xl text-light 2xl:text-3xl">
-            - Dive in to boost your portfolio
+            - Dive in, to boost your portfolio
           </h2>
           <p className="text-sm text-light 2xl:text-xl">
             your gateway to financial independence and profitable trading
