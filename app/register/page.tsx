@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"; // Import useRouter
 import { useEffect, useState } from "react";
 import { auth } from "../../firebase";
 
-export default function page() {
+export default function Page() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");

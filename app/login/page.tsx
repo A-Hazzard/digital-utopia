@@ -13,7 +13,7 @@ import Link from "next/link";
 import { Button, Input } from "@nextui-org/react"; // Import NextUI Input
 import { sendSignInLink } from "@/helpers/auth";
 
-export default function page() {
+export default function Page() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState<boolean | null>(null);
@@ -88,7 +88,7 @@ export default function page() {
 
         <div className="w-full mt-8">
           <h1 className="text-xl mb-8 text-dark">
-            Let's Get You Back On Track!
+            Let&apos;s Get You Back On Track!
           </h1>
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
