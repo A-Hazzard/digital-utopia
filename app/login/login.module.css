@@ -1,0 +1,26 @@
+.diagonalLines {
+  position: relative;
+}
+
+.diagonalLines::before,
+.diagonalLines::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #eeeeee;
+  z-index: 1;
+}
+
+.diagonalLines::before {
+  left: 0;
+  transform-origin: top left;
+  transform: skew(45deg) scaleY(1.4142);
+}
+
+.diagonalLines::after {
+  right: 0;
+  transform-origin: top right;
+  transform: skew(-45deg) scaleY(1.4142);
+}

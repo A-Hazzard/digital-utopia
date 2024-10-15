@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation"; // Import useRouter
 import { useEffect, useState } from "react";
 import { auth } from "../../firebase";
+import styles from './login.module.css'
 
 export default function Page() {
   const [email, setEmail] = useState("");
@@ -155,11 +156,19 @@ export default function Page() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden h-[60vh] pt-20 bg-dark">
+      <section className={`relative overflow-hidden h-[60vh] pt-10 bg-dark ${styles.diagonalLines}`}>
+        <div className="ml-4 md:ml-20 relative z-10">
+          <h2 className="text-xl text-light">
+            - Dive in to boost your portfolio
+          </h2>
+          <p className="text-sm text-light">
+            your gateway to financial independence and profitable trading
+          </p>
+        </div>
         <Image
           src="/dashboard.svg"
           alt="dashboard preview"
-          className="w-full ml-40"
+          className="w-full mt-10 ml-40 relative z-10"
           width={100}
           height={100}
         />
