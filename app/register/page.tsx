@@ -82,6 +82,7 @@ export default function Page() {
           <h1 className="text-xl mb-8 text-dark 2xl:text-3xl">
             Let&apos;s Get You Registered!
           </h1>
+
           <form
             onSubmit={handleRegister}
             className="flex flex-col gap-2 2xl:gap-4"
@@ -122,6 +123,7 @@ export default function Page() {
               />
             </div>
             {error && <p className="text-red-500 2xl:text-lg">{error}</p>}
+
             <Button
               type="submit"
               className="mt-2 w-full bg-dark text-light 2xl:text-xl 2xl:py-3"
@@ -144,7 +146,7 @@ export default function Page() {
       </section>
 
       <section
-        className={`relative overflow-hidden h-[60vh] pt-10 lg:h-screen lg:w-1/2 xl:pt-24 bg-dark ${styles.diagonalLines}`}
+        className={`relative overflow-hidden h-[60vh] pt-10 mt-10 lg:mt-0 lg:h-screen lg:w-1/2 xl:pt-24 bg-dark ${styles.diagonalLines}`}
       >
         <div className="ml-4 md:ml-20 xl:ml-32 relative z-10">
           <h2 className="text-xl text-light 2xl:text-3xl">

@@ -1,16 +1,13 @@
 "use client";
 import { sendSignInLink } from "@/helpers/auth";
 import { Button, Input } from "@nextui-org/react"; // Import NextUI Input
-import {
-  onAuthStateChanged,
-  signInWithEmailAndPassword
-} from "firebase/auth";
+import { isSignInWithEmailLink, onAuthStateChanged, signInWithEmailAndPassword, signInWithEmailLink } from "firebase/auth";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation"; // Import useRouter
 import { useEffect, useState } from "react";
 import { auth } from "../../firebase";
-import styles from './login.module.css'
+import styles from "./login.module.css";
 
 export default function Page() {
   const [email, setEmail] = useState("");
@@ -54,6 +51,23 @@ export default function Page() {
   };
 
   useEffect(() => {
+    const checkEmailSignInLink = async () => {
+      if (isSignInWithEmailLink(auth, window.location.href)) {
+        let email = window.localStorage.getItem('emailForSignIn');
+        if (!email) {
+          email = window.prompt('Please provide your email for confirmation');
+        }
+        try {
+          await signInWithEmailLink(auth, email || '', window.location.href);
+          window.localStorage.removeItem('emailForSignIn');
+          router.push('/'); // Redirect to home after successful email link sign-in
+        } catch (error) {
+          console.error('Error signing in with email link:', error);
+          setError('Failed to sign in with email link. Please try again.');
+        }
+      }
+    };
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(true); // User is signed in
@@ -61,6 +75,7 @@ export default function Page() {
       } else {
         setUser(false); // User is signed out
         setIsPageLoading(false); // Set page loading to false
+        checkEmailSignInLink(); // Check for email sign-in link
       }
     });
 
@@ -90,7 +105,8 @@ export default function Page() {
           <h1 className="text-xl mb-8 text-dark 2xl:text-3xl">
             Let&apos;s Get You Back On Track!
           </h1>
-          <form onSubmit={handleLogin} className="space-y-6 2xl:space-y-8">
+
+          <form onSubmit={handleLogin} className="flex flex-col gap-6 2xl:gap-8">
             <div>
               <Input
                 isClearable
@@ -103,6 +119,7 @@ export default function Page() {
                 className="2xl:text-xl"
               />
             </div>
+
             {isPasswordLogin && (
               <div>
                 <Input
@@ -117,24 +134,23 @@ export default function Page() {
                 />
               </div>
             )}
+
             {error && <p className="text-red-500 2xl:text-lg">{error}</p>}
+
+            <p className="-mt-4 text-sm text-dark 2xl:text-lg">
+              <Link href="/forgot-password" className="text-orange hover:text-opacity-80">
+                Forgot your password?
+              </Link>
+            </p>
             <Button
               type="submit"
               className="w-full bg-darker text-light py-2 px-4 rounded-md hover:bg-opacity-90 transition duration-300 2xl:text-xl 2xl:py-3"
-              disabled={isLoading}
+              isLoading={isLoading}
             >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-t-2 border-b-2 border-light rounded-full animate-spin mr-2"></div>
-                  Loading...
-                </div>
-              ) : isPasswordLogin ? (
-                "Login"
-              ) : (
-                "Send Email Link"
-              )}
+              {isPasswordLogin ? "Login" : "Send Email Link"}
             </Button>
           </form>
+
           <p className="mt-4 text-sm text-dark 2xl:text-lg 2xl:mt-6">
             {isPasswordLogin
               ? "Want to log in without a password?"
@@ -159,7 +175,7 @@ export default function Page() {
       </section>
 
       <section
-        className={`relative overflow-hidden h-[60vh] pt-10 lg:h-screen lg:w-1/2 xl:pt-24 bg-dark ${styles.diagonalLines}`}
+        className={`relative overflow-hidden h-[60vh] pt-10 mt-10 lg:mt-0 lg:h-screen lg:w-1/2 xl:pt-24 bg-dark ${styles.diagonalLines}`}
       >
         <div className="ml-4 md:ml-20 xl:ml-32 relative z-10">
           <h2 className="text-xl text-light 2xl:text-3xl">
