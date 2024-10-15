@@ -1,8 +1,6 @@
 "use client"
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '../firebase'; // Adjust the import path as necessary
-import { useAuthRedirectForAuth } from '@/helpers/authRedirect';
 
 const Home = () => {
   const router = useRouter();

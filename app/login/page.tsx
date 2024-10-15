@@ -1,17 +1,15 @@
 "use client";
+import { sendSignInLink } from "@/helpers/auth";
+import { Button, Input } from "@nextui-org/react"; // Import NextUI Input
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword
+} from "firebase/auth";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation"; // Import useRouter
 import { useEffect, useState } from "react";
 import { auth } from "../../firebase";
-import {
-  isSignInWithEmailLink,
-  signInWithEmailLink,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-} from "firebase/auth";
-import { useRouter } from "next/navigation"; // Import useRouter
-import Link from "next/link";
-import { Button, Input } from "@nextui-org/react"; // Import NextUI Input
-import { sendSignInLink } from "@/helpers/auth";
 
 export default function Page() {
   const [email, setEmail] = useState("");
