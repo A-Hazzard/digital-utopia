@@ -23,6 +23,7 @@
 body {
   font-family: var(--font-family);
   font-weight: 400;
+  overflow-x: hidden;
 }
 
 @layer utilities {
@@ -77,5 +78,9 @@ body {
 
   .bg-darker {
     background-color: var(--darker);
+  }
+
+  .border-gray {
+    border-color: var(--gray);
   }
 }
