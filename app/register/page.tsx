@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Input } from "@nextui-org/react";
-import { createUserWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
+import { createUserWithEmailAndPassword, onAuthStateChanged, updateProfile } from "firebase/auth";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation"; // Import useRouter
@@ -24,8 +24,10 @@ export default function Register() {
     setIsLoading(true); // Set loading to true
     setError(""); // Reset error message
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      router.push("/"); // Redirect to home
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user; // Get the user object
+      await updateProfile(user, { displayName: name }); // Set the displayName
+      router.push("/dashboard"); // Redirect to home
     } catch (error: unknown) {
       if (error instanceof Error) {
         // Check for specific error message
@@ -51,7 +53,7 @@ export default function Register() {
      const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
        if (currentUser) {
          setUser(true); // User is signed in
-         router.push("/"); // Redirect to home
+         router.push("/dashboard"); // Redirect to home
        } else {
          setUser(false); // User is signed out
          setIsPageLoading(false); // Set page loading to false

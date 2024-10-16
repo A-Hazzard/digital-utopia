@@ -13,6 +13,8 @@
 :root {
   --dark: #16171a;
   --darker: #141010;
+  --background: #393E46;
+  --gray: #B5B5B5;
   --light: #eeeeee;
   --orange: #ff5722;
   --font-family: "Montserrat", sans-serif;
@@ -49,8 +51,20 @@ body {
     color: var(--light);
   }
 
+  .text-gray {
+    color: var(--gray);
+  }
+
+  .bg-background {
+    background-color: var(--background);
+  }
+
   .bg-orange {
     background-color: var(--orange);
+  }
+
+  .bg-gray {
+    background-color: var(--gray);
   }
 
   .bg-light {

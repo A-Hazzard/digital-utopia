@@ -28,7 +28,7 @@ export default function Login() {
       if (isPasswordLogin) {
         // Login with password
         await signInWithEmailAndPassword(auth, email, password);
-        router.push("/"); // Redirect to home only if login is successful
+        router.push("/dashboard"); // Redirect to home only if login is successful
       } else {
         // Login with email link
         window.localStorage.setItem("emailForSignIn", email); // Store email for later use
@@ -60,7 +60,7 @@ export default function Login() {
         try {
           await signInWithEmailLink(auth, email || '', window.location.href);
           window.localStorage.removeItem('emailForSignIn');
-          router.push('/'); // Redirect to home after successful email link sign-in
+          router.push('/dashboard'); // Redirect to home after successful email link sign-in
         } catch (error) {
           console.error('Error signing in with email link:', error);
           setError('Failed to sign in with email link. Please try again.');
@@ -71,7 +71,7 @@ export default function Login() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(true); // User is signed in
-        router.push("/"); // Redirect to home
+        router.push("/dashboard"); // Redirect to home
       } else {
         setUser(false); // User is signed out
         setIsPageLoading(false); // Set page loading to false
