@@ -13,7 +13,6 @@ export const ProfileModalProvider = ({ children }: { children: React.ReactNode }
 
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
-  console.log('isOpen:', isOpen);
   return (
     <ProfileModalContext.Provider value={{ isOpen, openModal, closeModal }}>
       {children}

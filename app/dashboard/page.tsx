@@ -4,7 +4,7 @@ import { Avatar, Button } from "@nextui-org/react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../../lib/firebase";
+import { auth, db } from "../../lib/firebase";
 import History from "@/components/History";
 import Navbar from "@/components/Navbar";
 import Panel from "@/components/Panel";
@@ -15,23 +15,33 @@ import {
 import ProfileSettingsModal from "@/components/ProfileSettingsModal";
 import { useRouter } from "next/navigation";
 import { UserProvider, useUser } from '@/context/UserContext'; // Import UserProvider
+import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 
 function Dashboard() {
   const { username, setUsername, setAvatar } = useUser(); // Destructure username, setUsername, and setAvatar from context
   const [loading, setLoading] = useState(true);
+  const [userGender, setUserGender] = useState<string | null>(null); // State for gender
   const { isOpen, closeModal } = useProfileModal();
   const navigation = useRouter();
   const user = auth.currentUser; // Get the current user
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         console.log(user);
-        setUsername(user.displayName?.trim() || ""); // Now setUsername is defined
-        setAvatar(user.photoURL); // Update the avatar in UserContext
+        setUsername(user.displayName?.trim() || "");
+        setAvatar(user.photoURL);
+        
+        // Fetch user data from Firestore
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserGender(userData.gender); // Set the gender from Firestore
+        }
+        
         setLoading(false);
       } else {
-        navigation.push("/");
+        navigation.push("/login");
       }
     });
 
@@ -79,7 +89,9 @@ function Dashboard() {
         </div>
 
         <h1 className="text-light text-2xl font-bold">
-          WELCOME BACK TO UTOPIA Mr. {username}.
+          {userGender === "male" ? `WELCOME BACK TO UTOPIA Mr. ${username}.` : 
+           userGender === "female" ? `WELCOME BACK TO UTOPIA Ms. ${username}.` : 
+           `WELCOME BACK TO UTOPIA ${username}.`}
         </h1>
 
         <div className="flex flex-col lg:flex-row gap-4 lg:justify-between">

@@ -1,28 +1,19 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { auth } from "../lib/firebase"; // Adjust the import path as necessary
+import { Button } from "@nextui-org/react";
 
 const Home = () => {
   const router = useRouter();
 
-  const handleSignOut = async () => {
-    try {
-      await auth.signOut();
-      router.push("/login"); // Redirect to login after signing out
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
-  };
-
   return (
     <div>
-      <h1>Welcome to Digital Utopia!</h1>
-      <button
-        onClick={handleSignOut}
-        className="bg-red-500 text-white py-2 px-4 rounded"
+      <h1>Welcome to Digital Utopia! Landing Page In Progress</h1>
+      <Button
+        onClick={()=> router.push("/login")}
+        className="bg-dark text-light py-2 px-4 rounded"
       >
-        Sign Out
-      </button>
+        Login
+      </Button>
     </div>
   );
 };

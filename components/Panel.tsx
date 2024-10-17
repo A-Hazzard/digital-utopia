@@ -4,12 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ProfileSettingsModal from "./ProfileSettingsModal";
+import { auth } from "@/lib/firebase";
+import { LogOut } from "lucide-react";
+
 export default function Panel() {
   const pathname = usePathname();
     const { isOpen, openModal, closeModal } = useProfileModal();
 
   return (
-    <div className="text-light flex flex-col gap-6">
+    <div className="text-light flex flex-col gap-6 h-full relative">
       <div className="w-full h-auto">
         <Image
           src="/whiteLogo.svg"
@@ -46,6 +49,15 @@ export default function Panel() {
         </Link>
       </ul>
 
+      <button 
+        className="bg-transparent w-fit text-light absolute bottom-0 left-0 flex items-center gap-2"
+        onClick={() => {
+          auth.signOut();
+        }}
+      >
+        <LogOut size={20} />
+        Sign Out
+      </button>
       {/* Render the modal here */}
       {isOpen && <ProfileSettingsModal onClose={closeModal} />}
     </div>

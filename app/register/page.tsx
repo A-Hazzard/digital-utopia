@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Input } from "@nextui-org/react";
+import { Button, Input, Radio, RadioGroup } from "@nextui-org/react";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -12,6 +12,8 @@ import { useRouter } from "next/navigation"; // Import useRouter
 import { useEffect, useState } from "react";
 import { auth } from "../../lib/firebase";
 import styles from "./register.module.css";
+import { doc, setDoc } from "firebase/firestore"; // Import Firestore functions
+import { db } from "../../lib/firebase"; // Ensure you have your Firestore instance imported
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -22,12 +24,14 @@ export default function Register() {
   const [user, setUser] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false); // State to track loading status
   const [isPageLoading, setIsPageLoading] = useState(true); // State to track page loading status
+  const [gender, setGender] = useState<string | null>(null);
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true); // Set loading to true
     setError(""); // Reset error message
     try {
+      console.log(gender)
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -35,6 +39,14 @@ export default function Register() {
       );
       const user = userCredential.user; // Get the user object
       await updateProfile(user, { displayName: name }); // Set the displayName
+
+      // Store additional user information in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        email: email,
+        displayName: name,
+        gender: gender, // Store the gender here
+      });
+
       router.push("/dashboard"); // Redirect to home
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -100,6 +112,7 @@ export default function Register() {
             <div>
               <Input
                 label="Name"
+                type="text"
                 labelPlacement="outside"
                 placeholder="Enter your full name"
                 value={name}
@@ -131,6 +144,16 @@ export default function Register() {
                 required
                 className="2xl:text-xl"
               />
+            </div>
+            <div>
+              <RadioGroup  
+                onChange={(e) => setGender(e.target.value)}
+                label="Select your gender"
+              >
+                <Radio value="male">Male</Radio>
+                <Radio value="female">Female</Radio>
+                <Radio value="other">Other</Radio>
+              </RadioGroup>
             </div>
             {error && <p className="text-red-500 2xl:text-lg">{error}</p>}
 
