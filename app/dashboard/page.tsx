@@ -4,144 +4,77 @@ import { Avatar, Button } from "@nextui-org/react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../../firebase";
+import { auth } from "../../lib/firebase";
 import History from "@/components/History";
+import Navbar from "@/components/Navbar";
+import Panel from "@/components/Panel";
+import {
+  ProfileModalProvider,
+  useProfileModal,
+} from "@/context/ProfileModalContext";
+import ProfileSettingsModal from "@/components/ProfileSettingsModal";
+import { useRouter } from "next/navigation";
+import { UserProvider, useUser } from '@/context/UserContext'; // Import UserProvider
 
-export default function Dashboard() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [username, setUsername] = useState("");
+function Dashboard() {
+  const { username, setUsername, setAvatar } = useUser(); // Destructure username, setUsername, and setAvatar from context
+  const [loading, setLoading] = useState(true);
+  const { isOpen, closeModal } = useProfileModal();
+  const navigation = useRouter();
+  const user = auth.currentUser; // Get the current user
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setUsername(user.displayName || user.email || "User");
+        console.log(user);
+        setUsername(user.displayName?.trim() || ""); // Now setUsername is defined
+        setAvatar(user.photoURL); // Update the avatar in UserContext
+        setLoading(false);
       } else {
-        setUsername("Guest");
+        navigation.push("/");
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [navigation, setUsername, setAvatar]); // Ensure setUsername and setAvatar are included in the dependency array
+
+  useEffect(() => {
+    console.log("Username updated:", username);
+  }, [username]);
+
+  if (loading && !username) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <div className={`bg-background flex h-screen`}>
       {/* Left Panel for Desktop */}
       <div className={`hidden lg:flex flex-col bg-darker p-4 w-64`}>
-        <div className="flex items-center mb-8">
-          <Image
-            src="/whiteLogo.svg"
-            className="w-full h-auto"
-            alt="Logo"
-            width={100}
-            height={100}
-          />
-        </div>
-
-        <ul className={`text-light flex flex-col gap-6`}>
-          <li className="flex items-center gap-2">
-            <Image
-              src="/dashboardIcon.svg"
-              alt="Dashboard"
-              width={20}
-              height={20}
-            />{" "}
-            Dashboard
-          </li>
-          <li className="flex items-center gap-2">
-            <Image
-              src="/profileIcon.svg"
-              alt="Profile"
-              width={20}
-              height={20}
-            />{" "}
-            Profile
-          </li>
-          <li className="flex items-center gap-2">
-            <Image
-              src="/paymentsIcon.svg"
-              alt="Payments"
-              width={20}
-              height={20}
-            />{" "}
-            Payments
-          </li>
-          <li className="flex items-center gap-2">
-            <Image
-              src="/invoicesIcon.svg"
-              alt="Invoices"
-              width={20}
-              height={20}
-            />{" "}
-            Invoices
-          </li>
-        </ul>
+        <ProfileModalProvider>
+          <Panel />
+        </ProfileModalProvider>
       </div>
 
       {/* Mobile Navbar */}
       <div className={`absolute lg:relative lg:hidden`}>
-        <button onClick={() => setIsOpen(true)} className="p-2">
-          {/* Custom Sandwich SVG Icon */}
-          <svg
-            className="text-light"
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </button>
-
-        {isOpen && (
-          <div
-            className={`fixed inset-0 bg-darker flex justify-center items-center lg:hidden`}
-          >
-            <div className={`w-full h-screen flex flex-col p-4`}>
-              <button onClick={() => setIsOpen(false)}>
-                {/* Custom Close SVG Icon */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-
-              <ul className={`text-light flex flex-col gap-4 mt-8`}>
-                <li>Dashboard</li>
-                <li>Profile</li>
-                <li>Payments</li>
-                <li>Invoices</li>
-              </ul>
-            </div>
-          </div>
-        )}
+        <Navbar />
       </div>
 
       {/* Main Content */}
       <main
         className={`flex-1 flex flex-col gap-4 pt-10 px-10 lg:p-8 overflow-y-auto`}
       >
-        <div className="w-3/12 md:w-2/12">
+        <div className="w-3/12 md:w-2/12 overflow-hidden">
+          {/* Display the user's avatar if available */}
           <Avatar
-            src="/avatar.svg"
-            alt="Dashboard Placeholder"
-            className="w-full h-auto"
+            src={user?.photoURL || "/avatar.svg"} // Use the user's photoURL or a placeholder
+            alt="User Avatar"
+            className="w-30 h-30 rounded-full object-cover" // Ensure the image covers the area
+            style={{ width: "120px", height: "120px" }} // Set fixed dimensions for a perfect circle
           />
         </div>
 
@@ -221,6 +154,18 @@ export default function Dashboard() {
 
         <History />
       </main>
+
+      {/* Conditionally render the ProfileSettingsModal based on isOpen state and username */}
+      {isOpen && <ProfileSettingsModal onClose={closeModal} />}
     </div>
+  );
+}
+
+// Wrap the Dashboard component with UserProvider
+export default function DashboardWithProvider() {
+  return (
+    <UserProvider>
+      <Dashboard />
+    </UserProvider>
   );
 }

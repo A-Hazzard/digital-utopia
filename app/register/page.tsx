@@ -1,12 +1,16 @@
 "use client";
 
 import { Button, Input } from "@nextui-org/react";
-import { createUserWithEmailAndPassword, onAuthStateChanged, updateProfile } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  updateProfile,
+} from "firebase/auth";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation"; // Import useRouter
 import { useEffect, useState } from "react";
-import { auth } from "../../firebase";
+import { auth } from "../../lib/firebase";
 import styles from "./register.module.css";
 
 export default function Register() {
@@ -18,13 +22,17 @@ export default function Register() {
   const [user, setUser] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false); // State to track loading status
   const [isPageLoading, setIsPageLoading] = useState(true); // State to track page loading status
-        
+
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true); // Set loading to true
     setError(""); // Reset error message
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
       const user = userCredential.user; // Get the user object
       await updateProfile(user, { displayName: name }); // Set the displayName
       router.push("/dashboard"); // Redirect to home
@@ -49,24 +57,24 @@ export default function Register() {
     }
   };
 
-   useEffect(() => {
-     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-       if (currentUser) {
-         setUser(true); // User is signed in
-         router.push("/dashboard"); // Redirect to home
-       } else {
-         setUser(false); // User is signed out
-         setIsPageLoading(false); // Set page loading to false
-       }
-     });
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(true); // User is signed in
+        router.push("/dashboard"); // Redirect to home
+      } else {
+        setUser(false); // User is signed out
+        setIsPageLoading(false); // Set page loading to false
+      }
+    });
 
-     return () => unsubscribe(); // Cleanup subscription on unmount
-   }, [router]);
+    return () => unsubscribe(); // Cleanup subscription on unmount
+  }, [router]);
 
   if (!user && isPageLoading) {
     return null;
   }
-//TODO MAKE INTO A LAYOUT COMPONENT
+  //TODO MAKE INTO A LAYOUT COMPONENT
   return (
     <div className="flex flex-col lg:flex-row-reverse text-dark lg:h-screen">
       <section className="lg:w-1/2 flex flex-col justify-start px-5 pt-20 2xl:pt-32">

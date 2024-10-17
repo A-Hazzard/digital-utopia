@@ -1,12 +1,17 @@
 "use client";
 import { sendSignInLink } from "@/helpers/auth";
 import { Button, Input } from "@nextui-org/react"; // Import NextUI Input
-import { isSignInWithEmailLink, onAuthStateChanged, signInWithEmailAndPassword, signInWithEmailLink } from "firebase/auth";
+import {
+  isSignInWithEmailLink,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithEmailLink,
+} from "firebase/auth";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation"; // Import useRouter
 import { useEffect, useState } from "react";
-import { auth } from "../../firebase";
+import { auth } from "../../lib/firebase";
 import styles from "./login.module.css";
 
 export default function Login() {
@@ -53,17 +58,17 @@ export default function Login() {
   useEffect(() => {
     const checkEmailSignInLink = async () => {
       if (isSignInWithEmailLink(auth, window.location.href)) {
-        let email = window.localStorage.getItem('emailForSignIn');
+        let email = window.localStorage.getItem("emailForSignIn");
         if (!email) {
-          email = window.prompt('Please provide your email for confirmation');
+          email = window.prompt("Please provide your email for confirmation");
         }
         try {
-          await signInWithEmailLink(auth, email || '', window.location.href);
-          window.localStorage.removeItem('emailForSignIn');
-          router.push('/dashboard'); // Redirect to home after successful email link sign-in
+          await signInWithEmailLink(auth, email || "", window.location.href);
+          window.localStorage.removeItem("emailForSignIn");
+          router.push("/dashboard"); // Redirect to home after successful email link sign-in
         } catch (error) {
-          console.error('Error signing in with email link:', error);
-          setError('Failed to sign in with email link. Please try again.');
+          console.error("Error signing in with email link:", error);
+          setError("Failed to sign in with email link. Please try again.");
         }
       }
     };
@@ -106,7 +111,10 @@ export default function Login() {
             Let&apos;s Get You Back On Track!
           </h1>
 
-          <form onSubmit={handleLogin} className="flex flex-col gap-6 2xl:gap-8">
+          <form
+            onSubmit={handleLogin}
+            className="flex flex-col gap-6 2xl:gap-8"
+          >
             <div>
               <Input
                 isClearable
@@ -138,7 +146,10 @@ export default function Login() {
             {error && <p className="text-red-500 2xl:text-lg">{error}</p>}
 
             <p className="-mt-4 text-sm text-dark 2xl:text-lg">
-              <Link href="/forgot-password" className="text-orange hover:text-opacity-80">
+              <Link
+                href="/forgot-password"
+                className="text-orange hover:text-opacity-80"
+              >
                 Forgot your password?
               </Link>
             </p>

@@ -4,7 +4,7 @@ import { Button, Input } from "@nextui-org/react";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { auth } from "../../firebase";
+import { auth } from "../../lib/firebase";
 import Image from "next/image";
 import Link from "next/link";
 import styles from "./forgot-password.module.css"; // Assuming you want to create a CSS module for styles
@@ -58,7 +58,10 @@ export default function ForgotPassword() {
             Reset Your Password
           </h1>
 
-          <form onSubmit={handleResetPassword} className="flex flex-col gap-6 2xl:gap-8">
+          <form
+            onSubmit={handleResetPassword}
+            className="flex flex-col gap-6 2xl:gap-8"
+          >
             <Input
               label="Email"
               type="email"
@@ -69,14 +72,21 @@ export default function ForgotPassword() {
               className="2xl:text-xl"
             />
             {error && <p className="text-red-500 2xl:text-lg">{error}</p>}
-            <Button type="submit" isLoading={isLoading} className="w-full bg-darker text-light py-2 px-4 rounded-md hover:bg-opacity-90 transition duration-300 2xl:text-xl 2xl:py-3">
+            <Button
+              type="submit"
+              isLoading={isLoading}
+              className="w-full bg-darker text-light py-2 px-4 rounded-md hover:bg-opacity-90 transition duration-300 2xl:text-xl 2xl:py-3"
+            >
               Send Reset Link
             </Button>
           </form>
 
           <p className="mt-4 text-sm text-dark 2xl:text-lg 2xl:mt-6">
-            Remembered your password? 
-            <Link href="/login" className="text-orange underline ml-1 hover:text-opacity-80">
+            Remembered your password?
+            <Link
+              href="/login"
+              className="text-orange underline ml-1 hover:text-opacity-80"
+            >
               Log in
             </Link>
           </p>

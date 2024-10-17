@@ -1,5 +1,5 @@
 // src/helpers/auth.ts
-import { auth } from "../firebase";
+import { auth } from "../lib/firebase";
 import {
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
@@ -9,9 +9,10 @@ import {
 export const sendSignInLink = async (email: string) => {
   const actionCodeSettings = {
     // URL you want to redirect back to after email link is clicked
-    url: process.env.NODE_ENV === 'development' 
-      ? "http://localhost:3000/login"
-      : "https://digitalutopia.vercel.app/login",
+    url:
+      process.env.NODE_ENV === "development"
+        ? "http://localhost:3000/login"
+        : "https://digitalutopia.vercel.app/login",
     handleCodeInApp: true,
   };
 
