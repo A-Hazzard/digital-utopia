@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { UserProvider, useUser } from '@/context/UserContext'; // Import UserProvider
 import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 import DepositFundsModal from "@/components/DepositFundsModal"; // Import the modal component
+import WithdrawCryptoModal from "@/components/WithdrawCryptoModal"; // Import the WithdrawCryptoModal
 
 function Dashboard() {
   const { username, setUsername, setAvatar } = useUser(); // Destructure username, setUsername, and setAvatar from context
@@ -26,6 +27,7 @@ function Dashboard() {
   const navigation = useRouter();
   const user = auth.currentUser; // Get the current user
   const [isDepositModalOpen, setDepositModalOpen] = useState(false); // State for modal visibility
+  const [isWithdrawModalOpen, setWithdrawModalOpen] = useState(false); // New state for withdraw modal
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -60,6 +62,14 @@ function Dashboard() {
 
   const handleCloseDepositModal = () => {
     setDepositModalOpen(false); // Close the modal
+  };
+
+  const handleOpenWithdrawModal = () => {
+    setWithdrawModalOpen(true);
+  };
+
+  const handleCloseWithdrawModal = () => {
+    setWithdrawModalOpen(false);
   };
 
   if (loading && !username) {
@@ -163,7 +173,7 @@ function Dashboard() {
               />
               Deposit Funds
             </Button>
-            <Button className="flex p-6 lg:w-full items-center gap-2 bg-gray text-light">
+            <Button className="flex p-6 lg:w-full items-center gap-2 bg-gray text-light" onClick={handleOpenWithdrawModal}>
               <Image
                 src="/minusButton.svg"
                 alt="Minus Icon"
@@ -182,6 +192,9 @@ function Dashboard() {
 
         {/* Conditionally render the DepositFundsModal */}
         {isDepositModalOpen && <DepositFundsModal onClose={handleCloseDepositModal} />}
+
+        {/* Conditionally render the WithdrawCryptoModal */}
+        {isWithdrawModalOpen && <WithdrawCryptoModal onClose={handleCloseWithdrawModal} />}
       </main>
 
       {/* Conditionally render the ProfileSettingsModal based on isOpen state and username */}
