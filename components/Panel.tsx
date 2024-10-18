@@ -58,7 +58,6 @@ export default function Panel() {
         <LogOut size={20} />
         Sign Out
       </button>
-      {/* Render the modal here */}
       {isOpen && <ProfileSettingsModal onClose={closeModal} />}
     </div>
   );

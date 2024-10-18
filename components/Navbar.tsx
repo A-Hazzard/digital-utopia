@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react"; // Import icons from lucide-react
 import { useProfileModal } from "@/context/ProfileModalContext";
+import ProfileSettingsModal from "./ProfileSettingsModal";
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -69,6 +70,7 @@ const Navbar = () => {
           </>
         )}
       </div>
+      {isOpen && <ProfileSettingsModal onClose={closeModal} />}
     </div>
   );
 };
