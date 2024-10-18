@@ -78,17 +78,19 @@ function Dashboard() {
       <main
         className={`flex-1 flex flex-col gap-4 pt-10 px-10 lg:p-8 overflow-y-auto`}
       >
-        <div className="w-3/12 md:w-2/12 overflow-hidden">
-          {/* Display the user's avatar if available */}
-          <Avatar
-            src={user?.photoURL || "/avatar.svg"} // Use the user's photoURL or a placeholder
-            alt="User Avatar"
-            className="w-30 h-30 rounded-full object-cover" // Ensure the image covers the area
-            style={{ width: "120px", height: "120px" }} // Set fixed dimensions for a perfect circle
-          />
+        <div className="mt-4 flex">
+          <div className="w-20 h-20 xl:w-40 xl:h-40 xl:-ml-4 overflow-hidden rounded-full flex items-center justify-center">
+            {/* Display the user's avatar if available */}
+            <Avatar
+              src={user?.photoURL || "/avatar.svg"} // Use the user's photoURL or a placeholder
+              alt="User Avatar"
+              className="object-cover" // Ensure the image covers the area
+              style={{ width: "120px", height: "120px" }} // Set fixed dimensions for a perfect circle
+            />
+          </div>
         </div>
 
-        <h1 className="text-light text-2xl font-bold">
+        <h1 style={{ marginTop: "0" }} className="text-light text-2xl font-bold">
           {userGender === "male"
             ? `WELCOME BACK TO UTOPIA Mr. ${username}.`
             : userGender === "female"

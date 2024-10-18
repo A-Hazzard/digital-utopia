@@ -273,7 +273,7 @@ export default function ProfileSettingsModal({
             </button>
           </div>
 
-          <div className="flex gap-5 items-center mb-4">
+          <div className="flex flex-col sm:flex-row gap-5 items-center mb-4">
             <div>
               <Avatar
                 src={localAvatar || "/avatar.svg"}
@@ -282,16 +282,16 @@ export default function ProfileSettingsModal({
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={() => document.getElementById("avatarInput")?.click()}
-                className="bg-orange hover:bg-orange-500 text-light"
+                className="bg-orange hover:bg-orange-500 text-light w-full sm:w-auto"
               >
                 Change Picture
               </Button>
               <Button
                 onClick={handleDeleteAvatar}
-                className="bg-light hover:bg-red-600 text-red-500 hover:text-light"
+                className="bg-light hover:bg-red-600 text-red-500 hover:text-light w-full sm:w-auto"
               >
                 Delete Picture
               </Button>
