@@ -18,7 +18,7 @@ const Navbar = () => {
   return (
     <div>
       {/* Hamburger Icon */}
-      <div className="absolute top-4 left-4 z-30">
+      <div className="absolute top-4 left-4 z-30 lg:hidden">
         <Menu onClick={toggleNavbar} className="cursor-pointer text-light" />
       </div>
 
@@ -29,7 +29,7 @@ const Navbar = () => {
         }`}
         style={{ transition: "opacity 0.3s ease-in-out" }}
       >
-        {isOpen && (
+        {isNavOpen && (
           <>
             <X
               onClick={toggleNavbar}
