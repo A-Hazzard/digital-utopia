@@ -16,6 +16,7 @@ import ProfileSettingsModal from "@/components/ProfileSettingsModal";
 import { useRouter } from "next/navigation";
 import { UserProvider, useUser } from '@/context/UserContext'; // Import UserProvider
 import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
+import DepositFundsModal from "@/components/DepositFundsModal"; // Import the modal component
 
 function Dashboard() {
   const { username, setUsername, setAvatar } = useUser(); // Destructure username, setUsername, and setAvatar from context
@@ -24,6 +25,7 @@ function Dashboard() {
   const { isOpen, closeModal } = useProfileModal();
   const navigation = useRouter();
   const user = auth.currentUser; // Get the current user
+  const [isDepositModalOpen, setDepositModalOpen] = useState(false); // State for modal visibility
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -51,6 +53,14 @@ function Dashboard() {
   useEffect(() => {
     console.log("Username updated:", username);
   }, [username]);
+
+  const handleOpenDepositModal = () => {
+    setDepositModalOpen(true); // Open the modal
+  };
+
+  const handleCloseDepositModal = () => {
+    setDepositModalOpen(false); // Close the modal
+  };
 
   if (loading && !username) {
     return (
@@ -144,7 +154,7 @@ function Dashboard() {
           </div>
 
           <div className="flex flex-col lg:flex-row justify-center lg:justify-end gap-4 lg:gap-2 md:w-5/12">
-            <Button className="flex p-6 lg:w-full items-center gap-2 bg-orange text-light">
+            <Button className="flex p-6 lg:w-full items-center gap-2 bg-orange text-light" onClick={handleOpenDepositModal}>
               <Image
                 src="/plusButton.svg"
                 alt="Plus Icon"
@@ -169,6 +179,9 @@ function Dashboard() {
         <h2 className="text-light text-xl font-bold">Your Profits</h2>
 
         <History />
+
+        {/* Conditionally render the DepositFundsModal */}
+        {isDepositModalOpen && <DepositFundsModal onClose={handleCloseDepositModal} />}
       </main>
 
       {/* Conditionally render the ProfileSettingsModal based on isOpen state and username */}

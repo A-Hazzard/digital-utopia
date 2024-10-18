@@ -14,6 +14,7 @@
   --dark: #16171a;
   --darker: #141010;
   --background: #393E46;
+  --readonly: #292B31;
   --gray: #B5B5B5;
   --light: #eeeeee;
   --orange: #ff5722;
@@ -62,6 +63,10 @@ body {
 
   .bg-orange {
     background-color: var(--orange);
+  }
+
+  .bg-readonly {
+    background-color: var(--readonly);
   }
 
   .bg-gray {
