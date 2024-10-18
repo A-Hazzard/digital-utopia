@@ -50,7 +50,7 @@ const Navbar = () => {
               >
                 Dashboard
               </Link>
-              <button className="bg-none inline w-fit" onClick={handleProfileClick}>
+              <button className="bg-none text-light inline w-fit" onClick={handleProfileClick}>
                 Profile
               </button>
               <Link
