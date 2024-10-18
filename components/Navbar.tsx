@@ -8,8 +8,8 @@ import ProfileSettingsModal from "./ProfileSettingsModal";
 
 const Navbar = () => {
   const pathname = usePathname();
-  const [isNavOpen, setIsNavOpen] = useState(false);
-    const { isOpen, openModal, closeModal } = useProfileModal();
+  const [isNavOpen, setIsNavOpen] = useState(false); // State to manage navbar visibility
+  const { isOpen, openModal, closeModal } = useProfileModal();
 
   const toggleNavbar = () => {
     setIsNavOpen(!isNavOpen);
@@ -25,11 +25,11 @@ const Navbar = () => {
       {/* Fullscreen Navbar Overlay */}
       <div
         className={`fixed inset-0 bg-darker flex flex-col items-center justify-center z-40 transition-opacity duration-300 ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          isNavOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         style={{ transition: "opacity 0.3s ease-in-out" }}
       >
-        {isNavOpen && (
+        {isNavOpen && ( // Use isNavOpen to control visibility
           <>
             <X
               onClick={toggleNavbar}
