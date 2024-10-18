@@ -15,6 +15,11 @@ const Navbar = () => {
     setIsNavOpen(!isNavOpen);
   };
 
+  const handleProfileClick = () => {
+    openModal(); // Open the profile modal
+    setIsNavOpen(false); // Close the navbar
+  };
+
   return (
     <div>
       {/* Hamburger Icon */}
@@ -45,7 +50,7 @@ const Navbar = () => {
               >
                 Dashboard
               </Link>
-              <button className="bg-none inline w-fit" onClick={openModal}>
+              <button className="bg-none inline w-fit" onClick={handleProfileClick}>
                 Profile
               </button>
               <Link
