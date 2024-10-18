@@ -2,9 +2,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react"; // Import icons from lucide-react
+import { Menu, X, LogOut } from "lucide-react"; // Import icons from lucide-react
 import { useProfileModal } from "@/context/ProfileModalContext";
 import ProfileSettingsModal from "./ProfileSettingsModal";
+import { auth } from "@/lib/firebase"; // Import Firebase auth
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -18,6 +19,15 @@ const Navbar = () => {
   const handleProfileClick = () => {
     openModal(); // Open the profile modal
     setIsNavOpen(false); // Close the navbar
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await auth.signOut(); // Sign out the user
+      // Optionally, you can redirect the user or show a message
+    } catch (error) {
+      console.error("Error signing out:", error); // Handle sign-out error
+    }
   };
 
   return (
@@ -71,6 +81,14 @@ const Navbar = () => {
               >
                 Invoices
               </Link>
+              {/* Sign Out Button */}
+              <button
+                className="flex items-center gap-2 text-light"
+                onClick={handleSignOut}
+              >
+                <LogOut size={20} />
+                Sign Out
+              </button>
             </nav>
           </>
         )}
