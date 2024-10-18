@@ -1,5 +1,6 @@
 import React from "react";
 import { Calendar, CheckCircle, Clock } from "lucide-react";
+import Image from "next/image";
 
 const trades = [
   {
@@ -100,15 +101,19 @@ export default function History() {
               <td className="p-2">
                 <div className="flex items-center">
                   <div className="relative w-6 h-6 mr-2">
-                    <img
+                    <Image
                       src="/btc.svg"
                       alt="ETH"
                       className="w-5 h-5 rounded-full absolute bottom-0 -right-2"
+                      width={20}
+                      height={20}
                     />
-                    <img
+                    <Image
                       src="/eth.svg"
                       alt="BTC"
                       className="w-5 h-5 rounded-full absolute top-0 left-0"
+                      width={20}
+                      height={20}
                     />
                   </div>
                   <span className="text-sm">{trade.pair}</span>

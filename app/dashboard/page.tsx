@@ -70,9 +70,7 @@ function Dashboard() {
       </div>
 
       {/* Mobile Navbar */}
-      <div className={`absolute lg:relative lg:hidden`}>
         <Navbar />
-      </div>
 
       {/* Main Content */}
       <main
