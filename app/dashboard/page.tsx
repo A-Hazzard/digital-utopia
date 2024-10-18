@@ -70,7 +70,9 @@ function Dashboard() {
       </div>
 
       {/* Mobile Navbar */}
+      <ProfileModalProvider>
         <Navbar />
+      </ProfileModalProvider>
 
       {/* Main Content */}
       <main
@@ -87,9 +89,11 @@ function Dashboard() {
         </div>
 
         <h1 className="text-light text-2xl font-bold">
-          {userGender === "male" ? `WELCOME BACK TO UTOPIA Mr. ${username}.` : 
-           userGender === "female" ? `WELCOME BACK TO UTOPIA Ms. ${username}.` : 
-           `WELCOME BACK TO UTOPIA ${username}.`}
+          {userGender === "male"
+            ? `WELCOME BACK TO UTOPIA Mr. ${username}.`
+            : userGender === "female"
+            ? `WELCOME BACK TO UTOPIA Ms. ${username}.`
+            : `WELCOME BACK TO UTOPIA ${username}.`}
         </h1>
 
         <div className="flex flex-col lg:flex-row gap-4 lg:justify-between">
