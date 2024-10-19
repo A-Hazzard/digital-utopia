@@ -2,14 +2,24 @@
 import { useProfileModal } from "@/context/ProfileModalContext";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import ProfileSettingsModal from "./ProfileSettingsModal";
 import { auth } from "@/lib/firebase";
 import { LogOut } from "lucide-react";
 
 export default function Panel() {
   const pathname = usePathname();
-    const { isOpen, openModal, closeModal } = useProfileModal();
+  const { isOpen, openModal, closeModal } = useProfileModal();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    try {
+      await auth.signOut();
+      router.push('/login');
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   return (
     <div className="text-light flex flex-col gap-6 h-full relative">
@@ -36,12 +46,6 @@ export default function Panel() {
         </button>
 
         <Link
-          href="/payments"
-          className={pathname === "/payments" ? "underline" : ""}
-        >
-          Payments
-        </Link>
-        <Link
           href="/invoices"
           className={pathname === "/invoices" ? "underline" : ""}
         >
@@ -51,9 +55,7 @@ export default function Panel() {
 
       <button 
         className="bg-transparent w-fit text-light absolute bottom-0 left-0 flex items-center gap-2"
-        onClick={() => {
-          auth.signOut();
-        }}
+        onClick={handleSignOut}
       >
         <LogOut size={20} />
         Sign Out

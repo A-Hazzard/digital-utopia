@@ -1,4 +1,3 @@
-// src/helpers/auth.ts
 import { auth } from "../lib/firebase";
 import {
   sendSignInLinkToEmail,
@@ -8,7 +7,6 @@ import {
 
 export const sendSignInLink = async (email: string) => {
   const actionCodeSettings = {
-    // URL you want to redirect back to after email link is clicked
     url:
       process.env.NODE_ENV === "development"
         ? "http://localhost:3000/login"
@@ -18,7 +16,6 @@ export const sendSignInLink = async (email: string) => {
 
   try {
     await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-    // Save the email locally to complete sign-in later
     window.localStorage.setItem("emailForSignIn", email);
     alert("Check your email for the sign-in link!");
   } catch (error) {
@@ -33,7 +30,6 @@ export const completeSignIn = async (email: string) => {
     try {
       const result = await signInWithEmailLink(auth, email, emailLink);
       console.log("User signed in:", result);
-      // Redirect or perform additional actions after sign-in
     } catch (error) {
       console.error("Error signing in with email link:", error);
     }

@@ -37,8 +37,8 @@ export default function ProfileSettingsModal({
     setUsername: setUsernameFromContext,
     setAvatar: setAvatarFromContext,
   } = useUser();
-  const [passwordError, setPasswordError] = useState(""); // New state for password error messages
-  const [confirmPasswordError, setConfirmPasswordError] = useState(""); // New state for confirm password error messages
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -71,7 +71,7 @@ export default function ProfileSettingsModal({
       setUsernameFromContext(newUsername);
       toast.success("Username updated successfully!");
     } catch (error) {
-      console.error("Error updating username:", error); // Added error logging
+      console.error("Error updating username:", error);
       toast.error("Failed to update username. Please try again.");
     }
   };
@@ -85,8 +85,8 @@ export default function ProfileSettingsModal({
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPasswordError("");
-    setPasswordError(""); // Reset password error message
-    setConfirmPasswordError(""); // Reset confirm password error message
+    setPasswordError("");
+    setConfirmPasswordError("");
 
     const user = auth.currentUser;
     if (!user) {
@@ -107,7 +107,7 @@ export default function ProfileSettingsModal({
         throw new Error("User email is not available");
       }
     } catch (_) { 
-      console.error("Error signing in with current password:", _); // Added error logging
+      console.error("Error signing in with current password:", _);
       setCurrentPasswordError("Current password is incorrect.");
       setIsCurrentPasswordValid(false);
       return;
@@ -130,7 +130,7 @@ export default function ProfileSettingsModal({
       setNewPassword("");
       setConfirmPassword("");
     } catch (_) { 
-      console.error("Error updating password:", _); // Added error logging
+      console.error("Error updating password:", _);
       toast.error("Failed to update password. Please try again.");
     }
   };
@@ -150,41 +150,35 @@ export default function ProfileSettingsModal({
         setAvatarFromContext(photoURL);
         toast.success("Avatar updated successfully!");
       } catch (error) {
-        console.error("Error updating avatar:", error); // Added error logging
+        console.error("Error updating avatar:", error);
         toast.error("Failed to update avatar. Please try again.");
       }
     }
   };
 
   const handleDeleteAvatar = async () => {
-    const user = auth.currentUser; // Get the current user
+    const user = auth.currentUser;
 
     if (user && user.photoURL) {
       try {
-        // Create a reference to the file in Firebase Storage
         const storageRef = ref(storage, user.photoURL);
 
-        // Delete the file from Firebase Storage
         await deleteObject(storageRef);
-        // Update the user's profile to set photoURL to null (removes avatar)
         await updateProfile(user, {
           photoURL: '/avatar.svg',
         });
 
-        // Clear the local avatar state
         setLocalAvatar(null);
 
-        // Update the avatar in UserContext
         setAvatarFromContext(null);
 
-        // Show success message
         toast.success("Avatar deleted successfully!");
       } catch (error) {
-        console.error("Error deleting avatar:", error); // Added error logging
+        console.error("Error deleting avatar:", error);
         toast.error("Failed to delete avatar. Please try again.");
       }
     } else {
-      toast.error("User not authenticated or no avatar to delete."); // Handle case where user is not authenticated or no avatar is present
+      toast.error("User not authenticated or no avatar to delete.");
     }
   };
 
@@ -208,7 +202,7 @@ export default function ProfileSettingsModal({
         } catch (error) {
           setIsCurrentPasswordValid(false);
           setCurrentPasswordError("Current password is incorrect.");
-          console.error("Error signing in with current password:", error); // Added error logging
+          console.error("Error signing in with current password:", error);
         }
       } else {
         setIsCurrentPasswordValid(false);
@@ -220,17 +214,15 @@ export default function ProfileSettingsModal({
     const value = e.target.value;
     setNewPassword(value);
 
-    // Clear previous timeout
     if (typingTimeout.current) {
         clearTimeout(typingTimeout.current);
     }
 
-    // Set a new timeout to validate the password after 1 second
     typingTimeout.current = setTimeout(() => {
         if (!validatePassword(value)) {
             setPasswordError("New password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, and one special character.");
         } else {
-            setPasswordError(""); // Clear error if valid
+            setPasswordError("");
         }
     }, 1000);
   };
@@ -239,19 +231,18 @@ export default function ProfileSettingsModal({
     const value = e.target.value;
     setConfirmPassword(value);
 
-    // Check if the confirm password matches the new password
     if (value !== newPassword) {
         setConfirmPasswordError("Passwords do not match.");
     } else {
-        setConfirmPasswordError(""); // Clear error if they match
+        setConfirmPasswordError("");
     }
   };
 
   const isPasswordUpdateButtonDisabled =
-    !isCurrentPasswordValid || // Ensure current password is valid
-    !validatePassword(newPassword) || // Check if new password is valid
-    newPassword !== confirmPassword || // Check if new passwords match
-    !currentPassword; // Ensure current password is provided
+    !isCurrentPasswordValid ||
+    !validatePassword(newPassword) ||
+    newPassword !== confirmPassword ||
+    !currentPassword;
 
 
   if (loading) {
@@ -354,7 +345,7 @@ export default function ProfileSettingsModal({
               type="password"
               placeholder="New Password"
               value={newPassword}
-              onChange={handleNewPasswordChange} // Updated to include validation
+              onChange={handleNewPasswordChange}
               className="-ml-3 w-full rounded px-3 py-2 text-gray"
               classNames={{
                 input: "text-light",
@@ -362,7 +353,7 @@ export default function ProfileSettingsModal({
               required
             />
             {passwordError && (
-              <p className="text-red-500">{passwordError}</p> // Display new password error
+              <p className="text-red-500">{passwordError}</p>
             )}
 
             <Input
@@ -370,7 +361,7 @@ export default function ProfileSettingsModal({
               type="password"
               placeholder="Confirm New Password"
               value={confirmPassword}
-              onChange={handleConfirmPasswordChange} // Updated to include validation
+              onChange={handleConfirmPasswordChange}
               className="-ml-3 w-full rounded px-3 py-2 text-gray"
               classNames={{
                 input: "text-light",
@@ -378,7 +369,7 @@ export default function ProfileSettingsModal({
               required
             />
             {confirmPasswordError && (
-              <p className="text-red-500">{confirmPasswordError}</p> // Display confirm password error
+              <p className="text-red-500">{confirmPasswordError}</p>
             )}
 
             <Button

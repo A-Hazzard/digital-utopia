@@ -14,7 +14,7 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({ onClose }) =>
   const [amount, setAmount] = useState('');
   const [isAddressConfirmed, setIsAddressConfirmed] = useState(false);
   const [isWithdrawEnabled, setIsWithdrawEnabled] = useState(false);
-  const availableBalance = 4000000; // Available balance in cents (40,000 USDT)
+  const availableBalance = 4000000; 
 
   const validateTRC20Address = (address: string) => {
     return /^T[A-Za-z1-9]{33}$/.test(address);
@@ -22,7 +22,7 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({ onClose }) =>
 
   useEffect(() => {
     const isValidAddress = validateTRC20Address(address);
-    const numericAmount = parseFloat(amount.replace(/,/g, '')) * 100; // Convert to cents
+    const numericAmount = parseFloat(amount.replace(/,/g, '')) * 100; 
     const isValidAmount = numericAmount >= 2000 && numericAmount <= availableBalance;
     setIsWithdrawEnabled(isValidAddress && isValidAmount && isAddressConfirmed);
   }, [address, amount, isAddressConfirmed]);

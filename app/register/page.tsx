@@ -8,28 +8,28 @@ import {
 } from "firebase/auth";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Import useRouter
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth } from "../../lib/firebase";
 import styles from "./register.module.css";
-import { doc, setDoc } from "firebase/firestore"; // Import Firestore functions
-import { db } from "../../lib/firebase"; // Ensure you have your Firestore instance imported
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../../lib/firebase";
 
 export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [error, setError] = useState(""); // State for error messages
-  const router = useRouter(); // Initialize useRouter
+  const [error, setError] = useState("");
+  const router = useRouter();
   const [user, setUser] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // State to track loading status
-  const [isPageLoading, setIsPageLoading] = useState(true); // State to track page loading status
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
   const [gender, setGender] = useState<string | null>(null);
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true); // Set loading to true
-    setError(""); // Reset error message
+    setIsLoading(true);
+    setError("");
     try {
       console.log(gender)
       const userCredential = await createUserWithEmailAndPassword(
@@ -37,56 +37,54 @@ export default function Register() {
         email,
         password
       );
-      const user = userCredential.user; // Get the user object
-      await updateProfile(user, { displayName: name }); // Set the displayName
+      const user = userCredential.user;
+      await updateProfile(user, { displayName: name });
 
-      // Store additional user information in Firestore
       await setDoc(doc(db, "users", user.uid), {
         email: email,
         displayName: name,
-        gender: gender, // Store the gender here
+        gender: gender,
       });
 
-      router.push("/dashboard"); // Redirect to home
+      router.push("/dashboard");
     } catch (error: unknown) {
       if (error instanceof Error) {
-        // Check for specific error message
         if (
           error.message.includes("invalid-email") ||
           error.message.includes("weak-password")
         ) {
-          setError("Please provide valid credentials."); // Disable specific error messages
+          setError("Please provide valid credentials.");
         } else {
-          setError("An error occurred. Please try again."); // General error message
+          setError("An error occurred. Please try again.");
         }
         console.error("Error registering user:", error);
       } else {
-        setError("An unknown error occurred"); // Fallback error message
+        setError("An unknown error occurred");
         console.error("Unknown error registering user:", error);
       }
     } finally {
-      setIsLoading(false); // Reset loading status
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        setUser(true); // User is signed in
-        router.push("/dashboard"); // Redirect to home
+        setUser(true);
+        router.push("/dashboard");
       } else {
-        setUser(false); // User is signed out
-        setIsPageLoading(false); // Set page loading to false
+        setUser(false);
+        setIsPageLoading(false);
       }
     });
 
-    return () => unsubscribe(); // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, [router]);
 
   if (!user && isPageLoading) {
     return null;
   }
-  //TODO MAKE INTO A LAYOUT COMPONENT
+
   return (
     <div className="flex flex-col lg:flex-row-reverse text-dark lg:h-screen">
       <section className="lg:w-1/2 flex flex-col justify-start px-5 pt-20 2xl:pt-32">

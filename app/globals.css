@@ -89,3 +89,7 @@ body {
     border-color: var(--gray);
   }
 }
+
+.bg-content1{
+  background-color: var(--dark) !important;
+}

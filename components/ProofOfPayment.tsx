@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@nextui-org/react";
 import { Image as ImageIcon, X as XIcon } from 'lucide-react';
+import Image from 'next/image';
 
 interface ProofOfPaymentProps {
   onBack: () => void;
@@ -50,7 +51,13 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({ onBack, onConfirm }) =>
           <label htmlFor="receipt-upload" className="flex flex-col items-center cursor-pointer w-full h-full">
             {receiptPreview ? (
               <>
-                <img src={receiptPreview} alt="Receipt preview" className="max-w-full max-h-48 object-contain" />
+                <Image 
+                  src={receiptPreview} 
+                  alt="Receipt preview" 
+                  className="max-w-full max-h-48 object-contain" 
+                  width={100}
+                  height={100}
+                />
                 <button
                   onClick={(e) => {
                     e.preventDefault();

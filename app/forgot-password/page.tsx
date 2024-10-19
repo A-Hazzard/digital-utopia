@@ -7,7 +7,7 @@ import { useState } from "react";
 import { auth } from "../../lib/firebase";
 import Image from "next/image";
 import Link from "next/link";
-import styles from "./forgot-password.module.css"; // Assuming you want to create a CSS module for styles
+import styles from "./forgot-password.module.css";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -23,7 +23,7 @@ export default function ForgotPassword() {
     try {
       await sendPasswordResetEmail(auth, email);
       alert("If your email is found a password reset link will be sent to it.");
-      router.push("/login"); // Redirect to login after sending the email
+      router.push("/login"); 
     } catch (error) {
       let errorMessage = "An error occurred. Please try again.";
       if (error instanceof Error) {

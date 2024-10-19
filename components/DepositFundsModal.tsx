@@ -2,22 +2,22 @@
 import React, { useState } from "react";
 import { Button } from "@nextui-org/react";
 import { ToastContainer } from "react-toastify";
-import { QRCodeSVG } from "qrcode.react"; // Make sure to install this package
+import { QRCodeSVG } from "qrcode.react";
 import "react-toastify/dist/ReactToastify.css";
 import { InfoIcon } from "lucide-react";
 import CustomInput from "./CustomInput";
 import ProofOfPayment from "./ProofOfPayment";
 
 interface DepositFundsModalProps {
-  onClose: () => void; // Define the prop type correctly
+  onClose: () => void; 
 }
 
 const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
-  const [showTooltip, setShowTooltip] = useState(false); // State to manage tooltip visibility
+  const [showTooltip, setShowTooltip] = useState(false); 
   const [showProofOfPayment, setShowProofOfPayment] = useState(false);
 
   const handleClick = () => {
-    setShowTooltip((prev) => !prev); // Toggle tooltip on click
+    setShowTooltip((prev) => !prev);
   };
 
   const handleProofOfTransaction = () => {
@@ -29,7 +29,6 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
   };
 
   const handleConfirmDeposit = () => {
-    // Handle deposit confirmation logic here
     console.log("Deposit confirmed");
   };
 

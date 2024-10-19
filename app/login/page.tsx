@@ -1,6 +1,6 @@
 "use client";
 import { sendSignInLink } from "@/helpers/auth";
-import { Button, Input } from "@nextui-org/react"; // Import NextUI Input
+import { Button, Input } from "@nextui-org/react";
 import {
   isSignInWithEmailLink,
   onAuthStateChanged,
@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Import useRouter
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth } from "../../lib/firebase";
 import styles from "./login.module.css";
@@ -18,40 +18,37 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState<boolean | null>(null);
-  const [isPasswordLogin, setIsPasswordLogin] = useState(true); // State to toggle between login methods
-  const [isLoading, setIsLoading] = useState(false); // State to track loading status
-  const [isPageLoading, setIsPageLoading] = useState(true); // State to track page loading status
-  const [error, setError] = useState(""); // State for error messages
+  const [isPasswordLogin, setIsPasswordLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true); // Set loading to true
-    setError(""); // Reset error message
+    setIsLoading(true);
+    setError("");
     try {
       if (isPasswordLogin) {
-        // Login with password
         await signInWithEmailAndPassword(auth, email, password);
-        router.push("/dashboard"); // Redirect to home only if login is successful
+        router.push("/dashboard");
       } else {
-        // Login with email link
-        window.localStorage.setItem("emailForSignIn", email); // Store email for later use
-        await sendSignInLink(email); // Function to send email link
-        setError("Check your email for the login link."); // Inform the user
+        window.localStorage.setItem("emailForSignIn", email);
+        await sendSignInLink(email);
+        setError("Check your email for the login link.");
       }
     } catch (error) {
-      let errorMessage = "An error occurred. Please try again."; // Default error message
+      let errorMessage = "An error occurred. Please try again.";
       if (error instanceof Error) {
-        // Customize error messages based on the error type
         if (error.message.includes("auth/invalid-credential")) {
-          errorMessage = "Invalid email or password. Please try again."; // General error message for invalid credentials
+          errorMessage = "Invalid email or password. Please try again.";
         }
       }
-      setError(errorMessage); // Set user-friendly error message
+      setError(errorMessage);
       console.error("Error logging in:", error);
     } finally {
-      setIsLoading(false); // Reset loading status
+      setIsLoading(false);
     }
   };
 
@@ -65,7 +62,7 @@ export default function Login() {
         try {
           await signInWithEmailLink(auth, email || "", window.location.href);
           window.localStorage.removeItem("emailForSignIn");
-          router.push("/dashboard"); // Redirect to home after successful email link sign-in
+          router.push("/dashboard");
         } catch (error) {
           console.error("Error signing in with email link:", error);
           setError("Failed to sign in with email link. Please try again.");
@@ -75,23 +72,21 @@ export default function Login() {
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        setUser(true); // User is signed in
-        router.push("/dashboard"); // Redirect to home
+        setUser(true);
+        router.push("/dashboard");
       } else {
-        setUser(false); // User is signed out
-        setIsPageLoading(false); // Set page loading to false
-        checkEmailSignInLink(); // Check for email sign-in link
+        setUser(false);
+        setIsPageLoading(false);
+        checkEmailSignInLink();
       }
     });
 
-    return () => unsubscribe(); // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, [router]);
 
-  // Render the login form if the user is not authenticated
   if (!user && isPageLoading) {
-    return null; // Optionally, you can show a loading spinner here
+    return null;
   }
-  //TODO MAKE INTO A LAYOUT COMPONENT
 
   return (
     <div className="flex flex-col lg:flex-row-reverse text-dark lg:h-screen">
