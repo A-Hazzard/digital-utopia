@@ -14,6 +14,7 @@ import { doc, getDoc } from "firebase/firestore";
 import DepositFundsModal from "@/components/DepositFundsModal";
 import WithdrawCryptoModal from "@/components/WithdrawCryptoModal";
 import Layout from "@/app/common/Layout";
+import { NextSeo } from 'next-seo';
 
 function Dashboard() {
   const { username, setUsername, setAvatar } = useUser(); 
@@ -72,6 +73,24 @@ function Dashboard() {
 
   return (
     <Layout>
+      <NextSeo
+        title="User Dashboard - Digital Utopia"
+        description="Manage your trading portfolio, view your profits, and access resources on your dashboard."
+        openGraph={{
+          url: 'https://digital-utopia.vercel.app/dashboard',
+          title: 'User Dashboard - Digital Utopia',
+          description: 'Manage your trading portfolio, view your profits, and access resources on your dashboard.',
+          images: [
+            {
+              url: 'https://digital-utopia.vercel.app/logo.svg',
+              width: 800,
+              height: 600,
+              alt: 'Dashboard Image',
+            },
+          ],
+          site_name: 'Digital Utopia',
+        }}
+      />
       <div className="mt-4 flex">
         <div className="w-20 h-20 xl:w-40 xl:h-40 xl:-ml-4 overflow-hidden rounded-full flex items-center justify-center">
           <Avatar
@@ -84,11 +103,7 @@ function Dashboard() {
       </div>
 
       <h1 style={{ marginTop: "0" }} className="text-light text-2xl font-bold">
-        {userGender === "male"
-          ? `WELCOME BACK TO UTOPIA Mr. ${username}.`
-          : userGender === "female"
-          ? `WELCOME BACK TO UTOPIA Ms. ${username}.`
-          : `WELCOME BACK TO UTOPIA ${username}.`}
+        WELCOME BACK TO UTOPIA {username.toUpperCase()}
       </h1>
 
       <div className="flex flex-col lg:flex-row gap-4 lg:justify-between">

@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Button } from "@nextui-org/react";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import CustomInput from "./CustomInput";
+import { auth } from "@/lib/firebase";
 
 interface WithdrawCryptoModalProps {
   onClose: () => void;
@@ -14,6 +15,7 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({ onClose }) =>
   const [amount, setAmount] = useState('');
   const [isAddressConfirmed, setIsAddressConfirmed] = useState(false);
   const [isWithdrawEnabled, setIsWithdrawEnabled] = useState(false);
+  const [loading, setLoading] = useState(false); // Loading state
   const availableBalance = 4000000; 
 
   const validateTRC20Address = (address: string) => {
@@ -50,6 +52,38 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({ onClose }) =>
       return formatAmount(availableBalance.toString());
     }
     return (cents / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  };
+
+  const handleWithdraw = async () => {
+    setLoading(true); // Set loading to true
+    const withdrawData = {
+      userId: auth.currentUser?.uid,
+      userEmail: auth.currentUser?.email,
+      amount,
+      address,
+    };
+
+    try {
+      const response = await fetch("/api/sendWithdrawalEmail", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(withdrawData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send withdrawal notification email.");
+      }
+
+      toast.success("Withdrawal request submitted! Funds will show up within 24 to 48 hours.");
+      // Do not close the modal, allow the user to close it manually
+    } catch (error) {
+      console.error("Error sending withdrawal email:", error);
+      toast.error("Failed to send withdrawal notification email.");
+    } finally {
+      setLoading(false); // Reset loading state
+    }
   };
 
   return (
@@ -147,7 +181,9 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({ onClose }) =>
                     ? 'bg-orange text-light' 
                     : 'bg-transparent text-gray cursor-not-allowed'
                 } w-fit self-end`}
-                disabled={!isWithdrawEnabled}
+                disabled={!isWithdrawEnabled || loading} // Disable if not enabled or loading
+                onClick={handleWithdraw}
+                isLoading={loading} // Use the loading prop
               >
                 Withdraw Amount
               </Button>

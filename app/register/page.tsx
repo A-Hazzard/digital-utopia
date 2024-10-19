@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Input, Radio, RadioGroup } from "@nextui-org/react";
+import { Button, Input } from "@nextui-org/react";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -12,8 +12,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth } from "../../lib/firebase";
 import styles from "./register.module.css";
-import { doc, setDoc } from "firebase/firestore";
-import { db } from "../../lib/firebase";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -24,14 +22,24 @@ export default function Register() {
   const [user, setUser] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
-  const [gender, setGender] = useState<string | null>(null);
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
     try {
-      console.log(gender)
+      const emailResponse = await fetch('/api/sendRegistrationEmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ displayName: name, email }),
+      });
+
+      if (!emailResponse.ok) {
+        throw new Error('Failed to send email');
+      }
+
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -40,16 +48,12 @@ export default function Register() {
       const user = userCredential.user;
       await updateProfile(user, { displayName: name });
 
-      await setDoc(doc(db, "users", user.uid), {
-        email: email,
-        displayName: name,
-        gender: gender,
-      });
-
       router.push("/dashboard");
     } catch (error: unknown) {
       if (error instanceof Error) {
-        if (
+        if (error.message === 'Failed to send email') {
+          setError("Failed to send registration email. Please try again.");
+        } else if (
           error.message.includes("invalid-email") ||
           error.message.includes("weak-password")
         ) {
@@ -117,6 +121,7 @@ export default function Register() {
                 onChange={(e) => setName(e.target.value)}
                 required
                 className="2xl:text-xl"
+                autoComplete="name"
               />
             </div>
             <div>
@@ -143,16 +148,7 @@ export default function Register() {
                 className="2xl:text-xl"
               />
             </div>
-            <div>
-              <RadioGroup  
-                onChange={(e) => setGender(e.target.value)}
-                label="Select your gender"
-              >
-                <Radio value="male">Male</Radio>
-                <Radio value="female">Female</Radio>
-                <Radio value="other">Other</Radio>
-              </RadioGroup>
-            </div>
+            
             {error && <p className="text-red-500 2xl:text-lg">{error}</p>}
 
             <Button

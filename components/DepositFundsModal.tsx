@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@nextui-org/react";
 import { ToastContainer } from "react-toastify";
 import { QRCodeSVG } from "qrcode.react";
@@ -7,6 +7,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { InfoIcon } from "lucide-react";
 import CustomInput from "./CustomInput";
 import ProofOfPayment from "./ProofOfPayment";
+import { auth } from "../lib/firebase"; // Import your Firebase auth configuration
+import { onAuthStateChanged } from "firebase/auth";
 
 interface DepositFundsModalProps {
   onClose: () => void; 
@@ -15,6 +17,8 @@ interface DepositFundsModalProps {
 const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
   const [showTooltip, setShowTooltip] = useState(false); 
   const [showProofOfPayment, setShowProofOfPayment] = useState(false);
+  const userId = auth.currentUser?.uid;
+  
 
   const handleClick = () => {
     setShowTooltip((prev) => !prev);
@@ -31,6 +35,10 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
   const handleConfirmDeposit = () => {
     console.log("Deposit confirmed");
   };
+
+  
+
+  if (!userId) return null;
 
   return (
     <>
@@ -115,7 +123,7 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
           </div>
 
           <div className={`transition-opacity duration-300 ${showProofOfPayment ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
-            <ProofOfPayment onBack={handleBack} onConfirm={handleConfirmDeposit} />
+            <ProofOfPayment onBack={handleBack} onConfirm={handleConfirmDeposit} userId={userId} />
           </div>
 
           {!showProofOfPayment && (
