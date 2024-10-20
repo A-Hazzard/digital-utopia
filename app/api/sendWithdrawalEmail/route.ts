@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import path from 'path';
+import fs from 'fs';
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -32,6 +34,14 @@ const sendWithdrawNotification = async (withdrawData: {
   amount: string;
   address: string;
 }) => {
+  const logoPath = path.join(process.cwd(), 'public', 'logo.png');
+
+  // Check if the file exists
+  if (!fs.existsSync(logoPath)) {
+    console.error(`Logo file not found at path: ${logoPath}`);
+    throw new Error('Logo file not found');
+  }
+
   const adminMailOptions = {
     from: process.env.ADMIN_EMAIL,
     to: process.env.ADMIN_EMAIL,
@@ -39,8 +49,8 @@ const sendWithdrawNotification = async (withdrawData: {
     html: createWithdrawNotificationTemplate(withdrawData),
     attachments: [
       {
-        filename: "logo.svg",
-        path: "public/logo.png",
+        filename: "logo.png",
+        path: logoPath,
         cid: "logo",
       },
     ],

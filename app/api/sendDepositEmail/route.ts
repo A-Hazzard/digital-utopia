@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import path from 'path';
+import fs from 'fs';
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -32,18 +34,26 @@ const sendDepositNotification = async (depositData: {
   transactionId: string;
   receiptURL: string;
 }) => {
+  const logoPath = path.join(process.cwd(), 'public', 'logo.png');
+
+  // Check if the file exists
+  if (!fs.existsSync(logoPath)) {
+    console.error(`Logo file not found at path: ${logoPath}`);
+    throw new Error('Logo file not found');
+  }
+
   const adminMailOptions = {
     from: process.env.ADMIN_EMAIL,
     to: process.env.ADMIN_EMAIL,
     subject: "New Deposit Request",
     html: createDepositNotificationTemplate(depositData.userEmail, depositData.transactionId, depositData.receiptURL),
-    // attachments: [
-    //   {
-    //     filename: "logo.svg",
-    //     path: "public/logo.png",
-    //     cid: "logo",
-    //   },
-    // ],
+    attachments: [
+      {
+        filename: "logo.svg",
+        path: logoPath, // Use the constructed path
+        cid: "logo",
+      },
+    ],
   };
 
   await transporter.sendMail(adminMailOptions);

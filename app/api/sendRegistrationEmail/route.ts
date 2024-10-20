@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer';
 import { NextResponse } from 'next/server';
+import path from 'path';
+import fs from 'fs';
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -13,6 +15,14 @@ const transporter = nodemailer.createTransport({
 const sendSignUpEmail = async (userData: { displayName: string; email: string }) => {
   console.log("Sending email to user and admin", userData);
 
+  const logoPath = path.join(process.cwd(), 'public', 'logo.png');
+
+  // Check if the file exists
+  if (!fs.existsSync(logoPath)) {
+    console.error(`Logo file not found at path: ${logoPath}`);
+    throw new Error('Logo file not found');
+  }
+
   // Email to the new user
   const userMailOptions = {
     from: process.env.ADMIN_EMAIL,
@@ -21,8 +31,8 @@ const sendSignUpEmail = async (userData: { displayName: string; email: string })
     html: createEmailTemplate(userData.displayName),
     attachments: [
       {
-        filename: 'logo.svg',
-        path: 'public/logo.png',
+        filename: 'logo.png',
+        path: logoPath,
         cid: 'logo',
       },
     ],
@@ -36,8 +46,8 @@ const sendSignUpEmail = async (userData: { displayName: string; email: string })
     html: createAdminNotificationTemplate(userData.displayName, userData.email),
     attachments: [
       {
-        filename: "logo.svg",
-        path: "public/logo.png",
+        filename: "logo.png",
+        path: logoPath,
         cid: "logo",
       },
     ],
