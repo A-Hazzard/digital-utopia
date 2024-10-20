@@ -6,26 +6,9 @@ import Layout from "@/app/common/Layout";
 import { Invoice } from '@/types/invoice';
 import InvoiceModal from '@/components/InvoiceModal';
 import { UserProvider } from "@/context/UserContext";
-
-const invoicesData: Invoice[] = Array.from({ length: 20 }, (_, i) => ({
-  id: `INV-${i + 1}`,
-  invoiceNumber: `${i + 1}/01/2024 12:00`,
-  description: "Subscription Fee",
-  amount: "75 USDT",
-  date: new Date(2024, 0, i + 1).toISOString(), 
-  status: Math.random() > 0.5 ? "paid" : "pending", 
-  userName: `User ${i + 1}`,
-  country: "Trinidad & Tobago", 
-}));
-
-const sortedInvoicesData = invoicesData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-const columns = [
-  { key: "invoiceNumber", label: "Invoice Number" },
-  { key: "description", label: "Description" },
-  { key: "amount", label: "Amount" },
-  { key: "status", label: "Status" },
-];
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { auth } from "@/lib/firebase"; 
 
 const InvoicesPage = () => {
   const [loading, setLoading] = useState(true);
@@ -33,6 +16,7 @@ const InvoicesPage = () => {
   const itemsPerPage = 10;
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [invoicesData, setInvoicesData] = useState<Invoice[]>([]);
 
   useEffect(() => {
     const fetchData = () => {
@@ -43,15 +27,40 @@ const InvoicesPage = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      if (auth.currentUser?.uid) {
+        const invoicesRef = collection(db, "invoices");
+        const q = query(invoicesRef, where("userEmail", "==", auth.currentUser?.email));
+        const querySnapshot = await getDocs(q);
+        const invoices: Invoice[] = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Invoice[]; 
+        setInvoicesData(invoices);
+      }
+    };
+
+    fetchInvoices();
+  }, []);
+
   const indexOfLastInvoice = currentPage * itemsPerPage;
   const indexOfFirstInvoice = indexOfLastInvoice - itemsPerPage;
-  const currentInvoices = sortedInvoicesData.slice(indexOfFirstInvoice, indexOfLastInvoice);
-  const totalPages = Math.ceil(sortedInvoicesData.length / itemsPerPage);
+  const currentInvoices = invoicesData.slice(indexOfFirstInvoice, indexOfLastInvoice);
+  const totalPages = Math.ceil(invoicesData.length / itemsPerPage);
 
   const handleRowClick = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setModalVisible(true);
   };
+
+  const columns = [
+    { key: "invoiceNumber", label: "Invoice Number" },
+    { key: "description", label: "Description" },
+    { key: "amount", label: "Amount" },
+    { key: "date", label: "Date" },
+    { key: "status", label: "Status" },
+  ];
 
   return (
     <UserProvider>
@@ -97,7 +106,13 @@ const InvoicesPage = () => {
                     >
                       {(columnKey) => (
                         <TableCell className="text-light bg-transparent">
-                          {getKeyValue(item, columnKey)}
+                          {columnKey === "date" 
+                            ? new Date(item.date).toLocaleDateString("en-US", {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit'
+                              }) 
+                            : getKeyValue(item, columnKey)}
                         </TableCell>
                       )}
                     </TableRow>

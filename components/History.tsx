@@ -1,67 +1,36 @@
 import React from "react";
 import { Calendar, CheckCircle, Clock } from "lucide-react";
 import Image from "next/image";
+import { Skeleton } from "@nextui-org/react";
 
-const trades = [
-  {
-    date: "12/12/2024",
-    time: "12:47",
-    status: "Pending",
-    pair: "BTC • ETH",
-    profit: "0.00210123BTC\n140.63USD",
-  },
-  {
-    date: "12/12/2024",
-    time: "12:47",
-    status: "Pending",
-    pair: "BTC • ETH",
-    profit: "0.00210123BTC\n140.63USD",
-  },
-  {
-    date: "12/12/2024",
-    time: "12:47",
-    status: "Done",
-    pair: "BTC • ETH",
-    profit: "0.00210123BTC\n140.63USD",
-  },
-  {
-    date: "12/12/2024",
-    time: "12:47",
-    status: "Pending",
-    pair: "BTC • ETH",
-    profit: "0.00210123BTC\n140.63USD",
-  },
-  {
-    date: "12/12/2024",
-    time: "12:47",
-    status: "Done",
-    pair: "BTC • ETH",
-    profit: "0.00210123BTC\n140.63USD",
-  },
-  {
-    date: "12/12/2024",
-    time: "12:47",
-    status: "Done",
-    pair: "BTC • ETH",
-    profit: "0.00210123BTC\n140.63USD",
-  },
-  {
-    date: "12/12/2024",
-    time: "12:47",
-    status: "Done",
-    pair: "BTC • ETH",
-    profit: "0.00210123BTC\n140.63USD",
-  },
-  {
-    date: "12/12/2024",
-    time: "12:47",
-    status: "Done",
-    pair: "BTC • ETH",
-    profit: "0.00210123BTC\n140.63USD",
-  },
-];
+type Trade = {
+  id: string;
+  userEmail: string;
+  date: Date;
+  time: string;
+  status: string;
+  pair: string;
+  profitAmount: number;
+};
 
-export default function History() {
+type HistoryProps = {
+  profits: Trade[];
+  loading: boolean;
+}
+
+export default function History({ profits, loading }: HistoryProps) {
+  if (loading) {
+    return (
+      <div className="flex justify-center">
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
+
+  if (profits.length === 0) {
+    return <p className="text-gray">You haven&apos;t made any profits yet.</p>;
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="text-light min-w-full">
@@ -74,14 +43,14 @@ export default function History() {
           </tr>
         </thead>
         <tbody>
-          {trades.map((trade, index) => (
+          {profits.map((trade, index) => (
             <tr key={index} className="border-b border-gray">
               <td className="p-2">
                 <div className="flex items-center">
                   <Calendar size={16} className="mr-2 text-gray-400" />
                   <div>
-                    <div className="text-sm">{trade.date}</div>
-                    <div className="text-gray-400 text-xs">{trade.time}</div>
+                    <div className="text-sm">{trade.date.toLocaleDateString()}</div>
+                    <div className="text-gray-400 text-xs">{trade.date.toLocaleTimeString()}</div>
                   </div>
                 </div>
               </td>
@@ -103,14 +72,14 @@ export default function History() {
                   <div className="relative w-6 h-6 mr-2">
                     <Image
                       src="/btc.svg"
-                      alt="ETH"
+                      alt="BTC"
                       className="w-5 h-5 rounded-full absolute bottom-0 -right-2"
                       width={20}
                       height={20}
                     />
                     <Image
                       src="/eth.svg"
-                      alt="BTC"
+                      alt="ETH"
                       className="w-5 h-5 rounded-full absolute top-0 left-0"
                       width={20}
                       height={20}
@@ -120,10 +89,7 @@ export default function History() {
                 </div>
               </td>
               <td className="text-right py-2">
-                <div className="text-sm">{trade.profit.split("\n")[0]}</div>
-                <div className="text-gray-400 text-xs">
-                  {trade.profit.split("\n")[1]}
-                </div>
+                <div className="text-sm">{trade.profitAmount} USDT</div>
               </td>
             </tr>
           ))}

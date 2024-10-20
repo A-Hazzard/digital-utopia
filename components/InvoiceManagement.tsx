@@ -1,34 +1,59 @@
 "use client";
 
-import { useState } from "react";
-import { Table, TableHeader, TableColumn, TableBody, TableCell, TableRow, Button, Input } from "@nextui-org/react";
+import { useEffect, useState } from "react";
+import { Table, TableHeader, TableColumn, TableBody, TableCell, TableRow, Button, Input, Skeleton } from "@nextui-org/react";
 import { Invoice } from '@/types/invoice';
-
-// Fake data for prototyping
-const fakeInvoices: Invoice[] = [
-  { id: '1', invoiceNumber: 'INV-001', description: 'Web Development', amount: "1000 USDT", status: 'pending', userName: 'John Doe', country: 'USA', date: new Date().toISOString() },
-  { id: '2', invoiceNumber: 'INV-002', description: 'UI/UX Design', amount: "750 USDT", status: 'paid', userName: 'Jane Smith', country: 'Canada', date: new Date().toISOString() },
-  { id: '3', invoiceNumber: 'INV-003', description: 'SEO Services', amount: "500 USDT", status: 'overdue', userName: 'Bob Johnson', country: 'UK', date: new Date().toISOString() },
-];
+import { db } from '@/lib/firebase';
+import { collection, getDocs } from "firebase/firestore";
 
 const InvoiceManagement = () => {
-  const [invoices, setInvoices] = useState<Invoice[]>(fakeInvoices);
-  const [newInvoice, setNewInvoice] = useState<Omit<Invoice, 'id'>>({
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [newInvoice, setNewInvoice] = useState<Omit<Invoice, 'id' | 'createdAt' | 'userId' | 'userEmail' | 'date'>>({
     invoiceNumber: '',
     description: '',
     amount: "0 USDT",
     status: 'pending',
     userName: '',
     country: '',
-    date: new Date().toISOString()
   });
+
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      setLoading(true);
+      try {
+        const invoicesCollection = collection(db, "invoices");
+        const invoicesSnapshot = await getDocs(invoicesCollection);
+        const invoicesData = invoicesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          date: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          userId: '', 
+          userEmail: '', 
+        })) as Invoice[];
+        setInvoices(invoicesData);
+      } catch (err) {
+        setError("Failed to fetch invoices");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInvoices();
+  }, []);
 
   const handleAddInvoice = () => {
     const id = (invoices.length + 1).toString();
     const newInvoiceWithDate = {
       ...newInvoice,
       id,
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      userId: '', 
+      userEmail: '', 
     };
     setInvoices([...invoices, newInvoiceWithDate]);
     setNewInvoice({
@@ -38,7 +63,6 @@ const InvoiceManagement = () => {
       status: 'pending',
       userName: '',
       country: '',
-      date: new Date().toISOString()
     });
   };
 
@@ -47,6 +71,21 @@ const InvoiceManagement = () => {
       invoice.id === invoiceId ? { ...invoice, status: newStatus } : invoice
     ));
   };
+
+  if (loading) {
+    return (
+      <div>
+        <h2 className="text-xl text-light font-bold mb-4">Invoice Management</h2>
+        <Skeleton className="h-10 w-full mb-2" />
+        <Skeleton className="h-10 w-full mb-2" />
+        <Skeleton className="h-10 w-full mb-2" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <p className="text-red-500">{error}</p>;
+  }
 
   return (
     <div>

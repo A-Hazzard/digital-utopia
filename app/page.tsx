@@ -7,7 +7,6 @@ const Home = () => {
 
   return (
     <>
-    
       <div>
         <h1>Welcome to Digital Utopia! Landing Page In Progress</h1>
         <Button

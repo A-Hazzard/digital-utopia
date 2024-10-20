@@ -5,20 +5,12 @@ import { Button } from "@nextui-org/react";
 import { XIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import PaymentMethod from "./PaymentMethod";
+import { Invoice } from "@/types/invoice";
 
 interface InvoiceModalProps {
   visible: boolean;
   onClose: () => void;
-  invoice: {
-    id: string;
-    invoiceNumber: string;
-    description: string;
-    amount: string;
-    date: string;
-    status: string;
-    userName: string;
-    country: string;
-  };
+  invoice: Invoice;
 }
 
 const InvoiceModal: React.FC<InvoiceModalProps> = ({ visible, onClose, invoice }) => {
@@ -28,16 +20,15 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ visible, onClose, invoice }
   useEffect(() => {
     if (visible) {
       setShowPaymentMethod(false);
-      
       const user = auth.currentUser;
       if (user) {
         setFirebaseUserName(user.displayName);
       }
     }
+
   }, [visible]);
 
   if (!visible) return null;
-
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -46,10 +37,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ visible, onClose, invoice }
           <h2 className="text-xl font-bold">
             Invoice #{invoice.invoiceNumber}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-light text-2xl"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-light text-2xl">
             <XIcon size={24} />
           </button>
         </div>
@@ -114,6 +102,8 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ visible, onClose, invoice }
             onBack={() => {
               setShowPaymentMethod(false);
             }} 
+            invoiceNumber={invoice.invoiceNumber} 
+            amount={invoice.amount} 
           />
         )}
       </div>

@@ -1,11 +1,13 @@
 "use client";
 
+import { db } from "@/lib/firebase"; 
 import { Button, Input } from "@nextui-org/react";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   updateProfile,
 } from "firebase/auth";
+import { addDoc, collection, getDocs, Timestamp } from "firebase/firestore";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -46,7 +48,13 @@ export default function Register() {
         password
       );
       const user = userCredential.user;
-      await updateProfile(user, { displayName: name });
+      if (user) {
+        await updateProfile(user, { displayName: name });
+
+        if (user.email) {
+          await createInvoice(user.uid, user.email);
+        }
+      }
 
       router.push("/dashboard");
     } catch (error: unknown) {
@@ -88,6 +96,28 @@ export default function Register() {
   if (!user && isPageLoading) {
     return null;
   }
+
+  const createInvoice = async (userId: string, userEmail: string) => {
+    const invoicesRef = collection(db, "invoices");
+    const querySnapshot = await getDocs(invoicesRef);
+    const invoiceCount = querySnapshot.size; 
+    const invoiceNumber = `INV-${invoiceCount + 1}`; 
+
+    const invoiceData = {
+      invoiceNumber: invoiceNumber,
+      description: "Monthly Subscription Fee",
+      amount: "75 USDT",
+      date: new Date().toISOString(), 
+      status: "pending",
+      userId: userId,
+      userEmail: userEmail,
+      createdAt: Timestamp.now(), 
+      userName: name, 
+      country: "User's Country", 
+    };
+
+    await addDoc(invoicesRef, invoiceData); 
+  };
 
   return (
     <div className="flex flex-col lg:flex-row-reverse text-dark lg:h-screen">

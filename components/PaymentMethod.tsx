@@ -6,14 +6,19 @@ import Image from "next/image";
 import ProofOfPayment from "./ProofOfPayment";
 import { auth } from "@/lib/firebase"; // Import your Firebase auth configuration
 
-const PaymentMethod = ({ onBack }: { onBack: () => void }) => {
+type PaymentMethodProps = {
+  onBack: () => void;
+  invoiceNumber: string;
+  amount: string;
+}
+
+const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack, invoiceNumber, amount }) => {
   const [selectedMethod, setSelectedMethod] = useState<
     "bank" | "paypal" | null
   >(null);
   const [showProofOfPayment, setShowProofOfPayment] = useState(false);
   const [fade, setFade] = useState(false);
-  const userId = auth.currentUser?.uid; // Get the userId from Firebase auth
-
+  const userId = auth.currentUser?.uid; 
   const handleMethodSelect = (method: "bank" | "paypal") => {
     setSelectedMethod(method);
   };
@@ -99,7 +104,6 @@ const PaymentMethod = ({ onBack }: { onBack: () => void }) => {
         </div>
       )}
 
-      {/* Proof of Payment Section */}
       {showProofOfPayment && (
         <div className="transition-opacity duration-500 ease-in-out opacity-100">
           <ProofOfPayment
@@ -107,7 +111,9 @@ const PaymentMethod = ({ onBack }: { onBack: () => void }) => {
               setShowProofOfPayment(false);
               setFade(false);
             }}
-            userId={userId} // Pass userId to ProofOfPayment
+            purpose="invoice"
+            invoiceNumber={invoiceNumber}
+            amount={amount}
           />
         </div>
       )}

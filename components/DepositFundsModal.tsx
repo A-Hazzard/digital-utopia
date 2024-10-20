@@ -49,7 +49,13 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
             </button>
           </div>
 
-          <div className={`transition-opacity duration-300 ${showProofOfPayment ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+          <div
+            className={`transition-opacity duration-300 ${
+              showProofOfPayment
+                ? "opacity-0 h-0 overflow-hidden"
+                : "opacity-100"
+            }`}
+          >
             {/* Original content */}
             <div className="space-y-4 flex-grow overflow-y-auto">
               <div>
@@ -116,8 +122,18 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
             </div>
           </div>
 
-          <div className={`transition-opacity duration-300 ${showProofOfPayment ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
-              <ProofOfPayment onBack={handleBack} userId={userId} />
+          <div
+            className={`transition-opacity duration-300 ${
+              showProofOfPayment
+                ? "opacity-100"
+                : "opacity-0 h-0 overflow-hidden"
+            }`}
+          >
+            <ProofOfPayment
+              purpose="deposit"
+              onBack={handleBack}
+              userId={userId}
+            />
           </div>
 
           {!showProofOfPayment && (

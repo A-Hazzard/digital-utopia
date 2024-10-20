@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Table, Button, TableHeader, TableColumn, TableCell, TableBody, TableRow, Input } from "@nextui-org/react";
+import { db } from '@/lib/firebase'; // Adjust the import based on your project structure
+import { collection, getDocs } from "firebase/firestore";
 
 // Define the Trade interface
 interface Trade {
@@ -11,22 +13,47 @@ interface Trade {
   amount: string;
 }
 
-// Fake data for prototyping
-const fakeTrades: Trade[] = [
-  { id: '1', date: new Date().toISOString(), type: 'win', amount: "100 USDT" },
-  { id: '2', date: new Date().toISOString(), type: 'loss', amount: "50 USDT" },
-  { id: '3', date: new Date().toISOString(), type: 'win', amount: "200 USDT" },
-];
-
 const TradeResultsManagement = () => {
-  const [trades, setTrades] = useState<Trade[]>(fakeTrades);
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newTrade, setNewTrade] = useState<Omit<Trade, 'id'>>({ date: '', type: 'win', amount: '' });
+
+  useEffect(() => {
+    const fetchTrades = async () => {
+      setLoading(true);
+      try {
+        const tradesCollection = collection(db, "trades");
+        const tradesSnapshot = await getDocs(tradesCollection);
+        const tradesData = tradesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Trade[];
+        setTrades(tradesData);
+      } catch (err) {
+        setError("Failed to fetch trades");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrades();
+  }, []);
 
   const handleAddTrade = () => {
     const id = (trades.length + 1).toString();
     setTrades([...trades, { ...newTrade, id }]);
     setNewTrade({ date: '', type: 'win', amount: '' });
   };
+
+  if (loading) {
+    return <p>Loading trades...</p>;
+  }
+
+  if (error) {
+    return <p className="text-red-500">{error}</p>;
+  }
 
   return (
     <div>

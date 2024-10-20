@@ -2,29 +2,35 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@nextui-org/react";
 import { Image as ImageIcon, X as XIcon } from "lucide-react";
 import Image from "next/image";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import { storage, db, auth } from "../lib/firebase"; // Import Firebase storage and Firestore
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { doc, setDoc } from "firebase/firestore";
 
 interface ProofOfPaymentProps {
   onBack: () => void;
-  userId: string; // Pass user ID to associate the deposit with the user
+  userId?: string; 
+  purpose: "deposit" | "invoice"; 
+  invoiceNumber?: string; 
+  amount?: string;
 }
 
 const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
   onBack,
   userId,
+  purpose,
+  invoiceNumber,
+  amount,
 }) => {
   const [receipt, setReceipt] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState("");
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(true);
-  const [loading, setLoading] = useState(false); // Loading state
+  const [loading, setLoading] = useState(false); 
   const userEmail = auth.currentUser?.email;
-  const MIN_TRANSACTION_ID_LENGTH = 10; // Set your minimum length here
-  const TRANSACTION_ID_REGEX = React.useMemo(() => /^[a-zA-Z0-9]{10,}$/, []); // Example regex for alphanumeric IDs with a minimum length
-
+  const MIN_TRANSACTION_ID_LENGTH = 10; 
+  const TRANSACTION_ID_REGEX = React.useMemo(() => /^[a-zA-Z0-9]{10,}$/, []); 
+  
   useEffect(() => {
     const isTransactionIdValid =
       transactionId.length >= MIN_TRANSACTION_ID_LENGTH &&
@@ -38,7 +44,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
       setReceipt(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setReceiptPreview(reader.result as string); // Ensure this is a valid data URL
+        setReceiptPreview(reader.result as string); 
       };
       reader.readAsDataURL(file);
     }
@@ -49,64 +55,84 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
     setReceiptPreview(null);
   };
 
+
   const handleConfirmDeposit = async () => {
-    setLoading(true); // Set loading to true
+    setLoading(true); 
     try {
       let receiptURL = "";
 
       if (receipt) {
-        // Upload the receipt to Firebase Storage
         const receiptRef = ref(storage, `receipts/${receipt.name}`);
         await uploadBytes(receiptRef, receipt);
         receiptURL = await getDownloadURL(receiptRef);
       }
 
-      // Ensure at least one of the fields is filled
       if (!transactionId && !receipt) {
-        throw new Error("At least one of Transaction ID or Receipt must be provided.");
+        throw new Error(
+          "At least one of Transaction ID or Receipt must be provided."
+        );
       }
 
-      // Validate userId
-      if (!userId) {
-        throw new Error("User ID is required.");
+      
+
+      if (purpose === "deposit") {
+        if (!userId) {
+          throw new Error("User ID is required.");
+        }
+      
+        const depositData = {
+          userId,
+          userEmail,
+          transactionId,
+          receiptURL,
+          createdAt: new Date(),
+        };
+
+        await setDoc(
+          doc(db, "deposits", transactionId || new Date().toISOString()),
+          depositData
+        );
+        await sendDepositEmail(depositData);
+        toast.success(
+          "Deposit Request Submitted! Funds will show up within 24 to 48 hours."
+        );
+      } else if (purpose === "invoice" && userEmail && amount) {
+        console.log(transactionId)
+        await sendInvoiceEmail({
+          userEmail,
+          transactionId,
+          amount,
+          receiptURL,
+        });
+
+        toast.success(
+          "Invoice Submission Submitted! Approval will be given within 24 to 48 hours."
+        );
       }
-
-      // Save transaction details to Firestore
-      const depositData = {
-        userId,
-        userEmail,
-        transactionId,
-        receiptURL,
-        createdAt: new Date(),
-      };
-
-      // Reference the document in the "deposits" collection using the transactionId
-      await setDoc(doc(db, "deposits", transactionId || new Date().toISOString()), depositData);
-
-      // Send email notification
-      await sendDepositEmail(depositData);
-
-      // Show success message
-      toast.success("Deposit request submitted! Funds will show up within 24 to 48 hours.");
     } catch (error: unknown) {
       console.error("Error confirming deposit:", error);
       if (error instanceof Error) {
-        toast.error(error.message || "Failed to submit deposit request. Please try again.");
+        toast.error(
+          error.message || "Failed to submit deposit request. Please try again."
+        );
       } else {
         toast.error("An unexpected error occurred. Please try again.");
       }
     } finally {
-      setLoading(false); // Reset loading state
+      setLoading(false);
     }
   };
 
-  // Function to send deposit email
-  const sendDepositEmail = async (depositData: { userId: string; transactionId: string; receiptURL: string }) => {
+  const sendDepositEmail = async (depositData: {
+    userId: string;
+    transactionId: string;
+    receiptURL: string;
+  }) => {
     try {
-      const response = await fetch('/api/sendDepositEmail', {
-        method: 'POST',
+      const response = await fetch("/api/sendDepositEmail", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(depositData),
       });
@@ -120,9 +146,37 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
     }
   };
 
+  const sendInvoiceEmail = async (invoiceData: {
+    userEmail: string;
+    transactionId: string;
+    amount: string;
+    receiptURL: string;
+  }) => {
+    try {
+      const response = await fetch("/api/sendInvoiceEmail", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(invoiceData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send invoice notification email.");
+      }
+    } catch (error) {
+      console.error("Error sending invoice email:", error);
+      toast.error("Failed to send invoice notification email.");
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <h2 className="text-gray">Proof of Payment</h2>
+      <ToastContainer />  
+      <h2 className="text-gray">
+        Proof of Payment for Invoice #{invoiceNumber}
+      </h2>
+      <p className="text-gray">Amount: {amount}</p>
 
       <div className="border border-gray-600 rounded-lg p-4 flex flex-col gap-4">
         <div
@@ -136,7 +190,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
             onChange={handleFileChange}
             className={`hidden ${!transactionId ? "cursor-not-allowed" : ""}`}
             id="receipt-upload"
-            disabled={!!transactionId} // Disable if transaction ID is entered
+            disabled={!!transactionId} 
           />
           <label
             htmlFor="receipt-upload"
@@ -150,8 +204,8 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
                   src={receiptPreview}
                   alt="Receipt preview"
                   className="max-w-full max-h-48 object-contain"
-                  width={300} // Adjust width as needed
-                  height={300} // Adjust height as needed
+                  width={300} 
+                  height={300} 
                 />
                 <button
                   onClick={(e) => {
@@ -183,7 +237,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
               !!receipt ? "cursor-not-allowed" : ""
             }`}
             placeholder="Enter Transaction ID"
-            readOnly={!!receipt} // Make readonly if an image is uploaded
+            readOnly={!!receipt} 
           />
           <label className="absolute text-sm text-gray-400 -top-2.5 left-2 bg-dark px-1">
             Transaction ID
@@ -196,11 +250,13 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
         </Button>
         <Button
           className={`${
-            isConfirmDisabled ? "bg-gray text-light cursor-not-allowed" : "bg-orange"
+            isConfirmDisabled
+              ? "bg-gray text-light cursor-not-allowed"
+              : "bg-orange"
           } text-light`}
           onClick={handleConfirmDeposit}
-          disabled={isConfirmDisabled || loading} // Disable if loading
-          isLoading={loading} // Use the loading prop
+          disabled={isConfirmDisabled || loading}
+          isLoading={loading}
         >
           Confirm Deposit
         </Button>
