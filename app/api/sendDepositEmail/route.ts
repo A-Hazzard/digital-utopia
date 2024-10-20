@@ -37,13 +37,13 @@ const sendDepositNotification = async (depositData: {
     to: process.env.ADMIN_EMAIL,
     subject: "New Deposit Request",
     html: createDepositNotificationTemplate(depositData.userEmail, depositData.transactionId, depositData.receiptURL),
-    attachments: [
-      {
-        filename: "logo.svg",
-        path: "public/logo.png",
-        cid: "logo",
-      },
-    ],
+    // attachments: [
+    //   {
+    //     filename: "logo.svg",
+    //     path: "public/logo.png",
+    //     cid: "logo",
+    //   },
+    // ],
   };
 
   await transporter.sendMail(adminMailOptions);
