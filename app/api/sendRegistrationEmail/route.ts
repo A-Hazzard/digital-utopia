@@ -4,8 +4,8 @@ import { NextResponse } from 'next/server';
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.ADMIN_EMAIL,
+    pass: process.env.ADMIN_EMAIL_PASS,
   },
 });
 
@@ -15,7 +15,7 @@ const sendSignUpEmail = async (userData: { displayName: string; email: string })
 
   // Email to the new user
   const userMailOptions = {
-    from: process.env.EMAIL_USER,
+    from: process.env.ADMIN_EMAIL,
     to: userData.email,
     subject: 'Welcome to Digital Utopia!',
     html: createEmailTemplate(userData.displayName),
@@ -30,7 +30,7 @@ const sendSignUpEmail = async (userData: { displayName: string; email: string })
 
   // Email to the admin
   const adminMailOptions = {
-    from: process.env.EMAIL_USER,
+    from: process.env.ADMIN_EMAIL,
     to: process.env.ADMIN_EMAIL, // Admin email from environment variables
     subject: "New User Registration",
     html: createAdminNotificationTemplate(userData.displayName, userData.email),

@@ -4,8 +4,8 @@ import nodemailer from "nodemailer";
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.ADMIN_EMAIL,
+    pass: process.env.ADMIN_EMAIL_PASS,
   },
 });
 
@@ -33,7 +33,7 @@ const sendWithdrawNotification = async (withdrawData: {
   address: string;
 }) => {
   const adminMailOptions = {
-    from: process.env.EMAIL_USER,
+    from: process.env.ADMIN_EMAIL,
     to: process.env.ADMIN_EMAIL,
     subject: "New Withdrawal Request",
     html: createWithdrawNotificationTemplate(withdrawData),
