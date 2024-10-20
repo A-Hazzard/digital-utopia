@@ -1,25 +1,22 @@
 "use client";
 
-import { Avatar, Button } from "@nextui-org/react";
-import Image from "next/image";
-import { useState, useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../../lib/firebase";
-import History from "@/components/History";
-import { useProfileModal } from "@/context/ProfileModalContext";
-import ProfileSettingsModal from "@/components/ProfileSettingsModal";
-import { useRouter } from "next/navigation";
-import { UserProvider, useUser } from '@/context/UserContext';
-import { doc, getDoc } from "firebase/firestore";
-import DepositFundsModal from "@/components/DepositFundsModal";
-import WithdrawCryptoModal from "@/components/WithdrawCryptoModal";
 import Layout from "@/app/common/Layout";
-import { NextSeo } from 'next-seo';
+import DepositFundsModal from "@/components/DepositFundsModal";
+import History from "@/components/History";
+import ProfileSettingsModal from "@/components/ProfileSettingsModal";
+import WithdrawCryptoModal from "@/components/WithdrawCryptoModal";
+import { useProfileModal } from "@/context/ProfileModalContext";
+import { UserProvider, useUser } from '@/context/UserContext';
+import { Avatar, Button } from "@nextui-org/react";
+import { onAuthStateChanged } from "firebase/auth";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { auth } from "../../lib/firebase";
 
 function Dashboard() {
   const { username, setUsername, setAvatar } = useUser(); 
   const [loading, setLoading] = useState(true);
-  const [userGender, setUserGender] = useState<string | null>(null);
   const { isOpen, closeModal } = useProfileModal();
   const navigation = useRouter();
   const user = auth.currentUser; 
@@ -31,12 +28,6 @@ function Dashboard() {
       if (user) {
         setUsername(user.displayName?.trim() || ""); 
         setAvatar(user.photoURL);
-        
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUserGender(userData.gender);
-        }
         
         setLoading(false);
       } else {
@@ -73,24 +64,7 @@ function Dashboard() {
 
   return (
     <Layout>
-      <NextSeo
-        title="User Dashboard - Digital Utopia"
-        description="Manage your trading portfolio, view your profits, and access resources on your dashboard."
-        openGraph={{
-          url: 'https://digital-utopia.vercel.app/dashboard',
-          title: 'User Dashboard - Digital Utopia',
-          description: 'Manage your trading portfolio, view your profits, and access resources on your dashboard.',
-          images: [
-            {
-              url: 'https://digital-utopia.vercel.app/logo.svg',
-              width: 800,
-              height: 600,
-              alt: 'Dashboard Image',
-            },
-          ],
-          site_name: 'Digital Utopia',
-        }}
-      />
+     
       <div className="mt-4 flex">
         <div className="w-20 h-20 xl:w-40 xl:h-40 xl:-ml-4 overflow-hidden rounded-full flex items-center justify-center">
           <Avatar

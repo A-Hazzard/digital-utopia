@@ -15,8 +15,9 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({ onClose }) =>
   const [amount, setAmount] = useState('');
   const [isAddressConfirmed, setIsAddressConfirmed] = useState(false);
   const [isWithdrawEnabled, setIsWithdrawEnabled] = useState(false);
-  const [loading, setLoading] = useState(false); // Loading state
+  const [loading, setLoading] = useState(false); 
   const availableBalance = 4000000; 
+  const userId = auth.currentUser?.uid; 
 
   const validateTRC20Address = (address: string) => {
     return /^T[A-Za-z1-9]{33}$/.test(address);
@@ -55,9 +56,9 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({ onClose }) =>
   };
 
   const handleWithdraw = async () => {
-    setLoading(true); // Set loading to true
+    setLoading(true); 
     const withdrawData = {
-      userId: auth.currentUser?.uid,
+      userId,
       userEmail: auth.currentUser?.email,
       amount,
       address,

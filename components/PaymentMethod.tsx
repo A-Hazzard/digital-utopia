@@ -4,15 +4,15 @@ import React, { useState } from "react";
 import { Button } from "@nextui-org/react";
 import Image from "next/image";
 import ProofOfPayment from "./ProofOfPayment";
-
-
+import { auth } from "@/lib/firebase"; // Import your Firebase auth configuration
 
 const PaymentMethod = ({ onBack }: { onBack: () => void }) => {
   const [selectedMethod, setSelectedMethod] = useState<
     "bank" | "paypal" | null
   >(null);
   const [showProofOfPayment, setShowProofOfPayment] = useState(false);
-  const [fade, setFade] = useState(false); 
+  const [fade, setFade] = useState(false);
+  const userId = auth.currentUser?.uid; // Get the userId from Firebase auth
 
   const handleMethodSelect = (method: "bank" | "paypal") => {
     setSelectedMethod(method);
@@ -22,6 +22,7 @@ const PaymentMethod = ({ onBack }: { onBack: () => void }) => {
     setFade(true); 
     setTimeout(() => setShowProofOfPayment(true), 500);
   };
+  if (!userId) return null;
 
   return (
     <div className="relative">
@@ -106,7 +107,7 @@ const PaymentMethod = ({ onBack }: { onBack: () => void }) => {
               setShowProofOfPayment(false);
               setFade(false);
             }}
-            onConfirm={() => console.log("Confirmed Payment")}
+            userId={userId} // Pass userId to ProofOfPayment
           />
         </div>
       )}

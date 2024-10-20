@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { auth } from "@/lib/firebase";
 import { Button } from "@nextui-org/react";
 import { XIcon } from "lucide-react";
-import PaymentMethod from "./PaymentMethod"; 
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import PaymentMethod from "./PaymentMethod";
 
 interface InvoiceModalProps {
   visible: boolean;
@@ -19,14 +18,12 @@ interface InvoiceModalProps {
     status: string;
     userName: string;
     country: string;
-    userGender?: string;
   };
 }
 
 const InvoiceModal: React.FC<InvoiceModalProps> = ({ visible, onClose, invoice }) => {
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
   const [firebaseUserName, setFirebaseUserName] = useState<string | null>(null);
-  const [userGender, setUserGender] = useState<string | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -35,23 +32,12 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ visible, onClose, invoice }
       const user = auth.currentUser;
       if (user) {
         setFirebaseUserName(user.displayName);
-
-        const fetchUserData = async () => {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setUserGender(userData.gender);
-          }
-        };
-
-        fetchUserData();
       }
     }
   }, [visible]);
 
   if (!visible) return null;
 
-  const titlePrefix = userGender === "male" ? "Mr." : userGender === "female" ? "Ms." : "";
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -90,7 +76,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ visible, onClose, invoice }
               </div>
               <div className="text-right">
                 <span className="font-bold">To:</span>
-                <p className="text-light">{titlePrefix} {firebaseUserName || invoice.userName}</p>
+                <p className="text-light">{firebaseUserName || invoice.userName}</p>
               </div>
 
               <div>

@@ -18,7 +18,7 @@ const sendSignUpEmail = async (userData: { displayName: string; email: string })
     from: process.env.EMAIL_USER,
     to: userData.email,
     subject: 'Welcome to Digital Utopia!',
-    html: createEmailTemplate(userData.displayName, userData.email),
+    html: createEmailTemplate(userData.displayName),
     attachments: [
       {
         filename: 'logo.svg',
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
 }
 
 
-const createEmailTemplate = (displayName: string, email: string) => {
+const createEmailTemplate = (displayName: string) => {
   return `
     <!DOCTYPE html>
     <html lang="en">

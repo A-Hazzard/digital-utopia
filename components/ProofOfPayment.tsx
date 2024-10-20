@@ -9,13 +9,11 @@ import { doc, setDoc } from "firebase/firestore";
 
 interface ProofOfPaymentProps {
   onBack: () => void;
-  onConfirm: () => void;
   userId: string; // Pass user ID to associate the deposit with the user
 }
 
 const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
   onBack,
-  onConfirm,
   userId,
 }) => {
   const [receipt, setReceipt] = useState<File | null>(null);
@@ -25,14 +23,14 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
   const [loading, setLoading] = useState(false); // Loading state
   const userEmail = auth.currentUser?.email;
   const MIN_TRANSACTION_ID_LENGTH = 10; // Set your minimum length here
-  const TRANSACTION_ID_REGEX = /^[a-zA-Z0-9]{10,}$/; // Example regex for alphanumeric IDs with a minimum length
+  const TRANSACTION_ID_REGEX = React.useMemo(() => /^[a-zA-Z0-9]{10,}$/, []); // Example regex for alphanumeric IDs with a minimum length
 
   useEffect(() => {
     const isTransactionIdValid =
       transactionId.length >= MIN_TRANSACTION_ID_LENGTH &&
       TRANSACTION_ID_REGEX.test(transactionId);
     setIsConfirmDisabled(!(receipt || isTransactionIdValid));
-  }, [receipt, transactionId]);
+  }, [receipt, transactionId, MIN_TRANSACTION_ID_LENGTH, TRANSACTION_ID_REGEX]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -90,7 +88,6 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
 
       // Show success message
       toast.success("Deposit request submitted! Funds will show up within 24 to 48 hours.");
-      onConfirm(); // Call the onConfirm prop to close the modal or perform any other action
     } catch (error: unknown) {
       console.error("Error confirming deposit:", error);
       if (error instanceof Error) {
