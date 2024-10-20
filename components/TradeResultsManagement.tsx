@@ -57,7 +57,6 @@ const TradeResultsManagement = () => {
 
   return (
     <div>
-      <h2 className="text-xl text-light font-bold mb-4">Trade Results Management</h2>
       <Table aria-label="Trades Table" className="text-light rounded-lg shadow-md bg-transparent">
         <TableHeader>
           <TableColumn>Date</TableColumn>

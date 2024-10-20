@@ -93,7 +93,6 @@ const DepositManagement = () => {
 
   return (
     <div>
-      <h2 className="text-xl text-light font-bold mb-4">Deposit Management</h2>
       <Table aria-label="Deposits Table" className="text-light rounded-lg shadow-md bg-transparent">
         <TableHeader>
           <TableColumn>User</TableColumn>

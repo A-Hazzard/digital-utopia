@@ -32,9 +32,7 @@ const ResourcesManagement = () => {
 
   return (
     <div>
-      <h2 className="text-xl text-light font-bold mb-4">
-        Resources Management
-      </h2>
+     
       <ul>
         {resources.map((resource) => (
           <li

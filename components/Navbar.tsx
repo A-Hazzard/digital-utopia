@@ -1,7 +1,7 @@
 "use client"
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X, LogOut } from "lucide-react";
 import { useProfileModal } from "@/context/ProfileModalContext";
 import ProfileSettingsModal from "./ProfileSettingsModal";
@@ -12,6 +12,7 @@ const Navbar = () => {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const { isOpen, openModal, closeModal } = useProfileModal();
   const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const toggleNavbar = () => {
     setIsNavOpen(!isNavOpen);
@@ -30,6 +31,14 @@ const Navbar = () => {
       console.error("Error signing out:", error);
     }
   };
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user) {
+      // Check if the user's email matches the admin email from the environment variable
+      setIsAdmin(user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL);
+    }
+  }, []);
 
   return (
     <div>
@@ -50,28 +59,102 @@ const Navbar = () => {
               className="absolute top-4 right-4 cursor-pointer text-light"
             />
             <nav className="flex flex-col items-center gap-4">
-              <Link
-                href="/dashboard"
-                className={`text-lg text-light ${
-                  pathname === "/dashboard" ? "underline font-bold" : ""
-                }`}
-                onClick={toggleNavbar}
+              {!isAdmin && (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className={pathname === "/dashboard" ? "underline" : ""}
+                  >
+                    Dashboard
+                  </Link>
+
+                  <Link
+                    href="/invoices"
+                    className={`text-lg text-light ${
+                      pathname === "/invoices" ? "underline font-bold" : ""
+                    }`}
+                    onClick={toggleNavbar}
+                  >
+                    Invoices
+                  </Link>
+                </>
+              )}
+              <button
+                className="bg-none text-light inline w-fit"
+                onClick={handleProfileClick}
               >
-                Dashboard
-              </Link>
-              <button className="bg-none text-light inline w-fit" onClick={handleProfileClick}>
                 Profile
               </button>
-             
-              <Link
-                href="/invoices"
-                className={`text-lg text-light ${
-                  pathname === "/invoices" ? "underline font-bold" : ""
-                }`}
-                onClick={toggleNavbar}
-              >
-                Invoices
-              </Link>
+
+              {/* Conditionally render admin links based on user's email */}
+              {isAdmin && (
+                <>
+                  <Link
+                    href="/admin/invoices"
+                    className={`text-lg text-light ${
+                      pathname === "/admin/invoices"
+                        ? "underline font-bold"
+                        : ""
+                    }`}
+                    onClick={toggleNavbar}
+                  >
+                    Invoices
+                  </Link>
+                  <Link
+                    href="/admin/deposits"
+                    className={`text-lg text-light ${
+                      pathname === "/admin/deposits"
+                        ? "underline font-bold"
+                        : ""
+                    }`}
+                    onClick={toggleNavbar}
+                  >
+                    Deposits
+                  </Link>
+                  <Link
+                    href="/admin/withdrawals"
+                    className={`text-lg text-light ${
+                      pathname === "/admin/withdrawals"
+                        ? "underline font-bold"
+                        : ""
+                    }`}
+                    onClick={toggleNavbar}
+                  >
+                    Withdrawals
+                  </Link>
+                  <Link
+                    href="/admin/payments"
+                    className={`text-lg text-light ${
+                      pathname === "/admin/payments"
+                        ? "underline font-bold"
+                        : ""
+                    }`}
+                    onClick={toggleNavbar}
+                  >
+                    Payments
+                  </Link>
+                  <Link
+                    href="/admin/trades"
+                    className={`text-lg text-light ${
+                      pathname === "/admin/trades" ? "underline font-bold" : ""
+                    }`}
+                    onClick={toggleNavbar}
+                  >
+                    Trade Results
+                  </Link>
+                  <Link
+                    href="/admin/resources"
+                    className={`text-lg text-light ${
+                      pathname === "/admin/resources"
+                        ? "underline font-bold"
+                        : ""
+                    }`}
+                    onClick={toggleNavbar}
+                  >
+                    Resources
+                  </Link>
+                </>
+              )}
               <button
                 className="flex items-center gap-2 text-light"
                 onClick={handleSignOut}

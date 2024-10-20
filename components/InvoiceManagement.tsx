@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Table, TableHeader, TableColumn, TableBody, TableCell, TableRow, Button, Input, Skeleton } from "@nextui-org/react";
-import { Invoice } from '@/types/invoice';
 import { db } from '@/lib/firebase';
+import { Invoice } from '@/types/invoice';
+import { Button, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@nextui-org/react";
 import { collection, getDocs } from "firebase/firestore";
+import { useEffect, useState } from "react";
 
 const InvoiceManagement = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -73,14 +73,7 @@ const InvoiceManagement = () => {
   };
 
   if (loading) {
-    return (
-      <div>
-        <h2 className="text-xl text-light font-bold mb-4">Invoice Management</h2>
-        <Skeleton className="h-10 w-full mb-2" />
-        <Skeleton className="h-10 w-full mb-2" />
-        <Skeleton className="h-10 w-full mb-2" />
-      </div>
-    );
+    return <p>Loading invoices...</p>;
   }
 
   if (error) {
@@ -89,7 +82,6 @@ const InvoiceManagement = () => {
 
   return (
     <div>
-      <h2 className="text-xl text-light font-bold mb-4">Invoice Management</h2>
       <Table
         aria-label="Invoices Table"
         className="text-light rounded-lg shadow-md bg-transparent"

@@ -57,7 +57,6 @@ const PaymentManagement = () => {
 
   return (
     <div>
-      <h2 className="text-xl text-light font-bold mb-4">Payment Management</h2>
       <Table aria-label="Payments Table" className="text-light rounded-lg shadow-md bg-transparent">
         <TableHeader>
           <TableColumn>User</TableColumn>
