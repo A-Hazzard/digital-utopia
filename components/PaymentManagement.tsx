@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Table, Button, TableHeader, TableColumn, TableCell, TableBody, TableRow } from "@nextui-org/react";
+import { Table, Button, TableHeader, TableColumn, TableCell, TableBody, TableRow, Spinner } from "@nextui-org/react";
 import { db } from '@/lib/firebase'; // Adjust the import based on your project structure
 import { collection, getDocs } from "firebase/firestore";
+import Layout from "@/app/common/Layout";
 
 // Define the Payment interface
 interface Payment {
@@ -48,7 +49,13 @@ const PaymentManagement = () => {
   };
 
   if (loading) {
-    return <p>Loading payments...</p>;
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-screen">
+          <Spinner size="md" />
+        </div>
+      </Layout>
+    );
   }
 
   if (error) {

@@ -1,7 +1,10 @@
+"use client";
+
 import React from "react";
 import { Calendar, CheckCircle, Clock } from "lucide-react";
-import Image from "next/image";
 import { Skeleton } from "@nextui-org/react";
+import { formatDate } from "@/helpers/date";
+import Image from "next/image";
 
 type Trade = {
   id: string;
@@ -9,16 +12,17 @@ type Trade = {
   date: Date;
   time: string;
   status: string;
-  pair: string;
-  profitAmount: number;
+  tradingPair: string;
+  amount: number;
+  iconUrl: string;
 };
 
 type HistoryProps = {
-  profits: Trade[];
   loading: boolean;
-}
+  trades: Trade[];
+};
 
-export default function History({ profits, loading }: HistoryProps) {
+export default function History({ loading, trades }: HistoryProps) {
   if (loading) {
     return (
       <div className="flex justify-center">
@@ -27,8 +31,8 @@ export default function History({ profits, loading }: HistoryProps) {
     );
   }
 
-  if (profits.length === 0) {
-    return <p className="text-gray">You haven&apos;t made any profits yet.</p>;
+  if (trades.length === 0) {
+    return <p className="text-gray">You haven&apos;t made any trades yet.</p>;
   }
 
   return (
@@ -43,14 +47,16 @@ export default function History({ profits, loading }: HistoryProps) {
           </tr>
         </thead>
         <tbody>
-          {profits.map((trade, index) => (
-            <tr key={index} className="border-b border-gray">
+          {trades.map((trade) => (
+            <tr key={trade.id} className="border-b border-gray">
               <td className="p-2">
                 <div className="flex items-center">
                   <Calendar size={16} className="mr-2 text-gray-400" />
                   <div>
-                    <div className="text-sm">{trade.date.toLocaleDateString()}</div>
-                    <div className="text-gray-400 text-xs">{trade.date.toLocaleTimeString()}</div>
+                    <div className="text-sm">
+                      {formatDate(trade.date)}
+                    </div>
+                    <div className="text-gray-400 text-xs">{trade.time}</div>
                   </div>
                 </div>
               </td>
@@ -69,27 +75,20 @@ export default function History({ profits, loading }: HistoryProps) {
               </td>
               <td className="p-2">
                 <div className="flex items-center">
-                  <div className="relative w-6 h-6 mr-2">
+                  {trade.iconUrl && (
                     <Image
-                      src="/btc.svg"
-                      alt="BTC"
-                      className="w-5 h-5 rounded-full absolute bottom-0 -right-2"
-                      width={20}
-                      height={20}
+                      width={16}
+                      height={16}
+                      src={trade.iconUrl}
+                      alt={`${trade.tradingPair} icon`}
+                      className="w-4 h-4 mr-1"
                     />
-                    <Image
-                      src="/eth.svg"
-                      alt="ETH"
-                      className="w-5 h-5 rounded-full absolute top-0 left-0"
-                      width={20}
-                      height={20}
-                    />
-                  </div>
-                  <span className="text-sm">{trade.pair}</span>
+                  )}
+                  <span className="text-sm">{trade.tradingPair}</span>
                 </div>
               </td>
               <td className="text-right py-2">
-                <div className="text-sm">{trade.profitAmount} USDT</div>
+                <div className="text-sm">{trade.amount} USDT</div>
               </td>
             </tr>
           ))}

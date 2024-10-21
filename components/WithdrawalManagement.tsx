@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Button } from "@nextui-org/react";
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Button, Spinner } from "@nextui-org/react";
 import { db } from '@/lib/firebase'; // Adjust the import based on your project structure
 import { collection, getDocs } from "firebase/firestore";
+import Layout from "@/app/common/Layout";
 
 // Define the Withdrawal interface
 interface Withdrawal {
@@ -48,7 +49,13 @@ const WithdrawalManagement = () => {
   };
 
   if (loading) {
-    return <p>Loading withdrawals...</p>;
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-screen">
+          <Spinner size="md" />
+        </div>
+      </Layout>
+    );
   }
 
   if (error) {

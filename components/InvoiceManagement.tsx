@@ -1,8 +1,9 @@
 "use client";
 
+import Layout from '@/app/common/Layout';
 import { db } from '@/lib/firebase';
 import { Invoice } from '@/types/invoice';
-import { Button, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@nextui-org/react";
+import { Button, Input, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@nextui-org/react";
 import { collection, getDocs } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
@@ -73,7 +74,13 @@ const InvoiceManagement = () => {
   };
 
   if (loading) {
-    return <p>Loading invoices...</p>;
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-screen">
+          <Spinner size="md" />
+        </div>
+      </Layout>
+    );
   }
 
   if (error) {

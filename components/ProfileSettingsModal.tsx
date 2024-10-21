@@ -13,10 +13,11 @@ import {
   ref,
   deleteObject,
 } from "firebase/storage";
-import { Avatar, Button, Input } from "@nextui-org/react";
+import { Avatar, Button, Input, Spinner } from "@nextui-org/react";
 import { useUser } from "@/context/UserContext";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Layout from "@/app/common/Layout";
 
 export default function ProfileSettingsModal({
   onClose,
@@ -246,7 +247,13 @@ export default function ProfileSettingsModal({
 
 
   if (loading) {
-    return null;
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-screen">
+          <Spinner size="md" />
+        </div>
+      </Layout>
+    );
   }
 
   return (

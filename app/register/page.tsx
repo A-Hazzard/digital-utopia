@@ -1,7 +1,7 @@
 "use client";
 
 import { db } from "@/lib/firebase"; 
-import { Button, Input } from "@nextui-org/react";
+import { Button, Input, Spinner } from "@nextui-org/react";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth } from "../../lib/firebase";
 import styles from "./register.module.css";
+import Layout from "../common/Layout";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -94,7 +95,13 @@ export default function Register() {
   }, [router]);
 
   if (!user && isPageLoading) {
-    return null;
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-screen">
+          <Spinner size="md" />
+        </div>
+      </Layout>
+    );
   }
 
   const createInvoice = async (userId: string, userEmail: string) => {

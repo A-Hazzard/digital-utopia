@@ -1,6 +1,6 @@
 "use client";
 import { sendSignInLink } from "@/helpers/auth";
-import { Button, Input } from "@nextui-org/react";
+import { Button, Input, Spinner } from "@nextui-org/react";
 import {
   isSignInWithEmailLink,
   onAuthStateChanged,
@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth } from "../../lib/firebase";
 import styles from "./login.module.css";
+import Layout from "../common/Layout";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -85,7 +86,13 @@ export default function Login() {
   }, [router]);
 
   if (!user && isPageLoading) {
-    return null;
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-screen">
+          <Spinner size="md" />
+        </div>
+      </Layout>
+    );
   }
 
   return (
