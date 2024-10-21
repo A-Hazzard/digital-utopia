@@ -1,13 +1,20 @@
 "use client";
 
 import Layout from "@/app/common/Layout";
+import { formatDate } from "@/helpers/date";
 import { db } from "@/lib/firebase";
 import {
   Button,
   Input,
-  Spinner
+  Spinner,
+  TableBody,
+  TableCell,
+  Table,
+  TableColumn,
+  TableHeader,
+  TableRow
 } from "@nextui-org/react";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, getDocs } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 type Investment = {
@@ -19,7 +26,7 @@ type Investment = {
 };
 
 const DepositManagement = () => {
-  // const [investments, setInvestments] = useState<Investment[]>([]);
+  const [investments, setInvestments] = useState<Investment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newInvestment, setNewInvestment] = useState<
@@ -34,17 +41,16 @@ const DepositManagement = () => {
     const fetchInvestments = async () => {
       setLoading(true);
       try {
-        console.log("fetching investments");
-        // const investmentsCollection = collection(db, "investments");
-        // const investmentsSnapshot = await getDocs(investmentsCollection);
-        // const investmentsData = investmentsSnapshot.docs.map((doc) => ({
-        //   id: doc.id,
-        //   userEmail: doc.data().userEmail,
-        //   amount: doc.data().amount,
-        //   status: doc.data().status,
-        //   createdAt: formatDate(doc.data().createdAt),
-        // }));
-        // setInvestments(investmentsData);
+        const investmentsCollection = collection(db, "investments");
+        const investmentsSnapshot = await getDocs(investmentsCollection);
+        const investmentsData = investmentsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          userEmail: doc.data().userEmail,
+          amount: doc.data().amount,
+          status: doc.data().status,
+          createdAt: formatDate(doc.data().createdAt),
+        }));
+        setInvestments(investmentsData);
       } catch (err) {
         setError(
           "Failed to fetch investments: " +
@@ -64,36 +70,36 @@ const DepositManagement = () => {
       ...newInvestment,
       createdAt: new Date(),
     });
-    // setNewInvestment({
-    //   userEmail: "",
-    //   amount: 0,
-    //   status: "pending",
-    // });
-    // // Fetch investments again to update the list
-    // const investmentsCollection = collection(db, "investments");
-    // const investmentsSnapshot = await getDocs(investmentsCollection);
-    // const investmentsData = investmentsSnapshot.docs.map((doc) => ({
-    //   id: doc.id,
-    //   userEmail: doc.data().userEmail,
-    //   amount: doc.data().amount,
-    //   status: doc.data().status,
-    //   createdAt: doc.data().createdAt,
-    // }));
-    // setInvestments(investmentsData);
+    setNewInvestment({
+      userEmail: "",
+      amount: 0,
+      status: "pending",
+    });
+    // Fetch investments again to update the list
+    const investmentsCollection = collection(db, "investments");
+    const investmentsSnapshot = await getDocs(investmentsCollection);
+    const investmentsData = investmentsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      userEmail: doc.data().userEmail,
+      amount: doc.data().amount,
+      status: doc.data().status,
+      createdAt: doc.data().createdAt,
+    }));
+    setInvestments(investmentsData);
   };
 
-  // const handleStatusChange = (
-  //   investmentId: string,
-  //   newStatus: "completed" | "failed"
-  // ) => {
-  //   setInvestments(
-  //     investments.map((investment) =>
-  //       investment.id === investmentId
-  //         ? { ...investment, status: newStatus }
-  //         : investment
-  //     )
-  //   );
-  // };
+  const handleStatusChange = (
+    investmentId: string,
+    newStatus: "completed" | "failed"
+  ) => {
+    setInvestments(
+      investments.map((investment) =>
+        investment.id === investmentId
+          ? { ...investment, status: newStatus }
+          : investment
+      )
+    );
+  };
 
   if (loading) {
     return (
@@ -152,7 +158,7 @@ const DepositManagement = () => {
         </select>
         <Button onClick={handleAddInvestment}>Add Investment</Button>
       </div>
-      {/* <Table
+      <Table
         aria-label="Investments Table"
         className="text-light rounded-lg shadow-md bg-transparent"
       >
@@ -162,7 +168,7 @@ const DepositManagement = () => {
           <TableColumn>Status</TableColumn>
           <TableColumn>Date</TableColumn>
           <TableColumn>Actions</TableColumn>
-        </TableHeader>
+        </TableHeader>  
         <TableBody>
           {investments.length > 0 ? (
             investments.map((investment) => (
@@ -200,7 +206,7 @@ const DepositManagement = () => {
             </TableRow>
           )}
         </TableBody>
-      </Table> */}
+      </Table>
     </div>
   );
 };
