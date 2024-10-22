@@ -260,8 +260,8 @@ export default function ProfileSettingsModal({
     <>
       <ToastContainer />
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-dark text-light p-6 rounded-lg w-full h-full md:w-auto md:h-auto md:max-w-md overflow-y-auto">
-          <hr className="border-gray mb-4"/>
+        <div className="bg-dark text-light p-6 rounded-lg w-full h-full md:w-auto md:h-auto xl:w-[40vw] 2xl:w-[30vw] md:max-w-md overflow-y-auto">
+          <hr className="border-gray mb-4" />
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">Profile Settings</h2>
             <button
@@ -359,9 +359,7 @@ export default function ProfileSettingsModal({
               }}
               required
             />
-            {passwordError && (
-              <p className="text-red-500">{passwordError}</p>
-            )}
+            {passwordError && <p className="text-red-500">{passwordError}</p>}
 
             <Input
               variant="bordered"

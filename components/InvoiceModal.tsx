@@ -32,7 +32,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ visible, onClose, invoice }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-dark text-light p-6 rounded-lg w-full h-full md:w-[70vw] md:h-auto flex flex-col">
+      <div className="bg-dark text-light p-6 rounded-lg w-full h-full md:w-[70vw] xl:w-[40vw] 2xl:w-[30vw] md:h-auto flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">
             Invoice #{invoice.invoiceNumber}
