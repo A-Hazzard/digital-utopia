@@ -12,7 +12,7 @@ interface ProofOfPaymentProps {
   userId?: string;
   purpose: "deposit" | "invoice";
   invoiceNumber?: string;
-  amount?: string;
+  amount?: number;
 }
 
 const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
@@ -77,7 +77,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
           throw new Error("User ID is required.");
         }
 
-        const depositAmount = parseFloat(amount || "0");
+        const depositAmount = amount || 0;
 
         const depositData = {
           userId,
@@ -149,7 +149,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
   const sendInvoiceEmail = async (invoiceData: {
     userEmail: string;
     transactionId: string;
-    amount: string;
+    amount: number;
     receiptURL: string;
   }) => {
     try {

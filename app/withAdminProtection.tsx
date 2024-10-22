@@ -3,29 +3,50 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
+import { Spinner } from "@nextui-org/react";
 
-const withAdminProtection = (WrappedComponent: React.ComponentType) => {
-  const AdminProtectedComponent = (props: React.ComponentProps<typeof WrappedComponent>) => {
+const withAdminProtection = <P extends object>(WrappedComponent: React.ComponentType<P>) => {
+  type AdminComponentProps = P;
+
+  type FirebaseUser = {
+    email: string | null;
+  };
+
+  const AdminProtectedComponent = (props: AdminComponentProps) => {
     const router = useRouter();
-    const [loading, setLoading] = useState(true);
+    const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // Use null to indicate loading state
 
     useEffect(() => {
-      const user = auth.currentUser;
-      if (!user) {
-        router.push("/");
-        return;
+      const unsubscribe = auth.onAuthStateChanged((user: FirebaseUser | null) => {
+        if (user) {
+          setIsAdmin(user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL);
+        } else {
+          setIsAdmin(false); // Reset if no user is logged in
+        }
+      });
+
+      return () => unsubscribe(); // Cleanup subscription on unmount
+    }, []);
+
+    useEffect(() => {
+      if (isAdmin === false) {
+        router.push("/"); // Redirect to home if not admin
       }
+    }, [isAdmin, router]);
 
-      if (user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) router.push("/");
-
-      setLoading(false);
-    }, [router]);
-
-    if (loading) return null; 
-    
+    // Show a loading state while checking authentication
+    if (isAdmin === null) {
+      return (
+        <div className="bg-background flex items-center justify-center h-screen w-screen">
+          <Spinner size="md" />
+        </div>
+      );
+    }
 
     return <WrappedComponent {...props} />;
   };
+
+  AdminProtectedComponent.displayName = `withAdminProtection(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
 
   return AdminProtectedComponent;
 };

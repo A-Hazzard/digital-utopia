@@ -9,7 +9,7 @@ import { auth } from "@/lib/firebase"; // Import your Firebase auth configuratio
 type PaymentMethodProps = {
   onBack: () => void;
   invoiceNumber: string;
-  amount: string;
+  amount: number;
 }
 
 const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack, invoiceNumber, amount }) => {

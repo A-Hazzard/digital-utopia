@@ -18,7 +18,7 @@ interface DepositFundsModalProps {
 const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
   const [showTooltip, setShowTooltip] = useState(false); 
   const [showProofOfPayment, setShowProofOfPayment] = useState(false);
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(0);
   const userId = auth.currentUser?.uid;
 
   const handleClick = () => {
@@ -139,8 +139,8 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
                 type="number"
                 label="Deposit Amount"
                 placeholder="Enter amount"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                value={amount.toString()}
+                onChange={(e) => setAmount(Number(e.target.value))}
                 className="mb-2"
               />
             </div>

@@ -241,7 +241,7 @@ function Dashboard() {
 
         <div className="flex flex-col lg:flex-row justify-center lg:justify-end gap-4 lg:gap-2 md:w-5/12">
           <Button
-            className={`flex p-6 lg:w-full items-center gap-2 ${
+            className={`flex p-4 lg:w-full items-center gap-2 ${
               hasConfirmedInvoice ? "bg-orange text-light" : "bg-gray text-dark cursor-not-allowed"
             }`}
             onClick={handleOpenDepositModal}
@@ -250,14 +250,14 @@ function Dashboard() {
             <Image
               src="/plusButton.svg"
               alt="Plus Icon"
-              width={20}
-              height={20}
+              width={24}
+              height={24}
             />
             Deposit Funds
           </Button>
           <div className="flex flex-col">
             <Button
-              className={`flex p-6 lg:w-full items-center gap-2 ${
+              className={`flex p-4 lg:w-full items-center gap-2 ${
                 hasConfirmedInvoice ? "bg-gray text-light" : "bg-gray text-dark cursor-not-allowed"
               }`}
               onClick={handleOpenWithdrawModal}
@@ -266,8 +266,8 @@ function Dashboard() {
               <Image
                 src="/minusButton.svg"
                 alt="Minus Icon"
-                width={20}
-                height={20}
+                width={24}
+                height={24}
               />
               Withdraw Funds
             </Button>

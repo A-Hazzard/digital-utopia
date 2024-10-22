@@ -1,10 +1,27 @@
 "use client";
 
-import Layout from '@/app/common/Layout';
-import { db } from '@/lib/firebase';
-import { Invoice } from '@/types/invoice';
-import { Button, Input, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@nextui-org/react";
-import { collection, getDocs, addDoc, updateDoc, doc } from "firebase/firestore";
+import Layout from "@/app/common/Layout";
+import { db } from "@/lib/firebase";
+import { Invoice } from "@/types/invoice";
+import {
+  Button,
+  Input,
+  Spinner,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
+} from "@nextui-org/react";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  doc,
+  DocumentData,
+} from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -12,15 +29,19 @@ const InvoiceManagement = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newInvoice, setNewInvoice] = useState<Omit<Invoice, 'id' | 'createdAt' | 'userId' | 'userEmail' | 'date'>>({
-    invoiceNumber: '',
-    description: '',
-    amount: "0 USDT",
-    status: 'pending',
-    userName: '',
-    country: '',
+  const [newInvoice, setNewInvoice] = useState<
+    Omit<Invoice, "id" | "createdAt" | "userId" | "userEmail" | "date">
+  >({
+    invoiceNumber: "",
+    description: "",
+    amount: 0, // Ensure amount is a number
+    status: "pending",
+    userName: "",
+    country: "",
   });
-  const [loadingInvoices, setLoadingInvoices] = useState<{ [key: string]: boolean }>({});
+  const [loadingInvoices, setLoadingInvoices] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   useEffect(() => {
     fetchInvoices();
@@ -31,14 +52,22 @@ const InvoiceManagement = () => {
     try {
       const invoicesCollection = collection(db, "invoices");
       const invoicesSnapshot = await getDocs(invoicesCollection);
-      const invoicesData = invoicesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        date: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        userId: doc.data().userId || '', 
-        userEmail: doc.data().userEmail || '', // Make sure this field is included
-      })) as Invoice[];
+      const invoicesData: Invoice[] = invoicesSnapshot.docs.map((doc) => {
+        const data = doc.data() as DocumentData; // Type the data as DocumentData
+        return {
+          id: doc.id,
+          invoiceNumber: data.invoiceNumber || "",
+          description: data.description || "",
+          amount: parseFloat(data.amount) || 0, // Ensure amount is a number
+          date: data.date instanceof Date ? data.date : new Date(data.date), // Ensure date is a Date object
+          status: data.status || "",
+          userId: data.userId || "",
+          userEmail: data.userEmail || "",
+          createdAt: data.createdAt || new Date().toISOString(),
+          userName: data.userName || "",
+          country: data.country || "",
+        } as Invoice; // Type assertion to Invoice
+      });
       setInvoices(invoicesData);
     } catch (err) {
       setError("Failed to fetch invoices");
@@ -52,20 +81,23 @@ const InvoiceManagement = () => {
     try {
       const newInvoiceWithDate = {
         ...newInvoice,
-        date: new Date().toISOString(),
+        date: new Date(), // Set date as a Date object
         createdAt: new Date().toISOString(),
-        userId: '', 
-        userEmail: '', 
+        userId: "",
+        userEmail: "",
       };
-      const docRef = await addDoc(collection(db, "invoices"), newInvoiceWithDate);
+      const docRef = await addDoc(
+        collection(db, "invoices"),
+        newInvoiceWithDate
+      );
       setInvoices([...invoices, { ...newInvoiceWithDate, id: docRef.id }]);
       setNewInvoice({
-        invoiceNumber: '',
-        description: '',
-        amount: "0 USDT",
-        status: 'pending',
-        userName: '',
-        country: '',
+        invoiceNumber: "",
+        description: "",
+        amount: 0, // Reset to number
+        status: "pending",
+        userName: "",
+        country: "",
       });
     } catch (err) {
       console.error("Error adding invoice:", err);
@@ -73,22 +105,27 @@ const InvoiceManagement = () => {
     }
   };
 
-  const handleStatusChange = async (invoiceId: string, newStatus: 'paid' | 'pending' | 'overdue') => {
-    setLoadingInvoices(prev => ({ ...prev, [invoiceId]: true }));
+  const handleStatusChange = async (
+    invoiceId: string,
+    newStatus: "paid" | "pending" | "overdue"
+  ) => {
+    setLoadingInvoices((prev) => ({ ...prev, [invoiceId]: true }));
     try {
       const invoiceRef = doc(db, "invoices", invoiceId);
       await updateDoc(invoiceRef, { status: newStatus });
-      
-      const updatedInvoice = invoices.find(invoice => invoice.id === invoiceId);
+
+      const updatedInvoice = invoices.find(
+        (invoice) => invoice.id === invoiceId
+      );
       if (updatedInvoice) {
-        if (newStatus === 'paid') {
+        if (newStatus === "paid") {
           if (!updatedInvoice.userEmail) {
             console.error("User email is missing for invoice:", updatedInvoice);
             toast.error("Failed to update invoice: User email is missing");
             return;
           }
           await sendClientInvoiceConfirmation(updatedInvoice);
-        } else if (newStatus === 'overdue') {
+        } else if (newStatus === "overdue") {
           await sendClientInvoiceOverdue(updatedInvoice);
         }
       } else {
@@ -97,9 +134,11 @@ const InvoiceManagement = () => {
         return;
       }
 
-      setInvoices(invoices.map(invoice => 
-        invoice.id === invoiceId ? { ...invoice, status: newStatus } : invoice
-      ));
+      setInvoices(
+        invoices.map((invoice) =>
+          invoice.id === invoiceId ? { ...invoice, status: newStatus } : invoice
+        )
+      );
 
       toast.success(`Invoice status updated to ${newStatus}`);
     } catch (err) {
@@ -107,7 +146,7 @@ const InvoiceManagement = () => {
       setError("Failed to update invoice status");
       toast.error("Failed to update invoice status");
     } finally {
-      setLoadingInvoices(prev => ({ ...prev, [invoiceId]: false }));
+      setLoadingInvoices((prev) => ({ ...prev, [invoiceId]: false }));
     }
   };
 
@@ -115,7 +154,9 @@ const InvoiceManagement = () => {
     try {
       if (!invoice.userEmail) {
         console.error("User email is missing for invoice:", invoice);
-        toast.error("Failed to send invoice confirmation email: User email is missing");
+        toast.error(
+          "Failed to send invoice confirmation email: User email is missing"
+        );
         return;
       }
 
@@ -199,7 +240,7 @@ const InvoiceManagement = () => {
             <TableRow key={invoice.id}>
               <TableCell>{invoice.invoiceNumber}</TableCell>
               <TableCell>{invoice.description}</TableCell>
-              <TableCell>${invoice.amount}</TableCell>
+              <TableCell>${invoice.amount.toFixed(2)}</TableCell>
               <TableCell>{invoice.status}</TableCell>
               <TableCell>{invoice.userName}</TableCell>
               <TableCell>
@@ -248,10 +289,14 @@ const InvoiceManagement = () => {
         />
         <Input
           label="Amount"
-          type="text"
-          value={newInvoice.amount}
-          onChange={(e) =>
-            setNewInvoice({ ...newInvoice, amount: e.target.value })
+          type="number" // Ensure type is number
+          value={newInvoice.amount.toString()} // Convert number to string for input
+          onChange={
+            (e) =>
+              setNewInvoice({
+                ...newInvoice,
+                amount: parseFloat(e.target.value) || 0,
+              }) // Ensure amount is a number
           }
           className="mb-2"
         />

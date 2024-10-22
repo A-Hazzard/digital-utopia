@@ -12,7 +12,8 @@ const Navbar = () => {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const { isOpen, openModal, closeModal } = useProfileModal();
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // Use null for loading state
+  const [loading, setLoading] = useState(true); // Loading state
 
   const toggleNavbar = () => {
     setIsNavOpen(!isNavOpen);
@@ -33,12 +34,22 @@ const Navbar = () => {
   };
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (user) {
-      // Check if the user's email matches the admin email from the environment variable
-      setIsAdmin(user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL);
-    }
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setIsAdmin(user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL);
+      } else {
+        setIsAdmin(false); // Reset if no user is logged in
+      }
+      setLoading(false); // Set loading to false after checking
+    });
+
+    return () => unsubscribe(); // Cleanup subscription on unmount
   }, []);
+
+  // Show a loading state while checking authentication
+  if (loading) {
+    return null; // You can customize this loading state
+  }
 
   return (
     <div>
@@ -94,7 +105,6 @@ const Navbar = () => {
                 Profile
               </button>
 
-              {/* Conditionally render admin links based on user's email */}
               {isAdmin && (
                 <>
                   <Link

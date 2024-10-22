@@ -1,10 +1,5 @@
 import { Timestamp } from "firebase/firestore";
 
-interface FirestoreTimestamp {
-  seconds: number;
-  nanoseconds: number;
-}
-
 export const formatDate = (
   date: Date | Timestamp | string | number
 ) => {

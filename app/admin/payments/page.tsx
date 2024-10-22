@@ -1,17 +1,17 @@
 "use client";
 
-import Layout from "@/app/common/Layout";
+import AdminLayout from "@/app/common/AdminLayout";
 import PaymentManagement from "@/components/PaymentManagement";
 import withAdminProtection from "@/app/withAdminProtection";
 
 const PaymentsPage = () => {
   return (
-    <Layout>
+    <AdminLayout>
       <div className="p-4">
         <h1 className="text-2xl text-light font-bold mb-4">Payment Management</h1>
         <PaymentManagement />
       </div>
-    </Layout>
+    </AdminLayout>
   );
 };
 
