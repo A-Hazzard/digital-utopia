@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -27,7 +27,7 @@ const Navbar = () => {
   const handleSignOut = async () => {
     try {
       await auth.signOut();
-      router.push('/login');
+      router.push("/login");
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -36,7 +36,11 @@ const Navbar = () => {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        setIsAdmin(user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL);
+        setIsAdmin(
+          user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL ||
+            user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL2 ||
+            user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL3
+        );
       } else {
         setIsAdmin(false); // Reset if no user is logged in
       }

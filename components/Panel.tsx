@@ -27,7 +27,11 @@ export default function Panel() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        setIsAdmin(user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL);
+        setIsAdmin(
+          user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL ||
+            user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL2 ||
+            user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL3
+        );
       } else {
         setIsAdmin(false); // Reset if no user is logged in
       }

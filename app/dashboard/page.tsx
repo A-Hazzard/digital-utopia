@@ -9,7 +9,16 @@ import { useProfileModal } from "@/context/ProfileModalContext";
 import { UserProvider, useUser } from "@/context/UserContext";
 import { Avatar, Button, Spinner } from "@nextui-org/react";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, doc, getDocs, onSnapshot, query, QueryDocumentSnapshot, Timestamp, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  onSnapshot,
+  query,
+  QueryDocumentSnapshot,
+  Timestamp,
+  where,
+} from "firebase/firestore";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -53,7 +62,11 @@ function Dashboard() {
         setAvatar(user.photoURL);
 
         // Check if the user is an admin
-        if (user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+        if (
+          user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL1 ||
+          user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL2 ||
+          user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL3
+        ) {
           navigation.push("/admin/invoices");
         } else {
           await fetchTrades();
@@ -77,27 +90,29 @@ function Dashboard() {
       const q = query(tradesCollection, where("userEmail", "==", userEmail));
       const tradesSnapshot = await getDocs(q);
 
-      const tradesData = tradesSnapshot.docs.map((doc: QueryDocumentSnapshot) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          userEmail: data.userEmail,
-          date: data.date,
-          time: data.time,
-          status: data.status,
-          tradingPair: data.tradingPair,
-          amount: parseFloat(data.amount), // Ensure amount is a number
-          iconUrl: data.iconUrl,
-          type: data.type, // Make sure to include the type (win/loss)
-        };
-      });
+      const tradesData = tradesSnapshot.docs.map(
+        (doc: QueryDocumentSnapshot) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            userEmail: data.userEmail,
+            date: data.date,
+            time: data.time,
+            status: data.status,
+            tradingPair: data.tradingPair,
+            amount: parseFloat(data.amount), // Ensure amount is a number
+            iconUrl: data.iconUrl,
+            type: data.type, // Make sure to include the type (win/loss)
+          };
+        }
+      );
       console.log("Fetched trades:", tradesData);
       setTrades(tradesData);
 
       // Calculate total trade profit
       const totalProfit = tradesData.reduce((acc, trade) => {
         // Add to profit if it's a win, subtract if it's a loss
-        return trade.type === 'win' ? acc + trade.amount : acc - trade.amount;
+        return trade.type === "win" ? acc + trade.amount : acc - trade.amount;
       }, 0);
       console.log("Calculated total profit:", totalProfit);
       setTotalTradeProfit(totalProfit);
@@ -112,16 +127,20 @@ function Dashboard() {
     if (!userEmail) return;
 
     const walletRef = doc(db, "wallets", userEmail);
-    return onSnapshot(walletRef, (doc) => {
-      if (doc.exists()) {
-        const walletData = doc.data() as Wallet;
-        setWalletBalance(walletData.balance || 0);
-      } else {
-        setWalletBalance(0);
+    return onSnapshot(
+      walletRef,
+      (doc) => {
+        if (doc.exists()) {
+          const walletData = doc.data() as Wallet;
+          setWalletBalance(walletData.balance || 0);
+        } else {
+          setWalletBalance(0);
+        }
+      },
+      (error) => {
+        console.error("Error listening to wallet changes:", error);
       }
-    }, (error) => {
-      console.error("Error listening to wallet changes:", error);
-    });
+    );
   };
 
   const checkConfirmedInvoice = async (userEmail: string | null) => {
@@ -142,7 +161,9 @@ function Dashboard() {
     if (hasConfirmedInvoice) {
       setDepositModalOpen(true);
     } else {
-      toast.error("Please pay your monthly subscription via the invoices page before depositing funds.");
+      toast.error(
+        "Please pay your monthly subscription via the invoices page before depositing funds."
+      );
     }
   };
 
@@ -154,7 +175,9 @@ function Dashboard() {
     if (hasConfirmedInvoice) {
       setWithdrawModalOpen(true);
     } else {
-      toast.error("Please pay your monthly subscription via the invoices page before withdrawing funds.");
+      toast.error(
+        "Please pay your monthly subscription via the invoices page before withdrawing funds."
+      );
     }
   };
 
@@ -242,7 +265,9 @@ function Dashboard() {
         <div className="flex flex-col lg:flex-row justify-center lg:justify-end gap-4 lg:gap-2 md:w-5/12">
           <Button
             className={`flex p-4 lg:w-full items-center gap-2 ${
-              hasConfirmedInvoice ? "bg-orange text-light" : "bg-gray text-dark cursor-not-allowed"
+              hasConfirmedInvoice
+                ? "bg-orange text-light"
+                : "bg-gray text-dark cursor-not-allowed"
             }`}
             onClick={handleOpenDepositModal}
             disabled={!hasConfirmedInvoice}
@@ -258,7 +283,9 @@ function Dashboard() {
           <div className="flex flex-col">
             <Button
               className={`flex p-4 lg:w-full items-center gap-2 ${
-                hasConfirmedInvoice ? "bg-gray text-light" : "bg-gray text-dark cursor-not-allowed"
+                hasConfirmedInvoice
+                  ? "bg-gray text-light"
+                  : "bg-gray text-dark cursor-not-allowed"
               }`}
               onClick={handleOpenWithdrawModal}
               disabled={!hasConfirmedInvoice}
@@ -273,7 +300,8 @@ function Dashboard() {
             </Button>
             {!hasConfirmedInvoice && (
               <p className="text-red-500 text-sm mt-2">
-                Please pay your monthly subscription via the invoices page before withdrawing funds.
+                Please pay your monthly subscription via the invoices page
+                before withdrawing funds.
               </p>
             )}
           </div>
