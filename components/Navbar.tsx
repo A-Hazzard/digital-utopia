@@ -37,7 +37,7 @@ const Navbar = () => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         setIsAdmin(
-          user.email === (process.env.NEXT_PUBLIC_ADMIN_EMAIL ||
+          user.email === (process.env.NEXT_PUBLIC_ADMIN_EMAIL1 ||
             user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL2 ||
             user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL3)
         );
