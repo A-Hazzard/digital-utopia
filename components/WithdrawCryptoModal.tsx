@@ -69,7 +69,7 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
     const isValidAddress = validateTRC20Address(address);
     const numericAmount = parseFloat(amount.replace(/,/g, ""));
     const isValidAmount =
-      numericAmount >= 20 && numericAmount <= availableBalance;
+      !isNaN(numericAmount) && numericAmount > 0 && numericAmount <= availableBalance;
     setIsWithdrawEnabled(isValidAddress && isValidAmount && isAddressConfirmed);
   }, [address, amount, isAddressConfirmed, availableBalance]);
 
@@ -77,7 +77,7 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
     if (validateTRC20Address(address)) {
       setIsAddressConfirmed(true);
     } else {
-      alert("Invalid TRC20 address");
+      toast.error("Invalid TRC20 address");
     }
   };
 
@@ -92,6 +92,7 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
   const formatAmount = (value: string) => {
     const numericValue = value.replace(/[^0-9.]/g, "");
     const floatValue = parseFloat(numericValue);
+    if (isNaN(floatValue)) return "0.00";
     if (floatValue > availableBalance) {
       return availableBalance.toFixed(2);
     }
