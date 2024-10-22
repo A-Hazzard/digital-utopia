@@ -74,7 +74,7 @@ const createClientInvoiceOverdueTemplate = (invoiceData: {
                 margin: 0;
                 padding: 0;
                 background-color: #393E46;
-                color: #eeeeee;
+                color: #ffffff; /* Change text color to white */
             }
             .container {
                 width: 100%;
@@ -102,11 +102,11 @@ const createClientInvoiceOverdueTemplate = (invoiceData: {
                 text-align: center;
                 padding: 20px 0;
                 font-size: 12px;
-                color: #B5B5B5;
+                color: #B5B5B5; /* Change footer text color to a lighter shade */
             }
             .status {
                 font-weight: bold;
-                color: #FF9800;
+                color: #FF9800; /* Keep status color as is */
             }
         </style>
     </head>

@@ -77,7 +77,7 @@ const createWithdrawNotificationTemplate = (withdrawData: {
                 margin: 0;
                 padding: 0;
                 background-color: #393E46; /* --background */
-                color: #eeeeee; /* --light */
+                color: #ffffff; /* Change text color to white */
             }
             .container {
                 width: 100%;
@@ -99,10 +99,9 @@ const createWithdrawNotificationTemplate = (withdrawData: {
                 font-size: 12px;
                 color: #B5B5B5; /* --gray */
             }
-                 .header {
+            .header {
                 text-align: center;
                 margin-bottom: 1rem;
-
             }
             .header img {
                 max-width: 150px;
@@ -112,7 +111,7 @@ const createWithdrawNotificationTemplate = (withdrawData: {
     </head>
     <body>
         <div class="container">
-<div class="header">
+            <div class="header">
                 <img src="cid:logo" alt="Digital Utopia Logo" aria-label="Digital Utopia Logo">
             </div>
             <div class="content">
