@@ -19,7 +19,11 @@ const withAdminProtection = <P extends object>(WrappedComponent: React.Component
     useEffect(() => {
       const unsubscribe = auth.onAuthStateChanged((user: FirebaseUser | null) => {
         if (user) {
-          setIsAdmin(user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL);
+          setIsAdmin(
+            user.email === (process.env.NEXT_PUBLIC_ADMIN_EMAIL1 ||
+              user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL2 ||
+              user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL3)
+          );
         } else {
           setIsAdmin(false); // Reset if no user is logged in
         }
