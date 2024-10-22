@@ -9,29 +9,28 @@ import { useProfileModal } from "@/context/ProfileModalContext";
 import { UserProvider, useUser } from "@/context/UserContext";
 import { Avatar, Button, Spinner } from "@nextui-org/react";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, doc, getDocs, onSnapshot, query, QueryDocumentSnapshot, Timestamp, where } from "firebase/firestore";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { auth, db } from "../../lib/firebase";
-
-type Investment = {
-  id: string;
-  userEmail: string;
-  amount: number;
-  date: Date;
-  status: string;
-};
 
 type Trade = {
   id: string;
   userEmail: string;
-  date: Date;
+  date: Timestamp;
   time: string;
   status: string;
   tradingPair: string;
   amount: number;
   iconUrl: string;
+  type: string;
+};
+
+type Wallet = {
+  balance: number;
 };
 
 function Dashboard() {
@@ -44,7 +43,8 @@ function Dashboard() {
   const [isDepositModalOpen, setDepositModalOpen] = useState(false);
   const [isWithdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [totalTradeProfit, setTotalTradeProfit] = useState(0);
-  const [totalInvestmentAmount, setTotalInvestmentAmount] = useState(0);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [hasConfirmedInvoice, setHasConfirmedInvoice] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -57,7 +57,8 @@ function Dashboard() {
           navigation.push("/admin/invoices");
         } else {
           await fetchTrades();
-          await fetchInvestments();
+          listenToWalletChanges(user.email);
+          checkConfirmedInvoice(user.email);
           setLoading(false);
         }
       } else {
@@ -76,28 +77,29 @@ function Dashboard() {
       const q = query(tradesCollection, where("userEmail", "==", userEmail));
       const tradesSnapshot = await getDocs(q);
 
-      const tradesData = tradesSnapshot.docs.map((doc) => {
+      const tradesData = tradesSnapshot.docs.map((doc: QueryDocumentSnapshot) => {
         const data = doc.data();
         return {
           id: doc.id,
           userEmail: data.userEmail,
-          date: new Date(data.date), // Convert string to Date object
+          date: data.date,
           time: data.time,
           status: data.status,
           tradingPair: data.tradingPair,
-          amount: data.amount,
+          amount: parseFloat(data.amount), // Ensure amount is a number
           iconUrl: data.iconUrl,
+          type: data.type, // Make sure to include the type (win/loss)
         };
       });
-      console.log(tradesData);
+      console.log("Fetched trades:", tradesData);
       setTrades(tradesData);
 
       // Calculate total trade profit
-      const totalProfit = tradesData.reduce(
-        (acc, trade) =>
-          acc + (typeof trade.amount === "number" ? trade.amount : 0),
-        0
-      );
+      const totalProfit = tradesData.reduce((acc, trade) => {
+        // Add to profit if it's a win, subtract if it's a loss
+        return trade.type === 'win' ? acc + trade.amount : acc - trade.amount;
+      }, 0);
+      console.log("Calculated total profit:", totalProfit);
       setTotalTradeProfit(totalProfit);
     } catch (error) {
       console.error("Error fetching trades:", error);
@@ -106,36 +108,42 @@ function Dashboard() {
     }
   };
 
-  const fetchInvestments = async () => {
-    try {
-      const userEmail = auth.currentUser?.email;
-      const investmentsCollection = collection(db, "investments");
-      const investmentsSnapshot = await getDocs(investmentsCollection);
+  const listenToWalletChanges = (userEmail: string | null) => {
+    if (!userEmail) return;
 
-      const investmentsData: Investment[] = investmentsSnapshot.docs
-        .map((doc) => ({
-          id: doc.id,
-          userEmail: doc.data().userEmail,
-          amount: doc.data().amount,
-          date: doc.data().createdAt,
-          status: doc.data().status,
-        }))
-        .filter((investment) => investment.userEmail === userEmail);
+    const walletRef = doc(db, "wallets", userEmail);
+    return onSnapshot(walletRef, (doc) => {
+      if (doc.exists()) {
+        const walletData = doc.data() as Wallet;
+        setWalletBalance(walletData.balance || 0);
+      } else {
+        setWalletBalance(0);
+      }
+    }, (error) => {
+      console.error("Error listening to wallet changes:", error);
+    });
+  };
 
-      // Calculate total investment amount
-      const totalAmount = investmentsData.reduce(
-        (acc, investment) => acc + investment.amount,
-        0
-      );
-      console.log(totalAmount, "totalAmount");
-      setTotalInvestmentAmount(totalAmount);
-    } catch (error) {
-      console.error("Error fetching investments:", error);
-    }
+  const checkConfirmedInvoice = async (userEmail: string | null) => {
+    if (!userEmail) return;
+
+    const invoicesCollection = collection(db, "invoices");
+    const q = query(
+      invoicesCollection,
+      where("userEmail", "==", userEmail),
+      where("status", "==", "paid")
+    );
+
+    const querySnapshot = await getDocs(q);
+    setHasConfirmedInvoice(!querySnapshot.empty);
   };
 
   const handleOpenDepositModal = () => {
-    setDepositModalOpen(true);
+    if (hasConfirmedInvoice) {
+      setDepositModalOpen(true);
+    } else {
+      toast.error("Please pay your monthly subscription via the invoices page before depositing funds.");
+    }
   };
 
   const handleCloseDepositModal = () => {
@@ -143,7 +151,11 @@ function Dashboard() {
   };
 
   const handleOpenWithdrawModal = () => {
-    setWithdrawModalOpen(true);
+    if (hasConfirmedInvoice) {
+      setWithdrawModalOpen(true);
+    } else {
+      toast.error("Please pay your monthly subscription via the invoices page before withdrawing funds.");
+    }
   };
 
   const handleCloseWithdrawModal = () => {
@@ -163,6 +175,7 @@ function Dashboard() {
 
   return (
     <Layout>
+      <ToastContainer />
       <div className="mt-4 flex">
         <div className="w-20 h-20 xl:w-40 xl:h-40 xl:-ml-4 overflow-hidden rounded-full flex items-center justify-center">
           <Avatar
@@ -184,7 +197,7 @@ function Dashboard() {
           {trades.length > 0 ? (
             <div className="flex items-center gap-2">
               <span className="text-light text-2xl lg:text-xl font-bold">
-                ${totalTradeProfit ? totalTradeProfit.toFixed(2) : "0.00"} USDT
+                ${totalTradeProfit.toFixed(2)} USDT
               </span>
               <Image
                 src="/usdt.svg"
@@ -195,25 +208,10 @@ function Dashboard() {
               />
             </div>
           ) : (
-            <p className="text-light">You haven&apos;t made any profits yet.</p>
-          )}
-        </div>
-
-        <div className="flex-grow">
-          <p className="text-gray">Investment</p>
-          <div className="flex items-center gap-2">
-            <span
-              className={`text-light ${
-                totalInvestmentAmount > 0
-                  ? "text-2xl lg:text-xl font-bold"
-                  : "text-lg"
-              }`}
-            >
-              {totalInvestmentAmount > 0
-                ? `$${totalInvestmentAmount} USDT`
-                : "You haven't invested yet."}
-            </span>
-            {totalInvestmentAmount > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-light text-2xl lg:text-xl font-bold">
+                $0.00 USDT
+              </span>
               <Image
                 src="/usdt.svg"
                 alt="USDT ICON"
@@ -221,14 +219,33 @@ function Dashboard() {
                 width={15}
                 height={15}
               />
-            )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex-grow">
+          <p className="text-gray">Wallet Balance</p>
+          <div className="flex items-center gap-2">
+            <span className="text-light text-2xl lg:text-xl font-bold">
+              ${walletBalance.toFixed(2)} USDT
+            </span>
+            <Image
+              src="/usdt.svg"
+              alt="USDT ICON"
+              className="inline"
+              width={15}
+              height={15}
+            />
           </div>
         </div>
 
         <div className="flex flex-col lg:flex-row justify-center lg:justify-end gap-4 lg:gap-2 md:w-5/12">
           <Button
-            className="flex p-6 lg:w-full items-center gap-2 bg-orange text-light"
+            className={`flex p-6 lg:w-full items-center gap-2 ${
+              hasConfirmedInvoice ? "bg-orange text-light" : "bg-gray text-dark cursor-not-allowed"
+            }`}
             onClick={handleOpenDepositModal}
+            disabled={!hasConfirmedInvoice}
           >
             <Image
               src="/plusButton.svg"
@@ -238,18 +255,28 @@ function Dashboard() {
             />
             Deposit Funds
           </Button>
-          <Button
-            className="flex p-6 lg:w-full items-center gap-2 bg-gray text-light"
-            onClick={handleOpenWithdrawModal}
-          >
-            <Image
-              src="/minusButton.svg"
-              alt="Minus Icon"
-              width={20}
-              height={20}
-            />
-            Withdraw Funds
-          </Button>
+          <div className="flex flex-col">
+            <Button
+              className={`flex p-6 lg:w-full items-center gap-2 ${
+                hasConfirmedInvoice ? "bg-gray text-light" : "bg-gray text-dark cursor-not-allowed"
+              }`}
+              onClick={handleOpenWithdrawModal}
+              disabled={!hasConfirmedInvoice}
+            >
+              <Image
+                src="/minusButton.svg"
+                alt="Minus Icon"
+                width={20}
+                height={20}
+              />
+              Withdraw Funds
+            </Button>
+            {!hasConfirmedInvoice && (
+              <p className="text-red-500 text-sm mt-2">
+                Please pay your monthly subscription via the invoices page before withdrawing funds.
+              </p>
+            )}
+          </div>
         </div>
       </div>
       <hr className="border-gray" />

@@ -6,29 +6,21 @@ interface FirestoreTimestamp {
 }
 
 export const formatDate = (
-  timestamp: FirestoreTimestamp | Date | string | number
+  date: Date | Timestamp | string | number
 ) => {
-  let date: Date;
+  if (date instanceof Timestamp) {
+    date = date.toDate();
+  }
 
-  if (
-    timestamp &&
-    typeof (timestamp as FirestoreTimestamp).seconds === "number" &&
-    typeof (timestamp as FirestoreTimestamp).nanoseconds === "number"
-  ) {
-    // Create a new Firebase Timestamp
-    const firebaseTimestamp = new Timestamp(
-      (timestamp as FirestoreTimestamp).seconds,
-      (timestamp as FirestoreTimestamp).nanoseconds
-    );
-    date = firebaseTimestamp.toDate();
-  } else if (timestamp instanceof Date) {
-    date = timestamp;
-  } else if (typeof timestamp === "string" || typeof timestamp === "number") {
-    date = new Date(timestamp);
+  let formattedDate: string;
+
+  if (date instanceof Date) {
+    formattedDate = date.toLocaleDateString(); // Change to toLocaleDateString()
+  } else if (typeof date === "string" || typeof date === "number") {
+    formattedDate = new Date(date).toLocaleDateString(); // Change to toLocaleDateString()
   } else {
     return "Invalid Date";
   }
 
-  // Format the date to only show the date part
-  return date.toLocaleDateString(); // Change to toLocaleDateString()
+  return formattedDate;
 };

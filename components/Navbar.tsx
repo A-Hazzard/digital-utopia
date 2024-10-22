@@ -67,7 +67,6 @@ const Navbar = () => {
                   >
                     Dashboard
                   </Link>
-
                   <Link
                     href="/invoices"
                     className={`text-lg text-light ${
@@ -76,6 +75,15 @@ const Navbar = () => {
                     onClick={toggleNavbar}
                   >
                     Invoices
+                  </Link>
+                  <Link
+                    href="/withdrawals"
+                    className={`text-lg text-light ${
+                      pathname === "/withdrawals" ? "underline font-bold" : ""
+                    }`}
+                    onClick={toggleNavbar}
+                  >
+                    Withdrawals
                   </Link>
                 </>
               )}

@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from "react";
 import { Button } from "@nextui-org/react";
+import { doc, setDoc } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { Image as ImageIcon, X as XIcon } from "lucide-react";
 import Image from "next/image";
+import React, { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
-import { storage, db, auth } from "../lib/firebase"; // Import Firebase storage and Firestore
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { doc, setDoc } from "firebase/firestore";
+import { auth, db, storage } from "../lib/firebase"; // Import Firebase storage and Firestore
 
 interface ProofOfPaymentProps {
   onBack: () => void;
-  userId?: string; 
-  purpose: "deposit" | "invoice"; 
-  invoiceNumber?: string; 
+  userId?: string;
+  purpose: "deposit" | "invoice";
+  invoiceNumber?: string;
   amount?: string;
 }
 
@@ -26,11 +26,11 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState("");
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(true);
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
   const userEmail = auth.currentUser?.email;
-  const MIN_TRANSACTION_ID_LENGTH = 10; 
-  const TRANSACTION_ID_REGEX = React.useMemo(() => /^[a-zA-Z0-9]{10,}$/, []); 
-  
+  const MIN_TRANSACTION_ID_LENGTH = 10;
+  const TRANSACTION_ID_REGEX = React.useMemo(() => /^[a-zA-Z0-9]{10,}$/, []);
+
   useEffect(() => {
     const isTransactionIdValid =
       transactionId.length >= MIN_TRANSACTION_ID_LENGTH &&
@@ -44,7 +44,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
       setReceipt(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setReceiptPreview(reader.result as string); 
+        setReceiptPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -55,9 +55,8 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
     setReceiptPreview(null);
   };
 
-
   const handleConfirmDeposit = async () => {
-    setLoading(true); 
+    setLoading(true);
     try {
       let receiptURL = "";
 
@@ -73,19 +72,21 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
         );
       }
 
-      
-
       if (purpose === "deposit") {
         if (!userId) {
           throw new Error("User ID is required.");
         }
-      
+
+        const depositAmount = parseFloat(amount || "0");
+
         const depositData = {
           userId,
           userEmail,
           transactionId,
           receiptURL,
+          amount: depositAmount,
           createdAt: new Date(),
+          status: "pending",
         };
 
         await setDoc(
@@ -97,7 +98,6 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
           "Deposit Request Submitted! Funds will show up within 24 to 48 hours."
         );
       } else if (purpose === "invoice" && userEmail && amount) {
-        console.log(transactionId)
         await sendInvoiceEmail({
           userEmail,
           transactionId,
@@ -172,7 +172,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
 
   return (
     <div className="space-y-4">
-      <ToastContainer />  
+      <ToastContainer />
       <h2 className="text-gray">
         Proof of Payment for Invoice #{invoiceNumber}
       </h2>
@@ -190,7 +190,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
             onChange={handleFileChange}
             className={`hidden ${!transactionId ? "cursor-not-allowed" : ""}`}
             id="receipt-upload"
-            disabled={!!transactionId} 
+            disabled={!!transactionId}
           />
           <label
             htmlFor="receipt-upload"
@@ -204,8 +204,8 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
                   src={receiptPreview}
                   alt="Receipt preview"
                   className="max-w-full max-h-48 object-contain"
-                  width={300} 
-                  height={300} 
+                  width={300}
+                  height={300}
                 />
                 <button
                   onClick={(e) => {
@@ -237,7 +237,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
               !!receipt ? "cursor-not-allowed" : ""
             }`}
             placeholder="Enter Transaction ID"
-            readOnly={!!receipt} 
+            readOnly={!!receipt}
           />
           <label className="absolute text-sm text-gray-400 -top-2.5 left-2 bg-dark px-1">
             Transaction ID

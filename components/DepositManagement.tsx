@@ -2,7 +2,7 @@
 
 import Layout from "@/app/common/Layout";
 import { formatDate } from "@/helpers/date";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import {
   Button,
   Input,
@@ -14,91 +14,127 @@ import {
   TableHeader,
   TableRow
 } from "@nextui-org/react";
-import { addDoc, collection, getDocs } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc, getDoc, onSnapshot, query, orderBy, Timestamp, runTransaction } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
-type Investment = {
+type Deposit = {
   id: string;
   userEmail: string;
   amount: number;
   status: "pending" | "completed" | "failed";
-  createdAt: string;
+  createdAt: Timestamp;
 };
 
 const DepositManagement = () => {
-  const [investments, setInvestments] = useState<Investment[]>([]);
+  const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newInvestment, setNewInvestment] = useState<
-    Omit<Investment, "id" | "createdAt">
-  >({
+  const [newDeposit, setNewDeposit] = useState<Omit<Deposit, "id" | "createdAt">>({
     userEmail: "",
     amount: 0,
     status: "pending",
   });
 
   useEffect(() => {
-    const fetchInvestments = async () => {
-      setLoading(true);
-      try {
-        const investmentsCollection = collection(db, "investments");
-        const investmentsSnapshot = await getDocs(investmentsCollection);
-        const investmentsData = investmentsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          userEmail: doc.data().userEmail,
-          amount: doc.data().amount,
-          status: doc.data().status,
-          createdAt: formatDate(doc.data().createdAt),
-        }));
-        setInvestments(investmentsData);
-      } catch (err) {
-        setError(
-          "Failed to fetch investments: " +
-            (err instanceof Error ? err.message : "Unknown error")
-        );
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const depositsCollection = collection(db, "deposits");
+    const q = query(depositsCollection, orderBy("createdAt", "desc"));
 
-    fetchInvestments();
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const depositsData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Deposit[];
+      setDeposits(depositsData);
+      setLoading(false);
+    }, (err) => {
+      setError("Failed to fetch deposits: " + err.message);
+      console.error(err);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const handleAddInvestment = async () => {
-    await addDoc(collection(db, "investments"), {
-      ...newInvestment,
-      createdAt: new Date(),
-    });
-    setNewInvestment({
-      userEmail: "",
-      amount: 0,
-      status: "pending",
-    });
-    // Fetch investments again to update the list
-    const investmentsCollection = collection(db, "investments");
-    const investmentsSnapshot = await getDocs(investmentsCollection);
-    const investmentsData = investmentsSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      userEmail: doc.data().userEmail,
-      amount: doc.data().amount,
-      status: doc.data().status,
-      createdAt: doc.data().createdAt,
-    }));
-    setInvestments(investmentsData);
+  const handleAddDeposit = async () => {
+    try {
+      await addDoc(collection(db, "deposits"), {
+        ...newDeposit,
+        userEmail: auth.currentUser?.email, // Make sure this is set
+        createdAt: Timestamp.now(),
+      });
+
+      // Update user's wallet balance
+      const userRef = doc(db, "users", newDeposit.userEmail);
+      const userDoc = await getDoc(userRef);
+      if (userDoc.exists()) {
+        const currentBalance = userDoc.data().walletBalance || 0;
+        await updateDoc(userRef, {
+          walletBalance: currentBalance + newDeposit.amount,
+        });
+      } else {
+        console.error("User document not found");
+      }
+
+      setNewDeposit({
+        userEmail: "",
+        amount: 0,
+        status: "pending",
+      });
+    } catch (err) {
+      console.error("Error adding deposit:", err);
+      setError("Failed to add deposit");
+    }
   };
 
-  const handleStatusChange = (
-    investmentId: string,
+  const handleStatusChange = async (
+    depositId: string,
     newStatus: "completed" | "failed"
   ) => {
-    setInvestments(
-      investments.map((investment) =>
-        investment.id === investmentId
-          ? { ...investment, status: newStatus }
-          : investment
-      )
-    );
+    try {
+      await runTransaction(db, async (transaction) => {
+        const depositRef = doc(db, "deposits", depositId);
+        const depositDoc = await transaction.get(depositRef);
+        
+        if (!depositDoc.exists()) {
+          throw new Error("Deposit document does not exist!");
+        }
+
+        const depositData = depositDoc.data() as Deposit;
+        
+        if (newStatus === "completed" && depositData.status !== "completed") {
+          // Find wallet document
+          const walletRef = doc(db, "wallets", depositData.userEmail);
+          const walletDoc = await transaction.get(walletRef);
+          
+          if (walletDoc.exists()) {
+            const currentBalance = walletDoc.data().balance || 0;
+            transaction.update(walletRef, { balance: currentBalance + depositData.amount });
+          } else {
+            transaction.set(walletRef, { balance: depositData.amount });
+          }
+        } else if (newStatus === "failed" && depositData.status === "completed") {
+          // If changing from completed to failed, deduct the amount from the wallet
+          const walletRef = doc(db, "wallets", depositData.userEmail);
+          const walletDoc = await transaction.get(walletRef);
+          
+          if (walletDoc.exists()) {
+            const currentBalance = walletDoc.data().balance || 0;
+            const newBalance = Math.max(currentBalance - depositData.amount, 0);
+            transaction.update(walletRef, { balance: newBalance });
+          }
+        }
+
+        // Update deposit status
+        transaction.update(depositRef, { status: newStatus });
+      });
+
+      toast.success(`Deposit status updated to ${newStatus}`);
+    } catch (err) {
+      console.error("Error updating deposit status:", err);
+      setError("Failed to update deposit status");
+      toast.error("Failed to update deposit status");
+    }
   };
 
   if (loading) {
@@ -117,36 +153,33 @@ const DepositManagement = () => {
 
   return (
     <div>
-      <h2 className="text-xl text-light font-bold mb-4">
-        Investment Management
-      </h2>
       <div className="mb-4">
         <Input
           type="text"
           label="User Email"
-          value={newInvestment.userEmail}
+          value={newDeposit.userEmail}
           onChange={(e) =>
-            setNewInvestment({ ...newInvestment, userEmail: e.target.value })
+            setNewDeposit({ ...newDeposit, userEmail: e.target.value })
           }
           className="mb-2"
         />
         <Input
           type="number"
-          label="Investment Amount"
-          value={newInvestment.amount.toString()}
+          label="Deposit Amount"
+          value={newDeposit.amount.toString()}
           onChange={(e) =>
-            setNewInvestment({
-              ...newInvestment,
+            setNewDeposit({
+              ...newDeposit,
               amount: Number(e.target.value),
             })
           }
           className="mb-2"
         />
         <select
-          value={newInvestment.status}
+          value={newDeposit.status}
           onChange={(e) =>
-            setNewInvestment({
-              ...newInvestment,
+            setNewDeposit({
+              ...newDeposit,
               status: e.target.value as "pending" | "completed" | "failed",
             })
           }
@@ -156,10 +189,10 @@ const DepositManagement = () => {
           <option value="completed">Completed</option>
           <option value="failed">Failed</option>
         </select>
-        <Button onClick={handleAddInvestment}>Add Investment</Button>
+        <Button onClick={handleAddDeposit}>Add Deposit</Button>
       </div>
       <Table
-        aria-label="Investments Table"
+        aria-label="Deposits Table"
         className="text-light rounded-lg shadow-md bg-transparent"
       >
         <TableHeader>
@@ -170,20 +203,21 @@ const DepositManagement = () => {
           <TableColumn>Actions</TableColumn>
         </TableHeader>  
         <TableBody>
-          {investments.length > 0 ? (
-            investments.map((investment) => (
-              <TableRow key={investment.id}>
-                <TableCell>{investment.userEmail}</TableCell>
-                <TableCell>{investment.amount}</TableCell>
-                <TableCell>{investment.status}</TableCell>
-                <TableCell>{formatDate(investment.createdAt)}</TableCell>
+          {deposits.length > 0 ? (
+            deposits.map((deposit) => (
+              <TableRow key={deposit.id}>
+                <TableCell>{deposit.userEmail}</TableCell>
+                <TableCell>{deposit.amount}</TableCell>
+                <TableCell>{deposit.status}</TableCell>
+                <TableCell>{formatDate(deposit.createdAt)}</TableCell>
                 <TableCell>
                   <Button
                     size="sm"
                     color="primary"
                     onClick={() =>
-                      handleStatusChange(investment.id, "completed")
+                      handleStatusChange(deposit.id, "completed")
                     }
+                    disabled={deposit.status === "completed"}
                   >
                     Complete
                   </Button>
@@ -191,7 +225,8 @@ const DepositManagement = () => {
                     size="sm"
                     color="danger"
                     className="ml-2"
-                    onClick={() => handleStatusChange(investment.id, "failed")}
+                    onClick={() => handleStatusChange(deposit.id, "failed")}
+                    disabled={deposit.status === "failed"}
                   >
                     Fail
                   </Button>
@@ -200,9 +235,13 @@ const DepositManagement = () => {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={5} className="text-center">
-                No investments found.
+              <TableCell>{""}</TableCell>
+              <TableCell>{""}</TableCell>
+              <TableCell className="text-center">
+                <h3>No One Has Deposited Yet.</h3>
               </TableCell>
+              <TableCell>{""}</TableCell>
+              <TableCell>{""}</TableCell>
             </TableRow>
           )}
         </TableBody>

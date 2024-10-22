@@ -1,23 +1,65 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Button } from "@nextui-org/react";
+import { Button, Spinner } from "@nextui-org/react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import CustomInput from "./CustomInput";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import {
+  addDoc,
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 
 interface WithdrawCryptoModalProps {
   onClose: () => void;
 }
 
-const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({ onClose }) => {
-  const [address, setAddress] = useState('');
-  const [amount, setAmount] = useState('');
+interface Trade {
+  amount: number;
+}
+
+const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
+  onClose,
+}) => {
+  const [address, setAddress] = useState("");
+  const [amount, setAmount] = useState("");
   const [isAddressConfirmed, setIsAddressConfirmed] = useState(false);
   const [isWithdrawEnabled, setIsWithdrawEnabled] = useState(false);
-  const [loading, setLoading] = useState(false); 
-  const availableBalance = 4000000; 
-  const userId = auth.currentUser?.uid; 
+  const [loading, setLoading] = useState(false);
+  const [availableBalance, setAvailableBalance] = useState(0);
+  const [fetchingBalance, setFetchingBalance] = useState(true);
+  const userId = auth.currentUser?.uid;
+  const username = auth.currentUser?.displayName || "";
+
+  useEffect(() => {
+    fetchTotalProfits();
+  }, []);
+
+  const fetchTotalProfits = async () => {
+    setFetchingBalance(true);
+    try {
+      const userEmail = auth.currentUser?.email;
+      const tradesCollection = collection(db, "trades");
+      const q = query(tradesCollection, where("userEmail", "==", userEmail));
+      const tradesSnapshot = await getDocs(q);
+
+      const tradesData = tradesSnapshot.docs.map((doc) => doc.data() as Trade);
+      const totalProfit = tradesData.reduce(
+        (acc, trade) =>
+          acc + (typeof trade.amount === "number" ? trade.amount : 0),
+        0
+      );
+      setAvailableBalance(totalProfit);
+    } catch (error) {
+      console.error("Error fetching total profits:", error);
+      toast.error("Failed to fetch available balance.");
+    } finally {
+      setFetchingBalance(false);
+    }
+  };
 
   const validateTRC20Address = (address: string) => {
     return /^T[A-Za-z1-9]{33}$/.test(address);
@@ -25,10 +67,11 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({ onClose }) =>
 
   useEffect(() => {
     const isValidAddress = validateTRC20Address(address);
-    const numericAmount = parseFloat(amount.replace(/,/g, '')) * 100; 
-    const isValidAmount = numericAmount >= 2000 && numericAmount <= availableBalance;
+    const numericAmount = parseFloat(amount.replace(/,/g, ""));
+    const isValidAmount =
+      numericAmount >= 20 && numericAmount <= availableBalance;
     setIsWithdrawEnabled(isValidAddress && isValidAmount && isAddressConfirmed);
-  }, [address, amount, isAddressConfirmed]);
+  }, [address, amount, isAddressConfirmed, availableBalance]);
 
   const handleConfirmAddress = () => {
     if (validateTRC20Address(address)) {
@@ -47,28 +90,32 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({ onClose }) =>
   };
 
   const formatAmount = (value: string) => {
-    const numericValue = value.replace(/[^0-9]/g, '');
-    const cents = parseInt(numericValue, 10);
-    if (cents > availableBalance) {
-      return formatAmount(availableBalance.toString());
+    const numericValue = value.replace(/[^0-9.]/g, "");
+    const floatValue = parseFloat(numericValue);
+    if (floatValue > availableBalance) {
+      return availableBalance.toFixed(2);
     }
-    return (cents / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return floatValue.toFixed(2);
   };
 
   const handleWithdraw = async () => {
-    setLoading(true); 
+    setLoading(true);
     const withdrawData = {
       userId,
       userEmail: auth.currentUser?.email,
-      amount,
+      username,
+      amount: parseFloat(amount),
       address,
+      date: new Date(),
+      status: "pending",
     };
 
     try {
+      await addDoc(collection(db, "withdrawalRequests"), withdrawData);
       const response = await fetch("/api/sendWithdrawalEmail", {
         method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(withdrawData),
       });
@@ -77,13 +124,14 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({ onClose }) =>
         throw new Error("Failed to send withdrawal notification email.");
       }
 
-      toast.success("Withdrawal request submitted! Funds will show up within 24 to 48 hours.");
-      // Do not close the modal, allow the user to close it manually
+      toast.success(
+        "Withdrawal request submitted! Funds will show up within 24 to 48 hours."
+      );
     } catch (error) {
-      console.error("Error sending withdrawal email:", error);
-      toast.error("Failed to send withdrawal notification email.");
+      console.error("Error processing withdrawal:", error);
+      toast.error("Failed to process withdrawal request.");
     } finally {
-      setLoading(false); // Reset loading state
+      setLoading(false);
     }
   };
 
@@ -123,18 +171,28 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({ onClose }) =>
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     readOnly={isAddressConfirmed}
-                    className={`text-sm w-full bg-transparent text-light border border-gray-600 rounded-lg p-2 pr-20 focus:outline-none ${isAddressConfirmed ? 'bg-gray-700 cursor-not-allowed' : 'focus:border-orange'}`}
+                    className={`text-sm w-full bg-transparent text-light border border-gray-600 rounded-lg p-2 pr-20 focus:outline-none ${
+                      isAddressConfirmed
+                        ? "bg-gray-700 cursor-not-allowed"
+                        : "focus:border-orange"
+                    }`}
                     placeholder="Confirm your wallet address"
                   />
                   <button
-                    onClick={isAddressConfirmed ? handleChangeAddress : handleConfirmAddress}
+                    onClick={
+                      isAddressConfirmed
+                        ? handleChangeAddress
+                        : handleConfirmAddress
+                    }
                     className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent text-[#3576FF] underline"
                   >
-                    {isAddressConfirmed ? 'Change' : 'Confirm'}
+                    {isAddressConfirmed ? "Change" : "Confirm"}
                   </button>
                 </div>
                 <p className="text-[#FF0000] text-xs lg:text-sm mt-1">
-                  Warning: Entering an incorrect address will result in your funds being sent elsewhere. We are not responsible for any lost funds.
+                  Warning: Entering an incorrect address will result in your
+                  funds being sent elsewhere. We are not responsible for any
+                  lost funds.
                 </p>
               </div>
 
@@ -151,7 +209,14 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({ onClose }) =>
               <div>
                 <div className="flex flex-col sm:flex-row sm:justify-between mb-1">
                   <label>Amount</label>
-                  <span className="text-sm text-gray-400">Available Balance: {formatAmount(availableBalance.toString())} USDT</span>
+                  <span className="text-sm text-gray-400">
+                    Available Balance:{" "}
+                    {fetchingBalance ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      `${availableBalance.toFixed(2)} USDT`
+                    )}
+                  </span>
                 </div>
                 <div className="relative mt-1">
                   <input
@@ -178,13 +243,13 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({ onClose }) =>
               </div>
               <Button
                 className={`${
-                  isWithdrawEnabled 
-                    ? 'bg-orange text-light' 
-                    : 'bg-transparent text-gray cursor-not-allowed'
+                  isWithdrawEnabled
+                    ? "bg-orange text-light"
+                    : "bg-transparent text-gray cursor-not-allowed"
                 } w-fit self-end`}
-                disabled={!isWithdrawEnabled || loading} // Disable if not enabled or loading
+                disabled={!isWithdrawEnabled || loading}
                 onClick={handleWithdraw}
-                isLoading={loading} // Use the loading prop
+                isLoading={loading}
               >
                 Withdraw Amount
               </Button>

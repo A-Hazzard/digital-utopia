@@ -12,83 +12,83 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function POST(req: Request) {
-  const depositData = await req.json();
+  const invoiceData = await req.json();
+  console.log("Received invoice data:", invoiceData);
 
   try {
-    await sendDepositNotification(depositData);
+    await sendClientInvoiceConfirmation(invoiceData);
     return NextResponse.json({
-      message: "Deposit notification sent successfully",
+      message: "Invoice confirmation sent successfully",
     });
   } catch (error) {
-    console.error("Error sending deposit notification:", error);
+    console.error("Error sending invoice confirmation:", error);
     return NextResponse.json(
-      { error: "Failed to send deposit notification" },
+      { error: "Failed to send invoice confirmation" },
       { status: 500 }
     );
   }
 }
 
-const sendDepositNotification = async (depositData: {
-  userId: string;
+const sendClientInvoiceConfirmation = async (invoiceData: {
   userEmail: string;
-  transactionId: string;
-  receiptURL: string;
-  amount: number;
+  invoiceNumber: string;
+  amount: string;
 }) => {
   const logoPath = path.join(process.cwd(), 'public', 'logo.png');
 
-  // Check if the file exists
   if (!fs.existsSync(logoPath)) {
     console.error(`Logo file not found at path: ${logoPath}`);
     throw new Error('Logo file not found');
   }
 
-  const adminMailOptions = {
+  const mailOptions = {
     from: process.env.ADMIN_EMAIL,
-    to: process.env.ADMIN_EMAIL,
-    subject: "New Deposit Request",
-    html: createDepositNotificationTemplate(depositData.userEmail, depositData.transactionId, depositData.receiptURL, depositData.amount),
+    to: invoiceData.userEmail,
+    subject: "Invoice Payment Confirmation",
+    html: createClientInvoiceConfirmationTemplate(invoiceData),
     attachments: [
       {
-        filename: "logo.svg",
+        filename: "logo.png",
         path: logoPath,
         cid: "logo",
       },
     ],
   };
 
-  await transporter.sendMail(adminMailOptions);
+  await transporter.sendMail(mailOptions);
 };
 
-const createDepositNotificationTemplate = (userEmail: string, transactionId: string, receiptURL: string, amount: number) => {
+const createClientInvoiceConfirmationTemplate = (invoiceData: {
+  invoiceNumber: string;
+  amount: string;
+}) => {
   return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>New Deposit Request</title>
+        <title>Invoice Payment Confirmation</title>
         <style>
             body {
                 font-family: 'Montserrat', sans-serif;
                 margin: 0;
                 padding: 0;
-                background-color: #393E46; /* --background */
-                color: #eeeeee; /* --light */
+                background-color: #393E46;
+                color: #eeeeee;
             }
             .container {
                 width: 100%;
                 max-width: 600px;
                 margin: 0 auto;
                 padding: 20px;
-                background-color: #16171a; /* --dark */
+                background-color: #16171a;
                 border-radius: 8px;
                 box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
             }
             .header {
                 text-align: center;
                 margin-bottom: 1rem;
-
             }
             .header img {
                 max-width: 150px;
@@ -96,14 +96,18 @@ const createDepositNotificationTemplate = (userEmail: string, transactionId: str
             }
             .content {
                 padding: 20px;
-                background-color: #141010; /* --darker */
+                background-color: #141010;
                 border-radius: 8px;
             }
             .footer {
                 text-align: center;
                 padding: 20px 0;
                 font-size: 12px;
-                color: #B5B5B5; /* --gray */
+                color: #B5B5B5;
+            }
+            .status {
+                font-weight: bold;
+                color: #4CAF50;
             }
         </style>
     </head>
@@ -113,18 +117,11 @@ const createDepositNotificationTemplate = (userEmail: string, transactionId: str
                 <img src="cid:logo" alt="Digital Utopia Logo" aria-label="Digital Utopia Logo">
             </div>
             <div class="content">
-                <h1>New Deposit Request</h1>
-                <p>A user has submitted a deposit request:</p>
-                <p><strong>User Email:</strong> ${userEmail}</p>
-                <p><strong>Transaction ID:</strong> ${
-                  transactionId ? transactionId : "<em>No Transaction ID</em>"
-                }</p>
-                <p><strong>Amount:</strong> ${amount} USDT</p>
-                <p><strong>Receipt URL:</strong> ${
-                  receiptURL
-                    ? `<a href="${receiptURL}">View Receipt</a>`
-                    : "<em>No Receipt</em>"
-                }</p>
+                <h1>Invoice Payment Confirmation</h1>
+                <p>Your invoice has been marked as <span class="status">PAID</span>.</p>
+                <p><strong>Invoice Number:</strong> ${invoiceData.invoiceNumber}</p>
+                <p><strong>Amount:</strong> ${invoiceData.amount} USDT</p>
+                <p>Thank you for your prompt payment. Your account is now active and in good standing.</p>
             </div>
             <div class="footer">
                 <p>&copy; 2024 Digital Utopia. All rights reserved.</p>

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@nextui-org/react": "^2.4.8",
+    "@react-types/datepicker": "^3.8.3",
     "@types/nodemailer": "^6.4.16",
     "firebase": "^10.14.1",
     "firebase-admin": "^12.6.0",

@@ -48,19 +48,26 @@ export default function Panel() {
           <>
             <Link
               href="/dashboard"
-            className={pathname === "/dashboard" ? "underline" : ""}
-          >
-            Dashboard
-          </Link>
-
-          <Link
-          href="/invoices"
-          className={`text-lg text-light ${
-            pathname === "/invoices" ? "underline font-bold" : ""
-            }`}
-          >
-            Invoices
-          </Link>
+              className={pathname === "/dashboard" ? "underline" : ""}
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/invoices"
+              className={`text-lg text-light ${
+                pathname === "/invoices" ? "underline font-bold" : ""
+              }`}
+            >
+              Invoices
+            </Link>
+            <Link
+              href="/withdrawals"
+              className={`text-lg text-light ${
+                pathname === "/withdrawals" ? "underline font-bold" : ""
+              }`}
+            >
+              Withdrawals
+            </Link>
           </>
         )}
 

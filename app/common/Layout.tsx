@@ -1,24 +1,27 @@
 "use client";
 
 import { ProfileModalProvider } from "@/context/ProfileModalContext";
+import { UserProvider } from "@/context/UserContext"; // Import UserProvider
 import Navbar from "@/components/Navbar";
 import Panel from "@/components/Panel";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className={`bg-background flex h-screen`}>
-      <div className={`hidden lg:flex flex-col bg-darker p-4 w-64`}>
+    <UserProvider> {/* Wrap the entire layout with UserProvider */}
+      <div className={`bg-background flex h-screen`}>
+        <div className={`hidden lg:flex flex-col bg-darker p-4 w-64`}>
+          <ProfileModalProvider>
+            <Panel />
+          </ProfileModalProvider>
+        </div>
         <ProfileModalProvider>
-          <Panel />
+          <Navbar />
         </ProfileModalProvider>
+        <main className={`flex-1 flex flex-col gap-4 pt-10 px-10 lg:p-8 overflow-y-auto`}>
+          {children}
+        </main>
       </div>
-      <ProfileModalProvider>
-        <Navbar />
-      </ProfileModalProvider>
-      <main className={`flex-1 flex flex-col gap-4 pt-10 px-10 lg:p-8 overflow-y-auto`}>
-        {children}
-      </main>
-    </div>
+    </UserProvider>
   );
 };
 

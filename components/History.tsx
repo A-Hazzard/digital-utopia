@@ -5,11 +5,12 @@ import { Calendar, CheckCircle, Clock } from "lucide-react";
 import { Skeleton } from "@nextui-org/react";
 import { formatDate } from "@/helpers/date";
 import Image from "next/image";
+import { Timestamp } from "firebase/firestore";
 
 type Trade = {
   id: string;
   userEmail: string;
-  date: Date;
+  date: Timestamp;
   time: string;
   status: string;
   tradingPair: string;

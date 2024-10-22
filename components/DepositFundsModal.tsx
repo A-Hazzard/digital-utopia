@@ -1,5 +1,5 @@
 "use client";
-import { Button } from "@nextui-org/react";
+import { Button, Input } from "@nextui-org/react";
 import { InfoIcon } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import React, { useState } from "react";
@@ -8,6 +8,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { auth } from "../lib/firebase"; // Import your Firebase auth configuration
 import CustomInput from "./CustomInput";
 import ProofOfPayment from "./ProofOfPayment";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "../lib/firebase"; // Add this import
 
 interface DepositFundsModalProps {
   onClose: () => void; 
@@ -16,14 +18,27 @@ interface DepositFundsModalProps {
 const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
   const [showTooltip, setShowTooltip] = useState(false); 
   const [showProofOfPayment, setShowProofOfPayment] = useState(false);
+  const [amount, setAmount] = useState("");
   const userId = auth.currentUser?.uid;
-  
 
   const handleClick = () => {
     setShowTooltip((prev) => !prev);
   };
 
-  const handleProofOfTransaction = () => {
+  const handleProofOfTransaction = async () => {
+    if (!userId) {
+      console.error("User ID is undefined");
+      return;
+    }
+
+    // Create or update wallet document
+    const walletRef = doc(db, "wallets", userId);
+    const walletDoc = await getDoc(walletRef);
+    
+    if (!walletDoc.exists()) {
+      await setDoc(walletRef, { balance: 0 });
+    }
+
     setShowProofOfPayment(true);
   };
 
@@ -119,6 +134,15 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
                   <p className="text-light">1.00 USDT </p>
                 </div>
               </div>
+
+              <Input
+                type="number"
+                label="Deposit Amount"
+                placeholder="Enter amount"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="mb-2"
+              />
             </div>
           </div>
 
@@ -133,6 +157,7 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
               purpose="deposit"
               onBack={handleBack}
               userId={userId}
+              amount={amount}
             />
           </div>
 
