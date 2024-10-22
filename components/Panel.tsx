@@ -115,12 +115,7 @@ export default function Panel() {
               Withdrawals
             </Link>
 
-            <Link
-              href="/admin/payments"
-              className={pathname === "/admin/payments" ? "underline" : ""}
-            >
-              Payments
-            </Link>
+         
 
             <Link
               href="/admin/trades"

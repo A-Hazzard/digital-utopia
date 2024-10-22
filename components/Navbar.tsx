@@ -144,17 +144,7 @@ const Navbar = () => {
                   >
                     Withdrawals
                   </Link>
-                  <Link
-                    href="/admin/payments"
-                    className={`text-lg text-light ${
-                      pathname === "/admin/payments"
-                        ? "underline font-bold"
-                        : ""
-                    }`}
-                    onClick={toggleNavbar}
-                  >
-                    Payments
-                  </Link>
+                 
                   <Link
                     href="/admin/trades"
                     className={`text-lg text-light ${
