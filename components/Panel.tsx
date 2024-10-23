@@ -90,7 +90,6 @@ export default function Panel() {
           Profile
         </button>
         
-
         {/* Conditionally render admin links based on user's email */}
         {isAdmin && (
           <>
@@ -115,7 +114,12 @@ export default function Panel() {
               Withdrawals
             </Link>
 
-         
+            {/* <Link
+              href="/admin/users" // New link for Users
+              className={pathname === "/admin/users" ? "underline" : ""}
+            >
+              Users
+            </Link> */}
 
             <Link
               href="/admin/trades"
@@ -144,4 +148,4 @@ export default function Panel() {
       {isOpen && <ProfileSettingsModal onClose={closeModal} />}
     </div>
   );
-};
+}

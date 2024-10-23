@@ -113,7 +113,7 @@ export default function Register() {
     const invoiceData = {
       invoiceNumber: invoiceNumber,
       description: "Monthly Subscription Fee",
-      amount: "75 USDT",
+      amount: "70 USDT",
       date: new Date().toISOString(), 
       status: "pending",
       userId: userId,

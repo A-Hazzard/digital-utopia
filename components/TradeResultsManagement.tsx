@@ -13,11 +13,12 @@ import {
   Pagination,
 } from "@nextui-org/react";
 import { db, storage } from "@/lib/firebase";
-import { collection, getDocs, addDoc, onSnapshot, query, orderBy, limit } from "firebase/firestore";
+import { collection, getDocs, addDoc, onSnapshot, query, orderBy, limit, doc, deleteDoc } from "firebase/firestore";
 import Image from "next/image";
 import { formatDate } from "@/helpers/date";
 import { toast } from "react-toastify";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { X } from "lucide-react"; // Import the X icon from lucide-react
 
 // Define the Trade interface
 interface Trade {

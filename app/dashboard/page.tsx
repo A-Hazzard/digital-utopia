@@ -11,6 +11,7 @@ import { Avatar, Button, Spinner } from "@nextui-org/react";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
+  deleteDoc,
   doc,
   getDocs,
   onSnapshot,
@@ -54,6 +55,10 @@ function Dashboard() {
   const [totalTradeProfit, setTotalTradeProfit] = useState(0);
   const [walletBalance, setWalletBalance] = useState(0);
   const [hasConfirmedInvoice, setHasConfirmedInvoice] = useState(false);
+  const [hasPendingWithdrawal, setHasPendingWithdrawal] = useState(false);
+  const [pendingWithdrawalId, setPendingWithdrawalId] = useState<string | null>(null); // New state for pending withdrawal ID
+  const [hasPendingDeposit, setHasPendingDeposit] = useState(false); // New state for pending deposit
+  const [pendingDepositId, setPendingDepositId] = useState<string | null>(null); // New state for pending deposit ID
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -72,6 +77,8 @@ function Dashboard() {
           await fetchTrades();
           listenToWalletChanges(user.email);
           checkConfirmedInvoice(user.email);
+          listenToPendingWithdrawals(user.email); // Listen for pending withdrawals
+          listenToPendingDeposits(user.email); // Listen for pending deposits
           setLoading(false);
         }
       } else {
@@ -100,9 +107,9 @@ function Dashboard() {
             time: data.time,
             status: data.status,
             tradingPair: data.tradingPair,
-            amount: parseFloat(data.amount), // Ensure amount is a number
+            amount: parseFloat(data.amount),
             iconUrl: data.iconUrl,
-            type: data.type, // Make sure to include the type (win/loss)
+            type: data.type,
           };
         }
       );
@@ -111,7 +118,6 @@ function Dashboard() {
 
       // Calculate total trade profit
       const totalProfit = tradesData.reduce((acc, trade) => {
-        // Add to profit if it's a win, subtract if it's a loss
         return trade.type === "win" ? acc + trade.amount : acc - trade.amount;
       }, 0);
       console.log("Calculated total profit:", totalProfit);
@@ -157,12 +163,56 @@ function Dashboard() {
     setHasConfirmedInvoice(!querySnapshot.empty);
   };
 
+  const listenToPendingWithdrawals = (userEmail: string | null) => {
+    if (!userEmail) return;
+
+    const withdrawalRequestsCollection = collection(db, "withdrawalRequests");
+    const q = query(
+      withdrawalRequestsCollection,
+      where("userEmail", "==", userEmail),
+      where("status", "==", "pending")
+    );
+
+    return onSnapshot(q, (querySnapshot) => {
+      if (!querySnapshot.empty) {
+        const pendingRequest = querySnapshot.docs[0].data();
+        setHasPendingWithdrawal(true);
+        setPendingWithdrawalId(pendingRequest.withdrawalId); // Set the pending withdrawal ID
+      } else {
+        setHasPendingWithdrawal(false);
+        setPendingWithdrawalId(null); // Reset if no pending requests
+      }
+    });
+  };
+
+  const listenToPendingDeposits = (userEmail: string | null) => {
+    if (!userEmail) return;
+
+    const depositsCollection = collection(db, "deposits");
+    const q = query(
+      depositsCollection,
+      where("userEmail", "==", userEmail),
+      where("status", "==", "pending")
+    );
+
+    return onSnapshot(q, (querySnapshot) => {
+      if (!querySnapshot.empty) {
+        const pendingDeposit = querySnapshot.docs[0].data();
+        setHasPendingDeposit(true);
+        setPendingDepositId(pendingDeposit.transactionId); // Set the pending deposit ID
+      } else {
+        setHasPendingDeposit(false);
+        setPendingDepositId(null); // Reset if no pending deposits
+      }
+    });
+  };
+
   const handleOpenDepositModal = () => {
-    if (hasConfirmedInvoice) {
+    if (hasConfirmedInvoice && !hasPendingDeposit) {
       setDepositModalOpen(true);
     } else {
       toast.error(
-        "Please pay your monthly subscription via the invoices page before depositing funds."
+        "Please pay your monthly subscription via the invoices page before depositing funds or resolve your pending deposit."
       );
     }
   };
@@ -172,7 +222,7 @@ function Dashboard() {
   };
 
   const handleOpenWithdrawModal = () => {
-    if (hasConfirmedInvoice) {
+    if (hasConfirmedInvoice && !hasPendingWithdrawal) {
       setWithdrawModalOpen(true);
     } else {
       toast.error(
@@ -183,6 +233,64 @@ function Dashboard() {
 
   const handleCloseWithdrawModal = () => {
     setWithdrawModalOpen(false);
+  };
+
+  const handleCancelWithdrawal = async () => {
+    if (!pendingWithdrawalId) return; // Ensure pendingWithdrawalId is available
+
+    try {
+      // Query the withdrawalRequests collection to find the document
+      const userEmail = auth.currentUser?.email;
+      const requestsCollection = collection(db, "withdrawalRequests");
+      const q = query(
+        requestsCollection,
+        where("userEmail", "==", userEmail),
+        where("withdrawalId", "==", pendingWithdrawalId)
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        // If a matching document is found, delete it
+        const docToDelete = querySnapshot.docs[0];
+        await deleteDoc(doc(db, "withdrawalRequests", docToDelete.id)); // Delete the withdrawal request
+        toast.success("Withdrawal request cancelled successfully.");
+      } else {
+        toast.error("No matching withdrawal request found.");
+      }
+    } catch (error) {
+      console.error("Error cancelling withdrawal:", error);
+      toast.error("Failed to cancel withdrawal request.");
+    }
+  };
+
+  const handleCancelDeposit = async () => {
+    if (!pendingDepositId) return; // Ensure pendingDepositId is available
+
+    try {
+      // Query the deposits collection to find the document
+      const userEmail = auth.currentUser?.email;
+      const depositsCollection = collection(db, "deposits");
+      const q = query(
+        depositsCollection,
+        where("userEmail", "==", userEmail),
+        where("transactionId", "==", pendingDepositId)
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        // If a matching document is found, delete it
+        const docToDelete = querySnapshot.docs[0];
+        await deleteDoc(doc(db, "deposits", docToDelete.id)); // Delete the deposit request
+        toast.success("Deposit request cancelled successfully.");
+      } else {
+        toast.error("No matching deposit request found.");
+      }
+    } catch (error) {
+      console.error("Error cancelling deposit:", error);
+      toast.error("Failed to cancel deposit request.");
+    }
   };
 
   // Show loading screen while fetching data
@@ -211,7 +319,7 @@ function Dashboard() {
       </div>
 
       <h1 style={{ marginTop: "0" }} className="text-light text-2xl font-bold">
-        WELCOME BACK TO UTOPIA {username.toUpperCase()}
+        WELCOME TO UTOPIA {username.toUpperCase()}
       </h1>
 
       <div className="flex flex-col lg:flex-row gap-4 lg:justify-between">
@@ -265,12 +373,12 @@ function Dashboard() {
         <div className="flex flex-col lg:flex-row justify-center lg:justify-end gap-4 lg:gap-2 md:w-5/12">
           <Button
             className={`flex p-4 lg:w-full items-center gap-2 ${
-              hasConfirmedInvoice
+              hasConfirmedInvoice && !hasPendingDeposit
                 ? "bg-orange text-light"
                 : "bg-gray text-dark cursor-not-allowed"
             }`}
             onClick={handleOpenDepositModal}
-            disabled={!hasConfirmedInvoice}
+            disabled={hasPendingDeposit}
           >
             <Image
               src="/plusButton.svg"
@@ -283,12 +391,12 @@ function Dashboard() {
           <div className="flex flex-col">
             <Button
               className={`flex p-4 lg:w-full items-center gap-2 ${
-                hasConfirmedInvoice
-                  ? "bg-gray text-light"
+                hasConfirmedInvoice && !hasPendingWithdrawal
+                  ? "bg-orange text-light"
                   : "bg-gray text-dark cursor-not-allowed"
               }`}
               onClick={handleOpenWithdrawModal}
-              disabled={!hasConfirmedInvoice}
+              disabled={!hasConfirmedInvoice || hasPendingWithdrawal}
             >
               <Image
                 src="/minusButton.svg"
@@ -303,6 +411,32 @@ function Dashboard() {
                 Please pay your monthly subscription via the invoices page
                 before withdrawing funds.
               </p>
+            )}
+            {hasPendingWithdrawal && (
+              <div className="flex flex-col">
+                <p className="text-red-500 text-sm mt-2">
+                  You have a pending withdrawal request. Please wait for it to be confirmed before making another request.
+                </p>
+                <Button
+                  className="bg-red-600 text-white mt-2"
+                  onClick={handleCancelWithdrawal}
+                >
+                  Cancel Withdrawal
+                </Button>
+              </div>
+            )}
+            {hasPendingDeposit && (
+              <div className="flex flex-col">
+                <p className="text-red-500 text-sm mt-2">
+                  You have a pending deposit request. Please wait for it to be confirmed before making another deposit.
+                </p>
+                <Button
+                  className="bg-red-600 text-white mt-2"
+                  onClick={handleCancelDeposit} // Call the cancel deposit function
+                >
+                  Cancel Deposit
+                </Button>
+              </div>
             )}
           </div>
         </div>

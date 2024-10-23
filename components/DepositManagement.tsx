@@ -20,9 +20,10 @@ import { toast } from "react-toastify";
 
 type Deposit = {
   id: string;
-  userEmail: string;
+  username: string;
+  userEmail: string; // Add userEmail to the Deposit type
   amount: number;
-  status: "pending" | "completed" | "failed";
+  status: "pending" | "confirmed" | "failed";
   createdAt: Timestamp;
 };
 
@@ -31,7 +32,8 @@ const DepositManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newDeposit, setNewDeposit] = useState<Omit<Deposit, "id" | "createdAt">>({
-    userEmail: "",
+    username: "",
+    userEmail: "", // Initialize userEmail
     amount: 0,
     status: "pending",
   });
@@ -60,12 +62,11 @@ const DepositManagement = () => {
     try {
       await addDoc(collection(db, "deposits"), {
         ...newDeposit,
-        userEmail: auth.currentUser?.email, // Make sure this is set
         createdAt: Timestamp.now(),
       });
 
       // Update user's wallet balance
-      const userRef = doc(db, "users", newDeposit.userEmail);
+      const userRef = doc(db, "users", newDeposit.userEmail); // Use userEmail
       const userDoc = await getDoc(userRef);
       if (userDoc.exists()) {
         const currentBalance = userDoc.data().walletBalance || 0;
@@ -77,7 +78,8 @@ const DepositManagement = () => {
       }
 
       setNewDeposit({
-        userEmail: "",
+        username: "",
+        userEmail: "", // Reset userEmail
         amount: 0,
         status: "pending",
       });
@@ -89,7 +91,7 @@ const DepositManagement = () => {
 
   const handleStatusChange = async (
     depositId: string,
-    newStatus: "completed" | "failed"
+    newStatus: "confirmed" | "failed"
   ) => {
     try {
       await runTransaction(db, async (transaction) => {
@@ -102,9 +104,9 @@ const DepositManagement = () => {
 
         const depositData = depositDoc.data() as Deposit;
         
-        if (newStatus === "completed" && depositData.status !== "completed") {
+        if (newStatus === "confirmed" && depositData.status !== "confirmed") {
           // Find wallet document
-          const walletRef = doc(db, "wallets", depositData.userEmail);
+          const walletRef = doc(db, "wallets", depositData.userEmail); // Use userEmail
           const walletDoc = await transaction.get(walletRef);
           
           if (walletDoc.exists()) {
@@ -113,9 +115,9 @@ const DepositManagement = () => {
           } else {
             transaction.set(walletRef, { balance: depositData.amount });
           }
-        } else if (newStatus === "failed" && depositData.status === "completed") {
-          // If changing from completed to failed, deduct the amount from the wallet
-          const walletRef = doc(db, "wallets", depositData.userEmail);
+        } else if (newStatus === "failed" && depositData.status === "confirmed") {
+          // If changing from confirmed to failed, deduct the amount from the wallet
+          const walletRef = doc(db, "wallets", depositData.userEmail); // Use userEmail
           const walletDoc = await transaction.get(walletRef);
           
           if (walletDoc.exists()) {
@@ -156,7 +158,16 @@ const DepositManagement = () => {
       <div className="mb-4">
         <Input
           type="text"
-          label="User Email"
+          label="Username" // Change label to Username
+          value={newDeposit.username}
+          onChange={(e) =>
+            setNewDeposit({ ...newDeposit, username: e.target.value })
+          }
+          className="mb-2"
+        />
+        <Input
+          type="text"
+          label="User Email" // Add input for User Email
           value={newDeposit.userEmail}
           onChange={(e) =>
             setNewDeposit({ ...newDeposit, userEmail: e.target.value })
@@ -180,13 +191,13 @@ const DepositManagement = () => {
           onChange={(e) =>
             setNewDeposit({
               ...newDeposit,
-              status: e.target.value as "pending" | "completed" | "failed",
+              status: e.target.value as "pending" | "confirmed" | "failed",
             })
           }
           className="mb-2 p-2 border rounded"
         >
           <option value="pending">Pending</option>
-          <option value="completed">Completed</option>
+          <option value="confirmed">confirmed</option>
           <option value="failed">Failed</option>
         </select>
         <Button onClick={handleAddDeposit}>Add Deposit</Button>
@@ -196,16 +207,20 @@ const DepositManagement = () => {
         className="text-light rounded-lg shadow-md bg-transparent"
       >
         <TableHeader>
-          <TableColumn>User</TableColumn>
-          <TableColumn>Amount</TableColumn>
-          <TableColumn>Status</TableColumn>
-          <TableColumn>Date</TableColumn>
-          <TableColumn>Actions</TableColumn>
+          <TableColumn key="documentId">Document ID</TableColumn>
+          <TableColumn key="username">Username</TableColumn>
+          <TableColumn key="userEmail">User Email</TableColumn>
+          <TableColumn key="amount">Amount</TableColumn>
+          <TableColumn key="status">Status</TableColumn>
+          <TableColumn key="date">Date</TableColumn>
+          <TableColumn key="actions">Actions</TableColumn>
         </TableHeader>  
         <TableBody>
           {deposits.length > 0 ? (
             deposits.map((deposit) => (
               <TableRow key={deposit.id}>
+                <TableCell>{deposit.id}</TableCell>
+                <TableCell>{deposit.username}</TableCell>
                 <TableCell>{deposit.userEmail}</TableCell>
                 <TableCell>{deposit.amount}</TableCell>
                 <TableCell>{deposit.status}</TableCell>
@@ -215,11 +230,11 @@ const DepositManagement = () => {
                     size="sm"
                     color="primary"
                     onClick={() =>
-                      handleStatusChange(deposit.id, "completed")
+                      handleStatusChange(deposit.id, "confirmed")
                     }
-                    disabled={deposit.status === "completed"}
+                    disabled={deposit.status === "confirmed"}
                   >
-                    Complete
+                    confirm
                   </Button>
                   <Button
                     size="sm"
@@ -237,9 +252,11 @@ const DepositManagement = () => {
             <TableRow>
               <TableCell>{""}</TableCell>
               <TableCell>{""}</TableCell>
-              <TableCell className="text-center">
-                <h3>No One Has Deposited Yet.</h3>
+              <TableCell>{""}</TableCell>
+              <TableCell>
+                <div className="text-center">No One Has Deposited Yet.</div>
               </TableCell>
+              <TableCell>{""}</TableCell>
               <TableCell>{""}</TableCell>
               <TableCell>{""}</TableCell>
             </TableRow>

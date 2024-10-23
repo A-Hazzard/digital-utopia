@@ -31,6 +31,7 @@ export async function POST(req: Request) {
 const sendDepositNotification = async (depositData: {
   userId: string;
   userEmail: string;
+  username: string;
   transactionId: string;
   receiptURL: string;
   amount: number;
@@ -47,10 +48,16 @@ const sendDepositNotification = async (depositData: {
     from: process.env.ADMIN_EMAIL,
     to: process.env.ADMIN_EMAIL,
     subject: "New Deposit Request",
-    html: createDepositNotificationTemplate(depositData.userEmail, depositData.transactionId, depositData.receiptURL, depositData.amount),
+    html: createDepositNotificationTemplate(
+      depositData.userEmail,
+      depositData.username,
+      depositData.transactionId,
+      depositData.receiptURL,
+      depositData.amount
+    ),
     attachments: [
       {
-        filename: "logo.svg",
+        filename: "logo.png",
         path: logoPath,
         cid: "logo",
       },
@@ -60,7 +67,13 @@ const sendDepositNotification = async (depositData: {
   await transporter.sendMail(adminMailOptions);
 };
 
-const createDepositNotificationTemplate = (userEmail: string, transactionId: string, receiptURL: string, amount: number) => {
+const createDepositNotificationTemplate = (
+  userEmail: string,
+  username: string,
+  transactionId: string,
+  receiptURL: string,
+  amount: number
+) => {
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -88,7 +101,6 @@ const createDepositNotificationTemplate = (userEmail: string, transactionId: str
             .header {
                 text-align: center;
                 margin-bottom: 1rem;
-
             }
             .header img {
                 max-width: 150px;
@@ -115,6 +127,7 @@ const createDepositNotificationTemplate = (userEmail: string, transactionId: str
             <div class="content">
                 <h1>New Deposit Request</h1>
                 <p>A user has submitted a deposit request:</p>
+                <p><strong>Username:</strong> ${username}</p>
                 <p><strong>User Email:</strong> ${userEmail}</p>
                 <p><strong>Transaction ID:</strong> ${
                   transactionId ? transactionId : "<em>No Transaction ID</em>"

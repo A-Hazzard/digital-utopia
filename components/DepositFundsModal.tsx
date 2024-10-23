@@ -1,15 +1,13 @@
 "use client";
 import { Button, Input } from "@nextui-org/react";
-import { InfoIcon } from "lucide-react";
+import { Copy, InfoIcon } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import React, { useState } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { auth } from "../lib/firebase"; // Import your Firebase auth configuration
+import { auth } from "../lib/firebase";
 import CustomInput from "./CustomInput";
 import ProofOfPayment from "./ProofOfPayment";
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "../lib/firebase"; // Add this import
 
 interface DepositFundsModalProps {
   onClose: () => void; 
@@ -18,34 +16,21 @@ interface DepositFundsModalProps {
 const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
   const [showTooltip, setShowTooltip] = useState(false); 
   const [showProofOfPayment, setShowProofOfPayment] = useState(false);
-  const [amount, setAmount] = useState(0);
+  const [amount, setAmount] = useState<number | string>("");
   const userId = auth.currentUser?.uid;
 
   const handleClick = () => {
     setShowTooltip((prev) => !prev);
   };
 
-  const handleProofOfTransaction = async () => {
-    if (!userId) {
-      console.error("User ID is undefined");
-      return;
-    }
-
-    // Create or update wallet document
-    const walletRef = doc(db, "wallets", userId);
-    const walletDoc = await getDoc(walletRef);
-    
-    if (!walletDoc.exists()) {
-      await setDoc(walletRef, { balance: 0 });
-    }
-
+  const handleProofOfTransaction = () => {
+    // Simply show the ProofOfPayment component
     setShowProofOfPayment(true);
   };
 
   const handleBack = () => {
     setShowProofOfPayment(false);
   };
-  
 
   if (!userId) return null;
 
@@ -64,13 +49,7 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
             </button>
           </div>
 
-          <div
-            className={`transition-opacity duration-300 ${
-              showProofOfPayment
-                ? "opacity-0 h-0 overflow-hidden"
-                : "opacity-100"
-            }`}
-          >
+          <div className={`transition-opacity duration-300 ${showProofOfPayment ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}>
             {/* Original content */}
             <div className="space-y-4 flex-grow overflow-y-auto">
               <div>
@@ -103,8 +82,13 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
 
                 <div className="mt-2 md:mt-0 md:flex-grow">
                   <div className="text-gray">Tron (TRC 20)</div>
-                  <div className="text-light break-all">
-                    TNUT4394NUN439TUN9GFNUSG9NFGFGFIOJ4094MM
+                  <div className="text-light break-all flex items-center">
+                    <span>TNUT4394NUN439TUN9GFNUSG9NFGFGFIOJ4094MM</span>
+                    <Copy
+                      size={18}
+                      className="ml-2 cursor-pointer"
+                      onClick={() => navigator.clipboard.writeText("TNUT4394NUN439TUN9GFNUSG9NFGFGFIOJ4094MM")}
+                    />
                   </div>
                 </div>
               </div>
@@ -130,7 +114,6 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
                 </div>
                 <div>
                   <p className="text-light">20.00 USDT</p>
-
                   <p className="text-light">1.00 USDT </p>
                 </div>
               </div>
@@ -140,7 +123,7 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
                 label="Deposit Amount"
                 placeholder="Enter amount"
                 value={amount.toString()}
-                onChange={(e) => setAmount(Number(e.target.value))}
+                onChange={(e) => setAmount(e.target.value)}
                 className="mb-2"
               />
             </div>
@@ -157,15 +140,16 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
               purpose="deposit"
               onBack={handleBack}
               userId={userId}
-              amount={amount}
+              amount={Number(amount)}
             />
           </div>
 
           {!showProofOfPayment && (
             <div className="mt-6 flex justify-end">
               <Button
-                className="w-fit bg-orange text-light"
+                className={`w-fit ${!amount || Number(amount) < 20 ? 'bg-gray cursor-not-allowed' : 'bg-orange'} text-light`}
                 onClick={handleProofOfTransaction}
+                disabled={!amount || Number(amount) < 20}
               >
                 Proof of Transaction
               </Button>

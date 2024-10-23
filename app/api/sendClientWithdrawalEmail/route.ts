@@ -32,6 +32,7 @@ const sendClientWithdrawalNotification = async (withdrawalData: {
   userEmail: string;
   amount: string;
   date: string;
+  withdrawalId: string; // Add withdrawalId
 }) => {
   const logoPath = path.join(process.cwd(), 'public', 'logo.png');
 
@@ -58,9 +59,12 @@ const sendClientWithdrawalNotification = async (withdrawalData: {
   await transporter.sendMail(mailOptions);
 };
 
+// Update the template to include withdrawalId
 const createWithdrawalConfirmationTemplate = (withdrawalData: {
   amount: string;
   date: string;
+  withdrawalId: string; // Add withdrawalId
+  userEmail: string; // Include userEmail for the template
 }) => {
   return `
     <!DOCTYPE html>
@@ -76,6 +80,7 @@ const createWithdrawalConfirmationTemplate = (withdrawalData: {
                 padding: 0;
                 background-color: #393E46;
                 color: #eeeeee;
+                color: white;
             }
             .container {
                 width: 100%;
@@ -115,6 +120,7 @@ const createWithdrawalConfirmationTemplate = (withdrawalData: {
             <div class="content">
                 <h1>Withdrawal Confirmation</h1>
                 <p>Your withdrawal has been confirmed.</p>
+                <p><strong>Withdrawal ID:</strong> ${withdrawalData.withdrawalId}</p>
                 <p><strong>Amount:</strong> ${withdrawalData.amount} USDT</p>
                 <p><strong>Date:</strong> ${withdrawalData.date}</p>
                 <p>Thank you for your transaction!</p>
@@ -125,5 +131,5 @@ const createWithdrawalConfirmationTemplate = (withdrawalData: {
         </div>
     </body>
     </html>
-  `;
+    `;
 };

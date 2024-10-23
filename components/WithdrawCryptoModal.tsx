@@ -11,7 +11,15 @@ import {
   getDocs,
   query,
   where,
+  deleteDoc,
+  doc,
+  onSnapshot,
 } from "firebase/firestore";
+import {
+  validateTRC20Address,
+  formatAmount,
+  getWithdrawalCount,
+} from "@/utils/withdrawCryptoModalUtils";
 
 interface WithdrawCryptoModalProps {
   onClose: () => void;
@@ -32,16 +40,41 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
   const [availableBalance, setAvailableBalance] = useState(0);
   const [fetchingBalance, setFetchingBalance] = useState(true);
   const userId = auth.currentUser?.uid;
+  const userEmail = auth.currentUser?.email;
   const username = auth.currentUser?.displayName || "";
+  const [hasPendingWithdrawal, setHasPendingWithdrawal] = useState(false);
+  const [pendingWithdrawalId, setPendingWithdrawalId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTotalProfits();
+    const unsubscribe = listenToPendingWithdrawals();
+    return () => unsubscribe();
   }, []);
+
+  const listenToPendingWithdrawals = () => {
+    if (!userEmail) return () => {};
+
+    const withdrawalRequestsRef = collection(db, "withdrawalRequests");
+    const q = query(
+      withdrawalRequestsRef,
+      where("userEmail", "==", userEmail),
+      where("status", "==", "pending")
+    );
+
+    return onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        setHasPendingWithdrawal(true);
+        setPendingWithdrawalId(snapshot.docs[0].id);
+      } else {
+        setHasPendingWithdrawal(false);
+        setPendingWithdrawalId(null);
+      }
+    });
+  };
 
   const fetchTotalProfits = async () => {
     setFetchingBalance(true);
     try {
-      const userEmail = auth.currentUser?.email;
       const tradesCollection = collection(db, "trades");
       const q = query(tradesCollection, where("userEmail", "==", userEmail));
       const tradesSnapshot = await getDocs(q);
@@ -61,15 +94,13 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
     }
   };
 
-  const validateTRC20Address = (address: string) => {
-    return /^T[A-Za-z1-9]{33}$/.test(address);
-  };
-
   useEffect(() => {
     const isValidAddress = validateTRC20Address(address);
     const numericAmount = parseFloat(amount.replace(/,/g, ""));
     const isValidAmount =
-      !isNaN(numericAmount) && numericAmount > 0 && numericAmount <= availableBalance;
+      !isNaN(numericAmount) &&
+      numericAmount > 0 &&
+      numericAmount <= availableBalance;
     setIsWithdrawEnabled(isValidAddress && isValidAmount && isAddressConfirmed);
   }, [address, amount, isAddressConfirmed, availableBalance]);
 
@@ -86,29 +117,23 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
   };
 
   const handleSelectAll = () => {
-    setAmount(formatAmount(availableBalance.toString()));
-  };
-
-  const formatAmount = (value: string) => {
-    const numericValue = value.replace(/[^0-9.]/g, "");
-    const floatValue = parseFloat(numericValue);
-    if (isNaN(floatValue)) return "0.00";
-    if (floatValue > availableBalance) {
-      return availableBalance.toFixed(2);
-    }
-    return floatValue.toFixed(2);
+    setAmount(formatAmount(availableBalance.toString(), availableBalance));
   };
 
   const handleWithdraw = async () => {
     setLoading(true);
+    const withdrawalCount = await getWithdrawalCount(db);
+    const withdrawalId = `WI-${withdrawalCount + 1}`;
+
     const withdrawData = {
       userId,
-      userEmail: auth.currentUser?.email,
+      userEmail,
       username,
       amount: parseFloat(amount),
       address,
       date: new Date(),
       status: "pending",
+      withdrawalId,
     };
 
     try {
@@ -134,6 +159,35 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancelWithdrawal = async () => {
+    if (!pendingWithdrawalId) return;
+
+    try {
+      await deleteDoc(doc(db, "withdrawalRequests", pendingWithdrawalId));
+      toast.success("Withdrawal request cancelled successfully.");
+      await sendCancellationEmail();
+    } catch (error) {
+      console.error("Error cancelling withdrawal:", error);
+      toast.error("Failed to cancel withdrawal request.");
+    }
+  };
+
+  const sendCancellationEmail = async () => {
+    const cancellationData = {
+      userEmail,
+      withdrawalId: pendingWithdrawalId,
+      username,
+    };
+
+    await fetch("/api/sendWithdrawalCancellationEmail", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(cancellationData),
+    });
   };
 
   return (
@@ -223,7 +277,9 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
                   <input
                     type="text"
                     value={amount}
-                    onChange={(e) => setAmount(formatAmount(e.target.value))}
+                    onChange={(e) =>
+                      setAmount(formatAmount(e.target.value, availableBalance))
+                    }
                     className="text-sm w-full bg-transparent text-light border border-gray-600 rounded-lg p-2 pr-20 focus:outline-none focus:border-orange"
                     placeholder="Enter the quantity"
                   />
@@ -242,18 +298,26 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
                 <p className="text-gray text-sm">Minimum Withdraw Amount</p>
                 <p className="text-light">20.00 USDT</p>
               </div>
-              <Button
-                className={`${
-                  isWithdrawEnabled
-                    ? "bg-orange text-light"
-                    : "bg-transparent text-gray cursor-not-allowed"
-                } w-fit self-end`}
-                disabled={!isWithdrawEnabled || loading}
-                onClick={handleWithdraw}
-                isLoading={loading}
-              >
-                Withdraw Amount
-              </Button>
+              {hasPendingWithdrawal ? (
+                <Button
+                  className="bg-red-600 text-white w-fit self-end"
+                  onClick={handleCancelWithdrawal}
+                >
+                  Cancel Withdrawal
+                </Button>
+              ) : (
+                <Button
+                  className={`${
+                    isWithdrawEnabled
+                      ? "bg-orange text-light"
+                      : "bg-transparent text-gray cursor-not-allowed"
+                  } w-fit self-end`}
+                  disabled={!isWithdrawEnabled || loading}
+                  onClick={handleWithdraw}
+                >
+                  {loading ? <Spinner size="sm" /> : "Withdraw Amount"}
+                </Button>
+              )}
             </div>
           </div>
         </div>

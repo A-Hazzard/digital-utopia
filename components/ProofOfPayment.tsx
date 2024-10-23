@@ -1,10 +1,20 @@
 import { Button } from "@nextui-org/react";
-import { doc, setDoc } from "firebase/firestore";
+import {
+  doc,
+  setDoc,
+  onSnapshot,
+  query,
+  where,
+  collection,
+  deleteDoc,
+  getDocs,
+  orderBy,
+} from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { Image as ImageIcon, X as XIcon } from "lucide-react";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
-import { toast, ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import { auth, db, storage } from "../lib/firebase"; // Import Firebase storage and Firestore
 
 interface ProofOfPaymentProps {
@@ -27,6 +37,9 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
   const [transactionId, setTransactionId] = useState("");
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [depositStatus, setDepositStatus] = useState<string | null>(null);
+  const [depositDocumentId, setDepositDocumentId] = useState<string | null>(null); // New state for deposit document ID
+  const [message, setMessage] = useState<string | null>(null); // New state for messages
   const userEmail = auth.currentUser?.email;
   const MIN_TRANSACTION_ID_LENGTH = 10;
   const TRANSACTION_ID_REGEX = React.useMemo(() => /^[a-zA-Z0-9]{10,}$/, []);
@@ -37,6 +50,32 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
       TRANSACTION_ID_REGEX.test(transactionId);
     setIsConfirmDisabled(!(receipt || isTransactionIdValid));
   }, [receipt, transactionId, MIN_TRANSACTION_ID_LENGTH, TRANSACTION_ID_REGEX]);
+
+  useEffect(() => {
+    if (userId) {
+      // Listen for existing pending deposits for the user
+      const depositsRef = query(
+        collection(db, "deposits"),
+        where("userEmail", "==", userEmail),
+        where("status", "==", "pending")
+      );
+
+      const unsubscribe = onSnapshot(depositsRef, (snapshot) => {
+        if (!snapshot.empty) {
+          setDepositStatus("pending");
+          // Set the transactionId to the first pending deposit's transactionId
+          setTransactionId(snapshot.docs[0].data().transactionId);
+          setDepositDocumentId(snapshot.docs[0].id); // Store the document ID
+        } else {
+          setDepositStatus(null);
+          setTransactionId(""); // Reset transactionId if no pending deposits
+          setDepositDocumentId(null); // Reset document ID
+        }
+      });
+
+      return () => unsubscribe();
+    }
+  }, [userId, userEmail]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -53,6 +92,12 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
   const handleRemoveImage = () => {
     setReceipt(null);
     setReceiptPreview(null);
+    setTransactionId(""); // Reset transactionId when removing the image
+    // Clear the input field value
+    const input = document.getElementById("receipt-upload") as HTMLInputElement;
+    if (input) {
+      input.value = "";
+    }
   };
 
   const handleConfirmDeposit = async () => {
@@ -79,94 +124,63 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
 
         const depositAmount = amount || 0;
 
+        // Generate a new deposit ID
+        const depositId = await getNextDepositId();
+
         const depositData = {
           userId,
           userEmail,
-          transactionId,
+          transactionId: depositId, // Use the auto-incremented ID
           receiptURL,
           amount: depositAmount,
+          username: auth.currentUser?.displayName || "Unknown", // Add username
           createdAt: new Date(),
           status: "pending",
         };
 
         await setDoc(
-          doc(db, "deposits", transactionId || new Date().toISOString()),
+          doc(db, "deposits", depositData.transactionId),
           depositData
         );
-        await sendDepositEmail(depositData);
-        toast.success(
-          "Deposit Request Submitted! Funds will show up within 24 to 48 hours."
-        );
-      } else if (purpose === "invoice" && userEmail && amount) {
-        await sendInvoiceEmail({
-          userEmail,
-          transactionId,
-          amount,
-          receiptURL,
-        });
 
-        toast.success(
-          "Invoice Submission Submitted! Approval will be given within 24 to 48 hours."
-        );
+        setMessage("Deposit Request Submitted! Funds will show up within 24 to 48 hours.");
       }
     } catch (error: unknown) {
       console.error("Error confirming deposit:", error);
       if (error instanceof Error) {
-        toast.error(
-          error.message || "Failed to submit deposit request. Please try again."
-        );
+        setMessage(error.message || "Failed to submit deposit request. Please try again.");
       } else {
-        toast.error("An unexpected error occurred. Please try again.");
+        setMessage("An unexpected error occurred. Please try again.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const sendDepositEmail = async (depositData: {
-    userId: string;
-    transactionId: string;
-    receiptURL: string;
-  }) => {
-    try {
-      const response = await fetch("/api/sendDepositEmail", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(depositData),
-      });
+  const getNextDepositId = async () => {
+    const depositsCollection = collection(db, "deposits");
+    const q = query(depositsCollection, orderBy("transactionId", "desc"));
+    const querySnapshot = await getDocs(q);
+    const lastDepositId = querySnapshot.docs[0]?.id; // Get the last deposit ID
 
-      if (!response.ok) {
-        throw new Error("Failed to send deposit notification email.");
-      }
-    } catch (error) {
-      console.error("Error sending deposit email:", error);
-      toast.error("Failed to send deposit notification email.");
+    if (lastDepositId) {
+      const lastIdNumber = parseInt(lastDepositId.split("-")[1], 10);
+      return `DI-${lastIdNumber + 1}`; // Increment the last ID
     }
+    return "DI-1"; // Start with DI-1 if no deposits exist
   };
 
-  const sendInvoiceEmail = async (invoiceData: {
-    userEmail: string;
-    transactionId: string;
-    amount: number;
-    receiptURL: string;
-  }) => {
-    try {
-      const response = await fetch("/api/sendInvoiceEmail", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(invoiceData),
-      });
+  const handleCancelDeposit = async () => {
+    if (!depositDocumentId) return; // Ensure depositDocumentId is available
 
-      if (!response.ok) {
-        throw new Error("Failed to send invoice notification email.");
-      }
+    try {
+      const depositRef = doc(db, "deposits", depositDocumentId);
+      await deleteDoc(depositRef);
+      setMessage("Deposit request cancelled successfully.");
+      onBack(); // Go back after cancellation
     } catch (error) {
-      console.error("Error sending invoice email:", error);
-      toast.error("Failed to send invoice notification email.");
+      console.error("Error cancelling deposit:", error);
+      setMessage("Failed to cancel deposit request.");
     }
   };
 
@@ -250,17 +264,29 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
         </Button>
         <Button
           className={`${
-            isConfirmDisabled
+            isConfirmDisabled || depositStatus === "pending"
               ? "bg-gray text-light cursor-not-allowed"
               : "bg-orange"
           } text-light`}
           onClick={handleConfirmDeposit}
-          disabled={isConfirmDisabled || loading}
-          isLoading={loading}
+          disabled={isConfirmDisabled || loading || depositStatus === "pending"}
         >
-          Confirm Deposit
+          {depositStatus === "pending"
+            ? "Awaiting Confirmation"
+            : "Confirm Deposit"}
         </Button>
       </div>
+      {depositStatus === "pending" && (
+        <div className="mt-4">
+          <Button
+            className="bg-red-600 text-white"
+            onClick={handleCancelDeposit}
+          >
+            Cancel Deposit
+          </Button>
+        </div>
+      )}
+      {message && <p className="text-green-500">{message}</p>} {/* Display message */}
     </div>
   );
 };
