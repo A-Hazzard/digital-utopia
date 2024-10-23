@@ -14,7 +14,7 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { Image as ImageIcon, X as XIcon } from "lucide-react";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
-import { ToastContainer } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import { auth, db, storage } from "../lib/firebase"; // Import Firebase storage and Firestore
 
 interface ProofOfPaymentProps {
@@ -38,8 +38,8 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
   const [isConfirmDisabled, setIsConfirmDisabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [depositStatus, setDepositStatus] = useState<string | null>(null);
-  const [depositDocumentId, setDepositDocumentId] = useState<string | null>(null); // New state for deposit document ID
-  const [message, setMessage] = useState<string | null>(null); // New state for messages
+  const [depositDocumentId, setDepositDocumentId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const userEmail = auth.currentUser?.email;
   const MIN_TRANSACTION_ID_LENGTH = 10;
   const TRANSACTION_ID_REGEX = React.useMemo(() => /^[a-zA-Z0-9]{10,}$/, []);
@@ -53,7 +53,6 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
 
   useEffect(() => {
     if (userId) {
-      // Listen for existing pending deposits for the user
       const depositsRef = query(
         collection(db, "deposits"),
         where("userEmail", "==", userEmail),
@@ -63,13 +62,12 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
       const unsubscribe = onSnapshot(depositsRef, (snapshot) => {
         if (!snapshot.empty) {
           setDepositStatus("pending");
-          // Set the transactionId to the first pending deposit's transactionId
           setTransactionId(snapshot.docs[0].data().transactionId);
-          setDepositDocumentId(snapshot.docs[0].id); // Store the document ID
+          setDepositDocumentId(snapshot.docs[0].id);
         } else {
           setDepositStatus(null);
-          setTransactionId(""); // Reset transactionId if no pending deposits
-          setDepositDocumentId(null); // Reset document ID
+          setTransactionId("");
+          setDepositDocumentId(null);
         }
       });
 
@@ -92,8 +90,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
   const handleRemoveImage = () => {
     setReceipt(null);
     setReceiptPreview(null);
-    setTransactionId(""); // Reset transactionId when removing the image
-    // Clear the input field value
+    setTransactionId("");
     const input = document.getElementById("receipt-upload") as HTMLInputElement;
     if (input) {
       input.value = "";
@@ -123,17 +120,15 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
         }
 
         const depositAmount = amount || 0;
-
-        // Generate a new deposit ID
         const depositId = await getNextDepositId();
 
         const depositData = {
           userId,
           userEmail,
-          transactionId: depositId, // Use the auto-incremented ID
+          transactionId: depositId,
           receiptURL,
           amount: depositAmount,
-          username: auth.currentUser?.displayName || "Unknown", // Add username
+          username: auth.currentUser?.displayName || "Unknown",
           createdAt: new Date(),
           status: "pending",
         };
@@ -143,7 +138,17 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
           depositData
         );
 
+        await sendDepositEmail(depositData);
         setMessage("Deposit Request Submitted! Funds will show up within 24 to 48 hours.");
+      } else if (purpose === "invoice" && userEmail && amount) {
+        await sendInvoiceEmail({
+          userEmail,
+          transactionId,
+          amount,
+          receiptURL,
+        });
+
+        setMessage("Invoice Submission Submitted! Approval will be given within 24 to 48 hours.");
       }
     } catch (error: unknown) {
       console.error("Error confirming deposit:", error);
@@ -161,26 +166,73 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
     const depositsCollection = collection(db, "deposits");
     const q = query(depositsCollection, orderBy("transactionId", "desc"));
     const querySnapshot = await getDocs(q);
-    const lastDepositId = querySnapshot.docs[0]?.id; // Get the last deposit ID
+    const lastDepositId = querySnapshot.docs[0]?.id;
 
     if (lastDepositId) {
       const lastIdNumber = parseInt(lastDepositId.split("-")[1], 10);
-      return `DI-${lastIdNumber + 1}`; // Increment the last ID
+      return `DI-${lastIdNumber + 1}`;
     }
-    return "DI-1"; // Start with DI-1 if no deposits exist
+    return "DI-1";
   };
 
   const handleCancelDeposit = async () => {
-    if (!depositDocumentId) return; // Ensure depositDocumentId is available
+    if (!depositDocumentId) return;
 
     try {
       const depositRef = doc(db, "deposits", depositDocumentId);
       await deleteDoc(depositRef);
       setMessage("Deposit request cancelled successfully.");
-      onBack(); // Go back after cancellation
+      onBack();
     } catch (error) {
       console.error("Error cancelling deposit:", error);
       setMessage("Failed to cancel deposit request.");
+    }
+  };
+
+  const sendDepositEmail = async (depositData: {
+    userId: string;
+    transactionId: string;
+    receiptURL: string;
+  }) => {
+    try {
+      const response = await fetch("/api/sendDepositEmail", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(depositData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send deposit notification email.");
+      }
+    } catch (error) {
+      console.error("Error sending deposit email:", error);
+      toast.error("Failed to send deposit notification email.");
+    }
+  };
+
+  const sendInvoiceEmail = async (invoiceData: {
+    userEmail: string;
+    transactionId: string;
+    amount: number;
+    receiptURL: string;
+  }) => {
+    try {
+      const response = await fetch("/api/sendInvoiceEmail", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(invoiceData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send invoice notification email.");
+      }
+    } catch (error) {
+      console.error("Error sending invoice email:", error);
+      toast.error("Failed to send invoice notification email.");
     }
   };
 
@@ -286,7 +338,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
           </Button>
         </div>
       )}
-      {message && <p className="text-green-500">{message}</p>} {/* Display message */}
+      {message && <p className="text-green-500">{message}</p>}
     </div>
   );
 };

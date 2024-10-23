@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@nextui-org/react";
-import { addDoc, collection, getDocs, limit, onSnapshot, orderBy, query } from "firebase/firestore";
+import { addDoc, collection, getDocs, limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -43,7 +43,7 @@ const TradeResultsManagement = () => {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [tradingPairs, setTradingPairs] = useState<TradingPair[]>([]);
   const [newTrade, setNewTrade] = useState<Omit<Trade, "id">>({
-    date: "",
+    date: new Date().toISOString().split("T")[0], // Set default date to current date
     type: "win",
     amount: 0,
     tradingPair: "",
@@ -58,6 +58,8 @@ const TradeResultsManagement = () => {
   const [isFormValid, setIsFormValid] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [username, setUsername] = useState(""); // State for username input
+  const [possibleEmails, setPossibleEmails] = useState<string[]>([]); // State for possible emails
 
   // Function to fetch trades from Firestore
   const fetchTrades = async () => {
@@ -207,8 +209,61 @@ const TradeResultsManagement = () => {
     fetchTrades(); // Fetch trades for the selected page
   };
 
+  // Function to fetch user email by username
+  const fetchUserEmailByUsername = async (username: string) => {
+    if (!username) {
+      setPossibleEmails([]); // Clear possible emails if username is empty
+      return; // Exit if the username is empty
+    }
+
+    try {
+      const usersCollection = collection(db, "users"); // Reference to the users collection
+      const snapshot = await getDocs(usersCollection); // Fetch all users
+
+      // Filter emails based on case-insensitive match
+      const emails = snapshot.docs
+          .filter(doc => doc.data().displayName.toLowerCase().includes(username.toLowerCase())) // Case-insensitive check
+          .map(doc => doc.data().email); // Extract emails from the documents
+
+      setPossibleEmails(emails); // Set the list of possible emails
+    } catch (error) {
+      console.error("Error fetching user email:", error);
+      setPossibleEmails([]); // Clear possible emails on error
+    }
+  };
+
   return (
     <div>
+      {/* Username Search Section */}
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold">Search User by Username</h2>
+        <p className="text-sm text-light mb-2">
+          Enter a username to find the associated user email. This can help you quickly locate user information if you cannot remember their email.
+        </p>
+        <Input
+          type="text"
+          label="Search by Username"
+          value={username}
+          onChange={(e) => {
+            setUsername(e.target.value);
+            fetchUserEmailByUsername(e.target.value); // Fetch email on input change
+          }}
+        />
+        {possibleEmails.length > 0 && (
+          <div className="bg-white border rounded mt-2 p-2">
+            <h3 className="text-sm font-semibold">Possible Emails:</h3>
+            <ul className="list-disc pl-5">
+              {possibleEmails.map((email, index) => (
+                <li key={index} className="text-sm text-dark cursor-pointer" onClick={() => setNewTrade({ ...newTrade, userEmail: email })}>
+                  {email}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      <hr className="mt-4 mb-10" /> {/* Horizontal rule for separation */}
+
       <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
           type="date"

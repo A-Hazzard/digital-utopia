@@ -52,6 +52,14 @@ export default function Register() {
       if (user) {
         await updateProfile(user, { displayName: name });
 
+        // Store user info in Firestore
+        await addDoc(collection(db, "users"), {
+          uid: user.uid,
+          email: user.email,
+          displayName: name,
+          createdAt: new Date(),
+        });
+
         if (user.email) {
           await createInvoice(user.uid, user.email);
         }

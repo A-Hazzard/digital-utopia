@@ -107,32 +107,12 @@ const InvoiceManagement = () => {
 
   const handleStatusChange = async (
     invoiceId: string,
-    newStatus: "paid" | "pending" | "overdue"
+    newStatus: "paid" | "pending"
   ) => {
     setLoadingInvoices((prev) => ({ ...prev, [invoiceId]: true }));
     try {
       const invoiceRef = doc(db, "invoices", invoiceId);
       await updateDoc(invoiceRef, { status: newStatus });
-
-      const updatedInvoice = invoices.find(
-        (invoice) => invoice.id === invoiceId
-      );
-      if (updatedInvoice) {
-        if (newStatus === "paid") {
-          if (!updatedInvoice.userEmail) {
-            console.error("User email is missing for invoice:", updatedInvoice);
-            toast.error("Failed to update invoice: User email is missing");
-            return;
-          }
-          await sendClientInvoiceConfirmation(updatedInvoice);
-        } else if (newStatus === "overdue") {
-          await sendClientInvoiceOverdue(updatedInvoice);
-        }
-      } else {
-        console.error("Invoice not found:", invoiceId);
-        toast.error("Failed to update invoice: Invoice not found");
-        return;
-      }
 
       setInvoices(
         invoices.map((invoice) =>
@@ -147,62 +127,6 @@ const InvoiceManagement = () => {
       toast.error("Failed to update invoice status");
     } finally {
       setLoadingInvoices((prev) => ({ ...prev, [invoiceId]: false }));
-    }
-  };
-
-  const sendClientInvoiceConfirmation = async (invoice: Invoice) => {
-    try {
-      if (!invoice.userEmail) {
-        console.error("User email is missing for invoice:", invoice);
-        toast.error(
-          "Failed to send invoice confirmation email: User email is missing"
-        );
-        return;
-      }
-
-      const response = await fetch("/api/sendClientInvoiceConfirmationEmail", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userEmail: invoice.userEmail,
-          invoiceNumber: invoice.invoiceNumber,
-          amount: invoice.amount,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to send invoice confirmation email");
-      }
-
-      toast.success("Invoice confirmation email sent successfully");
-    } catch (error) {
-      console.error("Error sending invoice confirmation email:", error);
-      toast.error("Failed to send invoice confirmation email");
-    }
-  };
-
-  const sendClientInvoiceOverdue = async (invoice: Invoice) => {
-    try {
-      const response = await fetch("/api/sendClientInvoiceOverdueEmail", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userEmail: invoice.userEmail,
-          invoiceNumber: invoice.invoiceNumber,
-          amount: invoice.amount,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to send invoice overdue email");
-      }
-    } catch (error) {
-      console.error("Error sending invoice overdue email:", error);
-      toast.error("Failed to send invoice overdue email");
     }
   };
 
@@ -252,16 +176,6 @@ const InvoiceManagement = () => {
                   disabled={loadingInvoices[invoice.id]}
                 >
                   Mark as Paid
-                </Button>
-                <Button
-                  size="sm"
-                  color="warning"
-                  className="ml-2"
-                  onClick={() => handleStatusChange(invoice.id, "overdue")}
-                  isLoading={loadingInvoices[invoice.id]}
-                  disabled={loadingInvoices[invoice.id]}
-                >
-                  Mark as Overdue
                 </Button>
               </TableCell>
             </TableRow>

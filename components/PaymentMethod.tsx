@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button } from "@nextui-org/react";
+import { Button, Input } from "@nextui-org/react";
 import Image from "next/image";
 import ProofOfPayment from "./ProofOfPayment";
-import { auth } from "@/lib/firebase"; // Import your Firebase auth configuration
+import { auth } from "@/lib/firebase";
+import { QRCodeSVG } from "qrcode.react";
+import { Copy } from "lucide-react";
 
 type PaymentMethodProps = {
   onBack: () => void;
@@ -14,24 +16,25 @@ type PaymentMethodProps = {
 
 const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack, invoiceNumber, amount }) => {
   const [selectedMethod, setSelectedMethod] = useState<
-    "bank" | "paypal" | null
+    "bank" | "paypal" | "usdt" | null
   >(null);
   const [showProofOfPayment, setShowProofOfPayment] = useState(false);
   const [fade, setFade] = useState(false);
-  const userId = auth.currentUser?.uid; 
-  const handleMethodSelect = (method: "bank" | "paypal") => {
+  const userId = auth.currentUser?.uid;
+
+  const handleMethodSelect = (method: "bank" | "paypal" | "usdt") => {
     setSelectedMethod(method);
   };
 
   const handleConfirmPayment = () => {
-    setFade(true); 
+    setFade(true);
     setTimeout(() => setShowProofOfPayment(true), 500);
   };
+
   if (!userId) return null;
 
   return (
     <div className="relative">
-      {/* Payment Method Section */}
       {!showProofOfPayment && (
         <div
           className={`transition-opacity duration-500 ease-in-out ${
@@ -48,7 +51,7 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack, invoiceNumber, am
           </div>
 
           <p className="text-gray">Choose a payment method:</p>
-          <div className="flex space-x-4 mt-2">
+          <div className="flex items-center space-x-4 mt-2">
             <div
               className="cursor-pointer"
               onClick={() => handleMethodSelect("bank")}
@@ -60,6 +63,12 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack, invoiceNumber, am
               onClick={() => handleMethodSelect("paypal")}
             >
               <Image src="/paypal.svg" alt="PayPal" width={100} height={50} />
+            </div>
+            <div
+              className="cursor-pointer"
+              onClick={() => handleMethodSelect("usdt")}
+            >
+              <Image src="/usdt.svg" alt="USDT" width={70} height={50} />
             </div>
           </div>
 
@@ -90,6 +99,54 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack, invoiceNumber, am
               <a href="https://www.paypal.me/khalxl" className="text-blue-500">
                 https://www.paypal.me/khalxl
               </a>
+            </div>
+          )}
+
+          {selectedMethod === "usdt" && (
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block mb-1">Currency</label>
+                <div className="flex items-center space-x-2 p-2 border border-gray-600 rounded">
+                  <Image src="/usdt.svg" alt="USDT Icon" width={24} height={24} />
+                  <span className="text-light">USDT</span>
+                  <span className="text-gray">Tether</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block mb-1">Network</label>
+                <div className="flex items-center space-x-2 p-2 border border-gray-600 rounded">
+                  <Image src="/trx.svg" alt="TRX Icon" width={24} height={24} />
+                  <span className="text-light">TRX</span>
+                  <span className="text-gray">Tron TRC20</span>
+                </div>
+              </div>
+
+              <div className="p-4 border border-gray rounded md:flex md:items-start md:space-x-4">
+                <div className="md:flex-shrink-0">
+                  <QRCodeSVG
+                    value="TNUT4394NUN439TUN9GFNUSG9NFGFGFIOJ4094MM"
+                    size={128}
+                  />
+                </div>
+
+                <div className="mt-2 md:mt-0 md:flex-grow">
+                  <div className="text-gray">Tron (TRC 20)</div>
+                  <div className="text-light break-all flex items-center">
+                    <span>TNUT4394NUN439TUN9GFNUSG9NFGFGFIOJ4094MM</span>
+                    <Copy
+                      size={18}
+                      className="ml-2 cursor-pointer"
+                      onClick={() => navigator.clipboard.writeText("TNUT4394NUN439TUN9GFNUSG9NFGFGFIOJ4094MM")}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center mb-2 text-white">
+                <span>Amount to Pay:</span>
+                <span className="font-bold">70.00 USDT</span>
+              </div>
             </div>
           )}
 

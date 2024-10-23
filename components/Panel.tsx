@@ -63,7 +63,7 @@ export default function Panel() {
           <>
             <Link
               href="/dashboard"
-              className={pathname === "/dashboard" ? "underline" : ""}
+              className={`text-lg text-light ${pathname === "/dashboard" ? "underline font-bold" : ""}`}
             >
               Dashboard
             </Link>

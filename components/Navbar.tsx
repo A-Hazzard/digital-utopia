@@ -78,7 +78,8 @@ const Navbar = () => {
                 <>
                   <Link
                     href="/dashboard"
-                    className={pathname === "/dashboard" ? "underline" : ""}
+                    className={`text-lg text-light ${pathname === "/dashboard" ? "underline font-bold" : ""}`}
+                    onClick={toggleNavbar}
                   >
                     Dashboard
                   </Link>
