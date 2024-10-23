@@ -13,11 +13,12 @@ import {
   TableHeader,
   TableRow,
 } from "@nextui-org/react";
-import { addDoc, collection, getDocs, limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { addDoc, collection, getDocs, limit, onSnapshot, orderBy, query, where, doc, deleteDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { X } from "lucide-react"; // Import the X icon
 
 // Define the Trade interface
 interface Trade {
@@ -28,6 +29,7 @@ interface Trade {
   tradingPair: string;
   userEmail: string;
   iconUrl: string;
+  username: string; // Add username to the Trade interface
 }
 
 // Define the TradingPair interface
@@ -49,6 +51,7 @@ const TradeResultsManagement = () => {
     tradingPair: "",
     userEmail: "",
     iconUrl: "",
+    username: "", // Add default username
   });
   const [showAddPair, setShowAddPair] = useState(false);
   const [newPair, setNewPair] = useState("");
@@ -142,10 +145,18 @@ const TradeResultsManagement = () => {
     }
 
     try {
+      // Fetch the display name based on the user email
+      const usersCollection = collection(db, "users");
+      const q = query(usersCollection, where("email", "==", newTrade.userEmail));
+      const snapshot = await getDocs(q);
+      const userDoc = snapshot.docs[0];
+      const username = userDoc ? userDoc.data().displayName : ""; // Get the display name
+
       await addDoc(collection(db, "trades"), {
         ...newTrade,
         tradingPair: selectedPair,
         iconUrl: tradingPairs.find(pair => pair.pair === selectedPair)?.iconUrl || "",
+        username: username, // Add username to the trade document
       });
       resetForm();
       toast.success("Trade added successfully");
@@ -183,6 +194,7 @@ const TradeResultsManagement = () => {
       tradingPair: "",
       userEmail: "",
       iconUrl: "",
+      username: "", // Add default username
     });
     setSelectedPair(null);
   };
@@ -229,6 +241,19 @@ const TradeResultsManagement = () => {
     } catch (error) {
       console.error("Error fetching user email:", error);
       setPossibleEmails([]); // Clear possible emails on error
+    }
+  };
+
+  // Function to delete a trading pair
+  const handleDeletePair = async (pairId: string) => {
+    try {
+      const pairDoc = doc(db, "tradingPairs", pairId);
+      await deleteDoc(pairDoc); // Delete the trading pair document
+      toast.success("Trading pair deleted successfully");
+      await fetchTradingPairs(); // Refresh the trading pairs list
+    } catch (error) {
+      console.error("Error deleting trading pair:", error);
+      toast.error("Failed to delete trading pair");
     }
   };
 
@@ -311,7 +336,7 @@ const TradeResultsManagement = () => {
           {tradingPairs.map((pair) => (
             <div
               key={pair.id}
-              className={`flex items-center text-xs py-1 px-2 rounded-md cursor-pointer transition-colors ${
+              className={`relative flex items-center text-xs py-1 px-2 rounded-md cursor-pointer transition-colors ${
                 selectedPair === pair.pair
                   ? "bg-white text-black"
                   : "bg-gray-700 text-white hover:bg-gray-600"
@@ -328,6 +353,14 @@ const TradeResultsManagement = () => {
                 />
               )}
               {pair.pair}
+              <X
+                className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 cursor-pointer text-red-500 hover:text-red-700"
+                style={{ width: '15px', height: '15px' }} // Set the size of the icon
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent the click from triggering the pair selection
+                  handleDeletePair(pair.id); // Call the delete function
+                }}
+              />
             </div>
           ))}
           <div
@@ -374,11 +407,12 @@ const TradeResultsManagement = () => {
         className="mt-4 text-light rounded-lg shadow-md bg-transparent"
       >
         <TableHeader>
-          <TableColumn>Date</TableColumn>
-          <TableColumn>Type</TableColumn>
-          <TableColumn>Amount</TableColumn>
-          <TableColumn>User Email</TableColumn>
-          <TableColumn>Trading Pair</TableColumn>
+          <TableColumn key="date">Date</TableColumn>
+          <TableColumn key="type">Type</TableColumn>
+          <TableColumn key="amount">Amount</TableColumn>
+          <TableColumn key="userEmail">User Email</TableColumn>
+          <TableColumn key="username">Username</TableColumn>
+          <TableColumn key="tradingPair">Trading Pair</TableColumn>
         </TableHeader>
         <TableBody>
           {trades.map((trade) => (
@@ -387,6 +421,7 @@ const TradeResultsManagement = () => {
               <TableCell>{trade.type}</TableCell>
               <TableCell>{trade.amount}</TableCell>
               <TableCell>{trade.userEmail}</TableCell>
+              <TableCell>{trade.username}</TableCell>
               <TableCell>
                 <div className="flex items-center">
                   {trade.iconUrl && (

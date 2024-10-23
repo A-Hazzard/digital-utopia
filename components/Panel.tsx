@@ -86,6 +86,13 @@ export default function Panel() {
           </>
         )}
 
+        <Link
+          href="/resources"
+          className={`text-lg text-light ${pathname === "/resources" ? "underline font-bold" : ""}`}
+        >
+          Resources
+        </Link>
+
         <button className="bg-none inline w-fit" onClick={openModal}>
           Profile
         </button>
@@ -114,13 +121,6 @@ export default function Panel() {
               Withdrawals
             </Link>
 
-            {/* <Link
-              href="/admin/users" // New link for Users
-              className={pathname === "/admin/users" ? "underline" : ""}
-            >
-              Users
-            </Link> */}
-
             <Link
               href="/admin/trades"
               className={pathname === "/admin/trades" ? "underline" : ""}
@@ -129,10 +129,10 @@ export default function Panel() {
             </Link>
 
             <Link
-              href="/admin/resources"
-              className={pathname === "/admin/resources" ? "underline" : ""}
+              href="/admin/manage-resources"
+              className={pathname === "/admin/manage-resources" ? "underline" : ""}
             >
-              Resources
+              Manage Resources
             </Link>
           </>
         )}

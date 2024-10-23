@@ -74,44 +74,56 @@ const Navbar = () => {
               className="absolute top-4 right-4 cursor-pointer text-light"
             />
             <nav className="flex flex-col items-center gap-4">
-              {!isAdmin && (
-                <>
-                  <Link
-                    href="/dashboard"
-                    className={`text-lg text-light ${pathname === "/dashboard" ? "underline font-bold" : ""}`}
-                    onClick={toggleNavbar}
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    href="/invoices"
-                    className={`text-lg text-light ${
-                      pathname === "/invoices" ? "underline font-bold" : ""
-                    }`}
-                    onClick={toggleNavbar}
-                  >
-                    Invoices
-                  </Link>
-                  <Link
-                    href="/withdrawals"
-                    className={`text-lg text-light ${
-                      pathname === "/withdrawals" ? "underline font-bold" : ""
-                    }`}
-                    onClick={toggleNavbar}
-                  >
-                    Withdrawals
-                  </Link>
-                </>
-              )}
-              <button
-                className="bg-none text-light inline w-fit"
-                onClick={handleProfileClick}
+              <Link
+                href="/dashboard"
+                className={`text-lg text-light ${
+                  pathname === "/dashboard" ? "underline font-bold" : ""
+                }`}
+                onClick={toggleNavbar}
               >
-                Profile
-              </button>
+                Dashboard
+              </Link>
+              <Link
+                href="/invoices"
+                className={`text-lg text-light ${
+                  pathname === "/invoices" ? "underline font-bold" : ""
+                }`}
+                onClick={toggleNavbar}
+              >
+                Invoices
+              </Link>
+              <Link
+                href="/withdrawals"
+                className={`text-lg text-light ${
+                  pathname === "/withdrawals" ? "underline font-bold" : ""
+                }`}
+                onClick={toggleNavbar}
+              >
+                Withdrawals
+              </Link>
+              <Link
+                href="/resources"
+                className={`text-lg text-light ${
+                  pathname === "/resources" ? "underline font-bold" : ""
+                }`}
+                onClick={toggleNavbar}
+              >
+                Resources
+              </Link>
 
               {isAdmin && (
                 <>
+                  <Link
+                    href="/admin/manage-resources"
+                    className={`text-lg text-light ${
+                      pathname === "/admin/manage-resources"
+                        ? "underline font-bold"
+                        : ""
+                    }`}
+                    onClick={toggleNavbar}
+                  >
+                    Manage Resources
+                  </Link>
                   <Link
                     href="/admin/invoices"
                     className={`text-lg text-light ${
@@ -145,17 +157,6 @@ const Navbar = () => {
                   >
                     Withdrawals
                   </Link>
-                  {/* <Link
-                    href="/admin/users" // New link for Users
-                    className={`text-lg text-light ${
-                      pathname === "/admin/users"
-                        ? "underline font-bold"
-                        : ""
-                    }`}
-                    onClick={toggleNavbar}
-                  >
-                    Users
-                  </Link> */}
                   <Link
                     href="/admin/trades"
                     className={`text-lg text-light ${
@@ -165,26 +166,23 @@ const Navbar = () => {
                   >
                     Trade Results
                   </Link>
-                  <Link
-                    href="/admin/resources"
-                    className={`text-lg text-light ${
-                      pathname === "/admin/resources"
-                        ? "underline font-bold"
-                        : ""
-                    }`}
-                    onClick={toggleNavbar}
-                  >
-                    Resources
-                  </Link>
                 </>
               )}
-              <button
-                className="flex items-center gap-2 text-light"
-                onClick={handleSignOut}
-              >
-                <LogOut size={20} />
-                Sign Out
-              </button>
+              <div className="flex flex-col items-center gap-4">
+                <button
+                  className="bg-none text-light inline w-fit"
+                  onClick={handleProfileClick}
+                >
+                  Profile
+                </button>
+                <button
+                  className="-ml-6 flex items-center gap-2 text-light"
+                  onClick={handleSignOut}
+                >
+                  <LogOut size={20} />
+                  Sign Out
+                </button>
+              </div>
             </nav>
           </>
         )}

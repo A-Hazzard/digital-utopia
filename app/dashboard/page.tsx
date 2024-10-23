@@ -409,7 +409,7 @@ function Dashboard() {
             {!hasConfirmedInvoice && (
               <p className="text-red-500 text-sm mt-2">
                 Please pay your monthly subscription via the invoices page
-                before withdrawing funds.
+                before depositing or withdrawing funds.
               </p>
             )}
             {hasPendingWithdrawal && (

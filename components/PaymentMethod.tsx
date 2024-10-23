@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import { Button, Input } from "@nextui-org/react";
-import Image from "next/image";
-import ProofOfPayment from "./ProofOfPayment";
 import { auth } from "@/lib/firebase";
-import { QRCodeSVG } from "qrcode.react";
+import { Button } from "@nextui-org/react";
 import { Copy } from "lucide-react";
+import Image from "next/image";
+import { QRCodeSVG } from "qrcode.react";
+import React, { useState } from "react";
+import ProofOfPayment from "./ProofOfPayment";
 
 type PaymentMethodProps = {
   onBack: () => void;
