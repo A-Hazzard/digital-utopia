@@ -51,6 +51,7 @@ interface WithdrawalRequest {
   status: "pending" | "confirmed";
   address: string;
   withdrawalId: string;
+  userId: string; // Ensure this line is present
 }
 
 const WithdrawalManagement = () => {

@@ -1,4 +1,4 @@
-import { collection, getDocs } from "firebase/firestore";
+import { collection, Firestore, getDocs } from "firebase/firestore";
 
 export const validateTRC20Address = (address: string) => {
     return /^T[A-Za-z1-9]{33}$/.test(address);
@@ -14,7 +14,7 @@ export const formatAmount = (value: string, availableBalance: number) => {
     return floatValue.toFixed(2);
 };
 
-export const getWithdrawalCount = async (db: any) => {
+export const getWithdrawalCount = async (db: Firestore): Promise<number> => {
     const withdrawalsCollection = collection(db, "withdrawalRequests");
     const snapshot = await getDocs(withdrawalsCollection);
     return snapshot.docs.length;

@@ -1,24 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { formatDate } from "@/helpers/date";
+import { db, storage } from "@/lib/firebase";
 import {
-  Table,
   Button,
-  TableHeader,
-  TableColumn,
-  TableCell,
-  TableBody,
-  TableRow,
   Input,
   Pagination,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
 } from "@nextui-org/react";
-import { db, storage } from "@/lib/firebase";
-import { collection, getDocs, addDoc, onSnapshot, query, orderBy, limit, doc, deleteDoc } from "firebase/firestore";
-import Image from "next/image";
-import { formatDate } from "@/helpers/date";
-import { toast } from "react-toastify";
+import { addDoc, collection, getDocs, limit, onSnapshot, orderBy, query } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { X } from "lucide-react"; // Import the X icon from lucide-react
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 // Define the Trade interface
 interface Trade {

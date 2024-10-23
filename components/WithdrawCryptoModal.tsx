@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button, Spinner } from "@nextui-org/react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -45,34 +45,7 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
   const [hasPendingWithdrawal, setHasPendingWithdrawal] = useState(false);
   const [pendingWithdrawalId, setPendingWithdrawalId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchTotalProfits();
-    const unsubscribe = listenToPendingWithdrawals();
-    return () => unsubscribe();
-  }, []);
-
-  const listenToPendingWithdrawals = () => {
-    if (!userEmail) return () => {};
-
-    const withdrawalRequestsRef = collection(db, "withdrawalRequests");
-    const q = query(
-      withdrawalRequestsRef,
-      where("userEmail", "==", userEmail),
-      where("status", "==", "pending")
-    );
-
-    return onSnapshot(q, (snapshot) => {
-      if (!snapshot.empty) {
-        setHasPendingWithdrawal(true);
-        setPendingWithdrawalId(snapshot.docs[0].id);
-      } else {
-        setHasPendingWithdrawal(false);
-        setPendingWithdrawalId(null);
-      }
-    });
-  };
-
-  const fetchTotalProfits = async () => {
+  const fetchTotalProfits = useCallback(async () => {
     setFetchingBalance(true);
     try {
       const tradesCollection = collection(db, "trades");
@@ -92,7 +65,34 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
     } finally {
       setFetchingBalance(false);
     }
-  };
+  }, [userEmail]);
+
+  const listenToPendingWithdrawals = useCallback(() => {
+    if (!userEmail) return () => {};
+
+    const withdrawalRequestsRef = collection(db, "withdrawalRequests");
+    const q = query(
+      withdrawalRequestsRef,
+      where("userEmail", "==", userEmail),
+      where("status", "==", "pending")
+    );
+
+    return onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        setHasPendingWithdrawal(true);
+        setPendingWithdrawalId(snapshot.docs[0].id);
+      } else {
+        setHasPendingWithdrawal(false);
+        setPendingWithdrawalId(null);
+      }
+    });
+  }, [userEmail]);
+
+  useEffect(() => {
+    fetchTotalProfits();
+    const unsubscribe = listenToPendingWithdrawals();
+    return () => unsubscribe();
+  }, [fetchTotalProfits, listenToPendingWithdrawals]);
 
   useEffect(() => {
     const isValidAddress = validateTRC20Address(address);

@@ -41,6 +41,7 @@ interface WithdrawalRequest {
   status: "pending" | "confirmed";
   address: string;
   withdrawalId: string;
+  userId: string;
 }
 
 type SetState<T> = Dispatch<SetStateAction<T>>;
@@ -95,6 +96,7 @@ export const listenToWithdrawalRequests = (
       const requestsData = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
+        userId: doc.data().userId,
       })) as WithdrawalRequest[];
       setWithdrawalRequests(requestsData);
       setLastVisibleRequest(snapshot.docs[snapshot.docs.length - 1]);
@@ -188,20 +190,25 @@ export const handleUpdateStatus = async (
         amount: requestData.amount,
         date: Timestamp.now(),
         status: "confirmed",
-        withdrawalId: requestData.withdrawalId, // Use withdrawalId as the document ID
+        withdrawalId: requestData.withdrawalId,
         address: requestData.address,
       };
 
-      // Save the document with withdrawalId as the document ID
-      await setDoc(doc(db, "withdrawals", requestData.withdrawalId), withdrawalData);
+      await setDoc(
+        doc(db, "withdrawals", requestData.withdrawalId),
+        withdrawalData
+      );
       await deductFromUserWallet(requestData.userId, requestData.amount);
     } else if (newStatus === "pending" && !isRequest) {
       const requestDoc = await getDoc(docRef);
       const requestData = requestDoc.data();
 
       if (requestData) {
-        // Delete the withdrawal document using withdrawalId
-        const withdrawalDocRef = doc(db, "withdrawals", requestData.withdrawalId);
+        const withdrawalDocRef = doc(
+          db,
+          "withdrawals",
+          requestData.withdrawalId
+        );
         await deleteDoc(withdrawalDocRef);
         toast.success("Withdrawal reverted and deleted.");
       } else {
@@ -209,7 +216,6 @@ export const handleUpdateStatus = async (
       }
     }
 
-    // Update the withdrawal request status to pending
     await updateDoc(docRef, { status: newStatus });
     toast.success(`Status updated to ${newStatus}`);
   } catch (error) {
@@ -233,20 +239,6 @@ const deductFromUserWallet = async (userId: string, amount: number) => {
   } catch (error) {
     console.error("Error deducting from user wallet:", error);
     toast.error("Error deducting from user wallet. Please try again.");
-  }
-};
-
-const addToUserWallet = async (userId: string, amount: number) => {
-  const userDocRef = doc(db, "users", userId);
-  try {
-    const userDoc = await getDoc(userDocRef);
-    const currentBalance = userDoc.data()?.balance || 0;
-
-    await updateDoc(userDocRef, { balance: currentBalance + amount });
-    toast.success("Amount added back to user wallet.");
-  } catch (error) {
-    console.error("Error adding to user wallet:", error);
-    toast.error("Error adding to user wallet. Please try again.");
   }
 };
 
@@ -312,7 +304,7 @@ export const handleSearch = async (
   }
 };
 
-export const confirmWithdrawal = async (requestData: any) => {
+export const confirmWithdrawal = async (requestData: WithdrawalRequest) => {
   const withdrawalData = {
     userEmail: requestData.userEmail,
     username: requestData.username,
@@ -323,12 +315,17 @@ export const confirmWithdrawal = async (requestData: any) => {
     address: requestData.address,
   };
 
-  // Save the document with withdrawalId as the document ID
-  await setDoc(doc(db, "withdrawals", requestData.withdrawalId), withdrawalData);
+  await setDoc(
+    doc(db, "withdrawals", requestData.withdrawalId),
+    withdrawalData
+  );
   await deductFromUserWallet(requestData.userId, requestData.amount);
 };
 
-export const revertWithdrawal = async (withdrawalId: string, requestId: string) => {
+export const revertWithdrawal = async (
+  withdrawalId: string,
+  requestId: string
+) => {
   try {
     const withdrawalDocRef = doc(db, "withdrawals", withdrawalId);
     const withdrawalDoc = await getDoc(withdrawalDocRef);
@@ -337,7 +334,6 @@ export const revertWithdrawal = async (withdrawalId: string, requestId: string) 
       await deleteDoc(withdrawalDocRef);
       toast.success("Withdrawal reverted and deleted.");
 
-      // Update the corresponding withdrawal request back to pending
       const requestDocRef = doc(db, "withdrawalRequests", requestId);
       await updateDoc(requestDocRef, { status: "pending" });
       toast.success("Withdrawal request status updated to pending.");
