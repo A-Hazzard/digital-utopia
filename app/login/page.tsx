@@ -14,6 +14,8 @@ import { useEffect, useState } from "react";
 import { auth } from "../../lib/firebase";
 import styles from "./login.module.css";
 import Layout from "../common/Layout";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -31,6 +33,20 @@ export default function Login() {
     setIsLoading(true);
     setError("");
     try {
+      // Check if the user account is disabled
+      const userQuery = query(collection(db, "users"), where("email", "==", email));
+      const querySnapshot = await getDocs(userQuery);
+
+      if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0].data();
+        if (userDoc.isDisabled) {
+          setError("Your account is disabled. Please contact support.");
+          setIsLoading(false);
+          return; // Exit if the account is disabled
+        }
+      }
+
+      // Proceed with login if the account is not disabled
       if (isPasswordLogin) {
         await signInWithEmailAndPassword(auth, email, password);
         router.push("/dashboard");

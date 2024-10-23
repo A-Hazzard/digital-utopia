@@ -52,12 +52,13 @@ export default function Register() {
       if (user) {
         await updateProfile(user, { displayName: name });
 
-        // Store user info in Firestore
+        // Store user info in Firestore, including isDisabled set to false
         await addDoc(collection(db, "users"), {
           uid: user.uid,
           email: user.email,
           displayName: name,
           createdAt: new Date(),
+          isDisabled: false, // Set isDisabled to false
         });
 
         if (user.email) {

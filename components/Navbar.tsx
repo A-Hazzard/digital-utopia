@@ -166,6 +166,15 @@ const Navbar = () => {
                   >
                     Trade Results
                   </Link>
+                  <Link
+                    href="/admin/user-management"
+                    className={`text-lg text-light ${
+                      pathname === "/admin/user-management" ? "underline font-bold" : ""
+                    }`}
+                    onClick={toggleNavbar}
+                  >
+                    User Management
+                  </Link>
                 </>
               )}
               <div className="flex flex-col items-center gap-4">

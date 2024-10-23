@@ -134,6 +134,13 @@ export default function Panel() {
             >
               Manage Resources
             </Link>
+
+            <Link
+              href="/admin/user-management"
+              className={pathname === "/admin/user-management" ? "underline" : ""}
+            >
+              User Management
+            </Link>
           </>
         )}
       </ul>
