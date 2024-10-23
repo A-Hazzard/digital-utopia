@@ -1,21 +1,21 @@
 import { db } from "@/lib/firebase";
 import {
-  collection,
-  doc,
-  DocumentData,
-  getDocs,
-  limit,
-  onSnapshot,
-  orderBy,
-  query,
-  QueryDocumentSnapshot,
-  startAfter,
-  Timestamp,
-  updateDoc,
-  where,
-  setDoc,
-  getDoc,
-  deleteDoc,
+    collection,
+    doc,
+    DocumentData,
+    getDoc,
+    getDocs,
+    limit,
+    onSnapshot,
+    orderBy,
+    query,
+    QueryDocumentSnapshot,
+    runTransaction,
+    setDoc,
+    startAfter,
+    Timestamp,
+    updateDoc,
+    where
 } from "firebase/firestore";
 import { Dispatch, SetStateAction } from "react";
 import { toast } from "react-toastify";
@@ -169,58 +169,53 @@ export const fetchMoreWithdrawalRequests = async (
 };
 
 export const handleUpdateStatus = async (
-  id: string,
-  newStatus: "pending" | "confirmed",
-  isRequest: boolean = false
+  requestId: string,
+  withdrawalId: string,
+  newStatus: string,
+  isConfirmation: boolean
 ) => {
-  const docRef = doc(db, isRequest ? "withdrawalRequests" : "withdrawals", id);
-
   try {
-    if (newStatus === "confirmed" && isRequest) {
-      const requestDoc = await getDoc(docRef);
-      const requestData = requestDoc.data();
+    await runTransaction(db, async (transaction) => {
+      // Perform all reads first
+      const requestRef = doc(db, "withdrawalRequests", requestId);
+      const requestDoc = await transaction.get(requestRef);
 
-      if (!requestData) {
-        throw new Error("Request data is undefined");
+      if (!requestDoc.exists()) {
+        throw new Error("Withdrawal request not found");
       }
 
-      const withdrawalData = {
-        userEmail: requestData.userEmail,
-        username: requestData.username,
-        amount: requestData.amount,
-        date: Timestamp.now(),
-        status: "confirmed",
-        withdrawalId: requestData.withdrawalId,
-        address: requestData.address,
-      };
-
-      await setDoc(
-        doc(db, "withdrawals", requestData.withdrawalId),
-        withdrawalData
-      );
-      await deductFromUserWallet(requestData.userId, requestData.amount);
-    } else if (newStatus === "pending" && !isRequest) {
-      const requestDoc = await getDoc(docRef);
       const requestData = requestDoc.data();
+      const { userEmail, amount } = requestData;
 
-      if (requestData) {
-        const withdrawalDocRef = doc(
-          db,
-          "withdrawals",
-          requestData.withdrawalId
-        );
-        await deleteDoc(withdrawalDocRef);
-        toast.success("Withdrawal reverted and deleted.");
-      } else {
-        toast.error("No matching withdrawal found to revert.");
+      const profitRef = doc(db, "profits", userEmail);
+      const profitDoc = await transaction.get(profitRef);
+
+      if (!profitDoc.exists()) {
+        throw new Error("Profit document not found");
       }
-    }
 
-    await updateDoc(docRef, { status: newStatus });
-    toast.success(`Status updated to ${newStatus}`);
+      // Now perform all writes
+      if (isConfirmation) {
+        const currentProfit = profitDoc.data().profit || 0;
+        const newProfit = Math.max(currentProfit - amount, 0);
+        transaction.update(profitRef, { profit: newProfit });
+      }
+
+      transaction.update(requestRef, { status: newStatus });
+
+      // Use the withdrawalId as the document ID for the withdrawal
+      const withdrawalRef = doc(db, "withdrawals", withdrawalId);
+      transaction.set(withdrawalRef, {
+        ...requestData,
+        status: newStatus,
+        withdrawalId: withdrawalId,
+      });
+    });
+
+    toast.success(`Withdrawal ${isConfirmation ? "confirmed" : "updated"} successfully`);
   } catch (error) {
-    console.error("Error updating status:", error);
-    toast.error("Error updating status. Please try again.");
+    console.error("Error updating withdrawal status:", error);
+    toast.error("Failed to update withdrawal status");
   }
 };
 
@@ -322,26 +317,52 @@ export const confirmWithdrawal = async (requestData: WithdrawalRequest) => {
   await deductFromUserWallet(requestData.userId, requestData.amount);
 };
 
-export const revertWithdrawal = async (
-  withdrawalId: string,
-  requestId: string
-) => {
+export const revertWithdrawal = async (withdrawalId: string) => {
   try {
-    const withdrawalDocRef = doc(db, "withdrawals", withdrawalId);
-    const withdrawalDoc = await getDoc(withdrawalDocRef);
+    await runTransaction(db, async (transaction) => {
+      // Read operations
+      const withdrawalRef = doc(db, "withdrawals", withdrawalId);
+      const withdrawalDoc = await transaction.get(withdrawalRef);
 
-    if (withdrawalDoc.exists()) {
-      await deleteDoc(withdrawalDocRef);
-      toast.success("Withdrawal reverted and deleted.");
+      if (!withdrawalDoc.exists()) {
+        throw new Error("Withdrawal not found");
+      }
 
-      const requestDocRef = doc(db, "withdrawalRequests", requestId);
-      await updateDoc(requestDocRef, { status: "pending" });
-      toast.success("Withdrawal request status updated to pending.");
-    } else {
-      toast.error("No matching withdrawal found to revert.");
-    }
+      const withdrawalData = withdrawalDoc.data();
+      const { userEmail, amount } = withdrawalData;
+
+      // Find the corresponding withdrawal request
+      const requestsRef = collection(db, "withdrawalRequests");
+      const requestQuery = query(requestsRef, where("withdrawalId", "==", withdrawalId));
+      const requestSnapshot = await getDocs(requestQuery);
+
+      if (requestSnapshot.empty) {
+        throw new Error("Corresponding withdrawal request not found");
+      }
+
+      const requestDoc = requestSnapshot.docs[0];
+
+      const profitRef = doc(db, "profits", userEmail);
+      const profitDoc = await transaction.get(profitRef);
+
+      if (!profitDoc.exists()) {
+        throw new Error("Profit document not found");
+      }
+
+      // Write operations
+      const currentProfit = profitDoc.data().profit || 0;
+      transaction.update(profitRef, { profit: currentProfit + amount });
+
+      // Delete the withdrawal document
+      transaction.delete(withdrawalRef);
+
+      // Update the withdrawal request status back to pending
+      transaction.update(requestDoc.ref, { status: "pending" });
+    });
+
+    toast.success("Withdrawal reverted successfully");
   } catch (error) {
     console.error("Error reverting withdrawal:", error);
-    toast.error("Error reverting withdrawal. Please try again.");
+    toast.error("Failed to revert withdrawal");
   }
 };

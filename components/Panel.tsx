@@ -62,8 +62,8 @@ export default function Panel() {
         {!isAdmin && (
           <>
             <Link
-              href="/dashboard"
-              className={`text-lg text-light ${pathname === "/dashboard" ? "underline font-bold" : ""}`}
+              href="/"
+              className={`text-lg text-light ${pathname === "/" ? "underline font-bold" : ""}`}
             >
               Dashboard
             </Link>

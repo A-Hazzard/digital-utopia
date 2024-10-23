@@ -66,7 +66,7 @@ export default function Register() {
         }
       }
 
-      router.push("/dashboard");
+      router.push("/");
     } catch (error: unknown) {
       if (error instanceof Error) {
         if (error.message === 'Failed to send email') {
@@ -93,7 +93,7 @@ export default function Register() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(true);
-        router.push("/dashboard");
+        router.push("/");
       } else {
         setUser(false);
         setIsPageLoading(false);

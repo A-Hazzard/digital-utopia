@@ -75,9 +75,9 @@ const Navbar = () => {
             />
             <nav className="flex flex-col items-center gap-4">
               <Link
-                href="/dashboard"
+                href="/"
                 className={`text-lg text-light ${
-                  pathname === "/dashboard" ? "underline font-bold" : ""
+                  pathname === "/" ? "underline font-bold" : ""
                 }`}
                 onClick={toggleNavbar}
               >

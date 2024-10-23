@@ -13,12 +13,12 @@ import {
   TableHeader,
   TableRow,
 } from "@nextui-org/react";
-import { addDoc, collection, getDocs, limit, onSnapshot, orderBy, query, where, doc, deleteDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDocs, limit, onSnapshot, orderBy, query, runTransaction, where } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { X } from "lucide-react"; // Import the X icon
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { X } from "lucide-react"; // Import the X icon
 
 // Define the Trade interface
 interface Trade {
@@ -37,6 +37,14 @@ interface TradingPair {
   id: string;
   pair: string;
   iconUrl: string;
+}
+
+// Define the ProfitData interface
+interface ProfitData {
+  profit: number;
+  username: string;
+  email?: string;
+  [key: string]: number | string | undefined; // Replace 'any' with more specific types
 }
 
 const ITEMS_PER_PAGE = 50;
@@ -150,19 +158,62 @@ const TradeResultsManagement = () => {
       const q = query(usersCollection, where("email", "==", newTrade.userEmail));
       const snapshot = await getDocs(q);
       const userDoc = snapshot.docs[0];
-      const username = userDoc ? userDoc.data().displayName : ""; // Get the display name
+      const username = userDoc ? userDoc.data().displayName : "";
 
+      // Add the trade
       await addDoc(collection(db, "trades"), {
         ...newTrade,
         tradingPair: selectedPair,
         iconUrl: tradingPairs.find(pair => pair.pair === selectedPair)?.iconUrl || "",
-        username: username, // Add username to the trade document
+        username: username,
       });
+
+      // Update or create the profit document
+      const profitAmount = newTrade.type === "win" ? newTrade.amount : -newTrade.amount;
+      await updateUserProfit(newTrade.userEmail, username, profitAmount);
+
       resetForm();
       toast.success("Trade added successfully");
     } catch (error) {
       console.error("Error adding trade:", error);
       toast.error("Failed to add trade");
+    }
+  };
+
+  // Function to update user profit
+  const updateUserProfit = async (userEmail: string, username: string, profitAmount: number) => {
+    const profitRef = doc(db, "profits", userEmail);
+    
+    try {
+      await runTransaction(db, async (transaction) => {
+        const profitDoc = await transaction.get(profitRef);
+        if (profitDoc.exists()) {
+          // If the document exists, update the profit
+          const currentData = profitDoc.data() as ProfitData;
+          const currentProfit = currentData.profit || 0;
+          const updateData: ProfitData = {
+            profit: currentProfit + profitAmount,
+            username: username // Ensure username is always up to date
+          };
+
+          // Check if email field exists, if not, add it
+          if (!currentData.email) {
+            updateData.email = userEmail;
+          }
+
+          transaction.update(profitRef, updateData);
+        } else {
+          // If the document doesn't exist, create it
+          transaction.set(profitRef, {
+            profit: profitAmount,
+            username: username,
+            email: userEmail // Add email field
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Error updating profit:", error);
+      throw error; // Rethrow the error to be caught in the calling function
     }
   };
 

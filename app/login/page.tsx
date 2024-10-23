@@ -49,7 +49,7 @@ export default function Login() {
       // Proceed with login if the account is not disabled
       if (isPasswordLogin) {
         await signInWithEmailAndPassword(auth, email, password);
-        router.push("/dashboard");
+        router.push("/");
       } else {
         window.localStorage.setItem("emailForSignIn", email);
         await sendSignInLink(email);
@@ -79,7 +79,7 @@ export default function Login() {
         try {
           await signInWithEmailLink(auth, email || "", window.location.href);
           window.localStorage.removeItem("emailForSignIn");
-          router.push("/dashboard");
+          router.push("/");
         } catch (error) {
           console.error("Error signing in with email link:", error);
           setError("Failed to sign in with email link. Please try again.");
@@ -90,7 +90,7 @@ export default function Login() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(true);
-        router.push("/dashboard");
+        router.push("/");
       } else {
         setUser(false);
         setIsPageLoading(false);

@@ -126,6 +126,14 @@ const WithdrawalManagement = () => {
     );
   };
 
+  const handleConfirmWithdrawal = async (request: WithdrawalRequest) => {
+    await handleUpdateStatus(request.id, request.withdrawalId, "confirmed", true);
+  };
+
+  const handleRevertWithdrawal = async (withdrawalId: string) => {
+    await revertWithdrawal(withdrawalId);
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -246,9 +254,7 @@ const WithdrawalManagement = () => {
                   <Button
                     size="sm"
                     color="primary"
-                    onClick={() =>
-                      handleUpdateStatus(request.id, "confirmed", true)
-                    }
+                    onClick={() => handleConfirmWithdrawal(request)}
                   >
                     Confirm
                   </Button>
@@ -256,7 +262,7 @@ const WithdrawalManagement = () => {
                   <Button
                     size="sm"
                     color="warning"
-                    onClick={() => revertWithdrawal(request.withdrawalId, request.id)}
+                    onClick={() => handleRevertWithdrawal(request.withdrawalId)}
                   >
                     Revert
                   </Button>
