@@ -85,6 +85,7 @@ function Dashboard() {
         }
       } else {
         navigation.push("/login");
+        setLoading(false); // Set loading to false when user is not logged in
       }
     });
 

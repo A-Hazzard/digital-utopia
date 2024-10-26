@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Spinner, Input } from "@nextui-org/react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import Layout from "@/app/common/Layout";
 import { formatDate } from "@/helpers/date";
+import { User } from "firebase/auth";
 
 interface Withdrawal {
   id: string;
@@ -16,33 +18,41 @@ interface Withdrawal {
 }
 
 export default function Withdrawals() {
+  const router = useRouter();
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    const fetchWithdrawals = async () => {
-      setLoading(true);
-      try {
-        const userEmail = auth.currentUser?.email;
-        const withdrawalsCollection = collection(db, "withdrawals");
-        const q = query(withdrawalsCollection, where("userEmail", "==", userEmail));
-        const withdrawalsSnapshot = await getDocs(q);
-        const withdrawalsData = withdrawalsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          amount: parseFloat(doc.data().amount) || 0, // Ensure amount is a number
-        })) as Withdrawal[];
-        setWithdrawals(withdrawalsData);
-      } catch (error) {
-        console.error("Error fetching withdrawals:", error);
-      } finally {
-        setLoading(false);
+    const unsubscribe = auth.onAuthStateChanged((user: User | null) => {
+      if (!user) {
+        router.push("/login");
+      } else {
+        fetchWithdrawals(user.email || "");
       }
-    };
+    });
 
-    fetchWithdrawals();
-  }, []);
+    return () => unsubscribe();
+  }, [router]);
+
+  const fetchWithdrawals = async (userEmail: string) => {
+    setLoading(true);
+    try {
+      const withdrawalsCollection = collection(db, "withdrawals");
+      const q = query(withdrawalsCollection, where("userEmail", "==", userEmail));
+      const withdrawalsSnapshot = await getDocs(q);
+      const withdrawalsData = withdrawalsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        amount: parseFloat(doc.data().amount) || 0,
+      })) as Withdrawal[];
+      setWithdrawals(withdrawalsData);
+    } catch (error) {
+      console.error("Error fetching withdrawals:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredWithdrawals = withdrawals.filter(withdrawal => {
     const dateMatch = formatDate(withdrawal.date).toLowerCase().includes(searchTerm.toLowerCase());

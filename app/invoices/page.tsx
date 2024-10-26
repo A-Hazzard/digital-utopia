@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Layout from "@/app/common/Layout";
 import { Invoice } from '@/types/invoice';
 import InvoiceModal from '@/components/InvoiceModal';
@@ -10,8 +11,10 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { auth } from "@/lib/firebase"; 
 import { Spinner, Input, Checkbox } from "@nextui-org/react";
 import { formatDate } from "@/helpers/date";
+import { User } from "firebase/auth";
 
 const InvoicesPage = () => {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 100; // Set items per page to 100
@@ -26,29 +29,35 @@ const InvoicesPage = () => {
   });
 
   useEffect(() => {
-    const fetchInvoices = async () => {
-      if (auth.currentUser?.uid) {
-        const invoicesRef = collection(db, "invoices");
-        const q = query(invoicesRef, where("userEmail", "==", auth.currentUser?.email));
-        const querySnapshot = await getDocs(q);
-        const invoices: Invoice[] = querySnapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            invoiceNumber: data.invoiceNumber || "",
-            description: data.description || "",
-            amount: parseFloat(data.amount) || 0,
-            date: data.date instanceof Date ? data.date : new Date(data.date), 
-            status: data.status || "",
-          } as Invoice; 
-        });
-        setInvoicesData(invoices);
+    const unsubscribe = auth.onAuthStateChanged((user: User | null) => {
+      if (!user) {
+        router.push("/login");
+      } else {
+        fetchInvoices(user.email || "");
       }
-      setLoading(false);
-    };
+    });
 
-    fetchInvoices();
-  }, []);
+    return () => unsubscribe();
+  }, [router]);
+
+  const fetchInvoices = async (userEmail: string) => {
+    const invoicesRef = collection(db, "invoices");
+    const q = query(invoicesRef, where("userEmail", "==", userEmail));
+    const querySnapshot = await getDocs(q);
+    const invoices: Invoice[] = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        invoiceNumber: data.invoiceNumber || "",
+        description: data.description || "",
+        amount: parseFloat(data.amount) || 0,
+        date: data.date instanceof Date ? data.date : new Date(data.date), 
+        status: data.status || "",
+      } as Invoice; 
+    });
+    setInvoicesData(invoices);
+    setLoading(false);
+  };
 
   const filteredInvoices = invoicesData.filter(invoice => {
     const invoiceNumberMatch = invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase());

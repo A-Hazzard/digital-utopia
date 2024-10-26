@@ -26,11 +26,12 @@ const withAdminProtection = <P extends object>(WrappedComponent: React.Component
           );
         } else {
           setIsAdmin(false); // Reset if no user is logged in
+          router.push("/login"); // Redirect to login if not authenticated
         }
       });
 
       return () => unsubscribe(); // Cleanup subscription on unmount
-    }, []);
+    }, [router]);
 
     useEffect(() => {
       if (isAdmin === false) {

@@ -5,7 +5,9 @@ import { db } from "@/lib/firebase";
 import { collection, onSnapshot, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Spinner } from "@nextui-org/react";
-
+import { auth } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
+import { User } from "firebase/auth";
 interface Resource {
   id: string;
   title: string;
@@ -15,8 +17,20 @@ interface Resource {
 export default function ResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const router = useRouter();
   useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user: User | null) => {
+      if (!user) {
+        router.push("/login");
+      } else {
+        fetchResources();
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  const fetchResources = () => {
     const resourcesQuery = query(collection(db, "resources"));
     const unsubscribe = onSnapshot(resourcesQuery, (snapshot) => {
       const resourcesData = snapshot.docs.map((doc) => ({
@@ -28,7 +42,7 @@ export default function ResourcesPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  };
 
   if (loading) {
     return (
