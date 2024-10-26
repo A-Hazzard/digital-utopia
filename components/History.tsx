@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Calendar, CheckCircle, Clock } from "lucide-react";
-import { Skeleton } from "@nextui-org/react";
+import { Spinner } from "@nextui-org/react";
 import { formatDate } from "@/helpers/date";
 import Image from "next/image";
 import { Timestamp } from "firebase/firestore";
@@ -27,7 +27,7 @@ export default function History({ loading, trades }: HistoryProps) {
   if (loading) {
     return (
       <div className="flex justify-center">
-        <Skeleton className="h-10 w-full" />
+        <Spinner color="default" />
       </div>
     );
   }

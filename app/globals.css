@@ -93,3 +93,7 @@ body {
 .bg-content1{
   background-color: var(--dark) !important;
 }
+
+.select-item-text {
+  color: #ffffff; 
+}
