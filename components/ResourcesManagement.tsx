@@ -61,32 +61,32 @@ const ResourcesManagement = () => {
 
   const handleAddCategory = async () => {
     try {
-     
+
       await addDoc(collection(db, "categories"), {
-        category: newCategory, 
+        category: newCategory,
       });
 
       toast.success("Category added successfully");
-      setNewCategory(""); 
-      setIsDropdownOpen(false); 
+      setNewCategory("");
+      setIsDropdownOpen(false);
     } catch (error) {
       console.error("Error adding category:", error);
       toast.error("Failed to add category");
     }
   };
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-// Function to handle checkbox change
-const handleCategoryChange = (category: string) => {
-  setSelectedCategories(prevSelected =>
-    prevSelected.includes(category)
-      ? prevSelected.filter(c => c !== category)
-      : [...prevSelected, category]
-  );
-};
+  // Function to handle checkbox change
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategories(prevSelected =>
+      prevSelected.includes(category)
+        ? prevSelected.filter(c => c !== category)
+        : [...prevSelected, category]
+    );
+  };
 
-  const [categories, setCategories] = useState<Category[]>([]); 
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     const categoriesCollection = collection(db, "categories");
@@ -94,11 +94,11 @@ const handleCategoryChange = (category: string) => {
       const categoriesData = snapshot.docs.map((doc) => ({
         id: doc.id,
         category: doc.data().category,
-      })) as Category[]; 
+      })) as Category[];
       setCategories(categoriesData);
     });
 
-    return () => unsubscribe(); 
+    return () => unsubscribe();
   }, []);
 
   const handleSearchResourcesByTitle = async (searchQuery: string) => {
@@ -177,6 +177,35 @@ const handleCategoryChange = (category: string) => {
 
     return () => unsubscribe();
   };
+  const [isDeleteDropdownOpen, setIsDeleteDropdownOpen] = useState(false);
+  const [categoriesToDelete, setCategoriesToDelete] = useState<string[]>([]);
+
+  const handleCategoryDeleteChange = (categoryId: string) => {
+    setCategoriesToDelete(prevSelected =>
+      prevSelected.includes(categoryId)
+        ? prevSelected.filter(id => id !== categoryId)
+        : [...prevSelected, categoryId]
+    );
+  };
+
+
+
+  const handleDeleteSelectedCategories = async () => {
+    const confirmDelete = window.confirm("Are you sure you want to delete the selected categories?");
+    if (!confirmDelete) return;
+
+    try {
+      const deletePromises = categoriesToDelete.map(categoryId =>
+        deleteDoc(doc(db, "categories", categoryId))
+      );
+      await Promise.all(deletePromises);
+      toast.success("Selected categories deleted successfully");
+      setCategoriesToDelete([]); // Clear selected categories after deletion
+    } catch (error) {
+      console.error("Error deleting categories:", error);
+      toast.error("Failed to delete selected categories");
+    }
+  };
 
   return (
     <div className="space-y-4 text-light">
@@ -201,7 +230,7 @@ const handleCategoryChange = (category: string) => {
           onChange={(e) => setNewResource({ ...newResource, category: e.target.value })}
           className="text-light"
         >
-          <SelectItem key="Select a category" value="category" className="select-item-text">
+          <SelectItem key="Select a category" value="">
             Select a category
           </SelectItem>
           {categories.map((category) => (
@@ -210,13 +239,14 @@ const handleCategoryChange = (category: string) => {
             </SelectItem>
           ))}
         </Select>
+        
       </div>
       <div className=" space-y-2 md:space-x-4">
-      <Button onClick={handleAddResource} color="primary">Add Resource</Button>
-      <Button onClick={handleSearchAndFilterResources} color="primary">Search Resources</Button>
-      <Button onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)} color="primary">
-        Filter Resources
-      </Button>
+        <Button onClick={handleAddResource} color="primary">Add Resource</Button>
+        <Button onClick={handleSearchAndFilterResources} color="primary">Search Resources</Button>
+        <Button onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)} color="primary">
+          Filter Resources
+        </Button>
       </div>
 
       {isFilterDropdownOpen && (
@@ -235,13 +265,13 @@ const handleCategoryChange = (category: string) => {
             </div>
           ))}
           <div className=" space-y-2 md:space-x-4">
-          <Button onClick={handleFilterResourcesByCategory} color="primary">Apply Filter</Button>
-          <Button onClick={handleClearFilter} color="secondary">Clear</Button>
+            <Button onClick={handleFilterResourcesByCategory} color="primary">Apply Filter</Button>
+            <Button onClick={handleClearFilter} color="secondary">Clear</Button>
           </div>
         </div>
       )}
       <hr className="my-4" />
-
+      <div className=" space-y-2 md:space-x-4">
       <Button onClick={() => setIsDropdownOpen(!isDropdownOpen)} color="primary">Add Category</Button>
       {isDropdownOpen && (
         <div className="mt-2">
@@ -255,7 +285,29 @@ const handleCategoryChange = (category: string) => {
           <Button onClick={handleAddCategory} color="primary">Submit</Button>
         </div>
       )}
-      
+      <Button onClick={() => setIsDeleteDropdownOpen(!isDeleteDropdownOpen)} color="primary">
+        Delete Categories
+      </Button>
+      </div>
+      {isDeleteDropdownOpen && (
+        <div className="dropdown-content">
+          <h3>Select Categories to Delete</h3>
+          {categories.map((category) => (
+            <div key={category.id}>
+              <input
+                type="checkbox"
+                id={`delete-${category.id}`}
+                value={category.category}
+                checked={categoriesToDelete.includes(category.id)}
+                onChange={() => handleCategoryDeleteChange(category.id)}
+              />
+              <label htmlFor={`delete-${category.id}`}>{category.category}</label>
+            </div>
+          ))}
+          <Button onClick={handleDeleteSelectedCategories} color="danger">Delete Selected</Button>
+        </div>
+      )}
+
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4 text-light">Existing Resources</h2>
         <div className="space-y-4">
