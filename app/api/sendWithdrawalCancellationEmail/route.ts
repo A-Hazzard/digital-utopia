@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 const sendCancellationNotification = async (cancellationData: {
   userEmail: string;
   withdrawalId: string;
-  username: string; // Add username
+  username: string;
 }) => {
   const logoPath = path.join(process.cwd(), "public", "logo.png");
 
@@ -61,7 +61,7 @@ const sendCancellationNotification = async (cancellationData: {
 const createCancellationTemplate = (cancellationData: {
   userEmail: string;
   withdrawalId: string;
-  username: string; // Add username
+  username: string;
 }) => {
   return `
     <!DOCTYPE html>
@@ -70,53 +70,20 @@ const createCancellationTemplate = (cancellationData: {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Withdrawal Request Cancelled</title>
-        <style>
-            body {
-                font-family: 'Montserrat', sans-serif;
-                margin: 0;
-                padding: 0;
-                background-color: #393E46;
-                color: #ffffff;
-            }
-            .container {
-                width: 100%;
-                max-width: 600px;
-                margin: 0 auto;
-                padding: 20px;
-                background-color: #16171a;
-                border-radius: 8px;
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            }
-            .header {
-                text-align: center;
-                margin-bottom: 1rem;
-            }
-            .content {
-                padding: 20px;
-                background-color: #141010;
-                border-radius: 8px;
-            }
-            .footer {
-                text-align: center;
-                padding: 20px 0;
-                font-size: 12px;
-                color: #B5B5B5;
-            }
-        </style>
     </head>
-    <body>
-        <div class="container">
-            <div class="header">
+    <body style="font-family: 'Montserrat', sans-serif; margin: 0; padding: 0; background-color: #393E46; color: #eeeeee;">
+        <div style="width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #16171a; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);">
+            <div style="text-align: center; margin-bottom: 1rem;">
                 <img src="cid:logo" alt="Digital Utopia Logo" aria-label="Digital Utopia Logo" style="max-width: 150px; height: auto;">
+            </div>
+            <div style="padding: 20px; background-color: #141010; border-radius: 8px;">
                 <h1>Withdrawal Request Cancelled</h1>
+                <p style="color: #eeeeee;">The user has cancelled their withdrawal request.</p>
+                <p style="color: #eeeeee;"><strong>User Email:</strong> ${cancellationData.userEmail}</p>
+                <p style="color: #eeeeee;"><strong>Withdrawal ID:</strong> ${cancellationData.withdrawalId}</p>
+                <p style="color: #eeeeee;"><strong>Username:</strong> ${cancellationData.username}</p>
             </div>
-            <div class="content">
-                <p>The user has cancelled their withdrawal request.</p>
-                <p><strong>User Email:</strong> ${cancellationData.userEmail}</p>
-                <p><strong>Withdrawal ID:</strong> ${cancellationData.withdrawalId}</p>
-                <p><strong>Username:</strong> ${cancellationData.username}</p>
-            </div>
-            <div class="footer">
+            <div style="text-align: center; padding: 20px 0; font-size: 12px; color: #B5B5B5;">
                 <p>&copy; 2024 Digital Utopia. All rights reserved.</p>
             </div>
         </div>

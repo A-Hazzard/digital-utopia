@@ -69,61 +69,20 @@ const createClientInvoiceConfirmationTemplate = (invoiceData: {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Invoice Payment Confirmation</title>
-        <style>
-            body {
-                font-family: 'Montserrat', sans-serif;
-                margin: 0;
-                padding: 0;
-                background-color: #393E46;
-                color: #ffffff; /* Change text color to white */
-            }
-            .container {
-                width: 100%;
-                max-width: 600px;
-                margin: 0 auto;
-                padding: 20px;
-                background-color: #16171a;
-                border-radius: 8px;
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            }
-            .header {
-                text-align: center;
-                margin-bottom: 1rem;
-            }
-            .header img {
-                max-width: 150px;
-                height: auto;
-            }
-            .content {
-                padding: 20px;
-                background-color: #141010;
-                border-radius: 8px;
-            }
-            .footer {
-                text-align: center;
-                padding: 20px 0;
-                font-size: 12px;
-                color: #B5B5B5; /* Change footer text color to a lighter shade */
-            }
-            .status {
-                font-weight: bold;
-                color: #4CAF50; /* Keep status color as is */
-            }
-        </style>
     </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <img src="cid:logo" alt="Digital Utopia Logo" aria-label="Digital Utopia Logo">
+    <body style="font-family: 'Montserrat', sans-serif; margin: 0; padding: 0; background-color: #393E46; color: #eeeeee;">
+        <div style="width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #16171a; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);">
+            <div style="text-align: center; margin-bottom: 1rem;">
+                <img src="cid:logo" alt="Digital Utopia Logo" aria-label="Digital Utopia Logo" style="max-width: 150px; height: auto;">
             </div>
-            <div class="content">
+            <div style="padding: 20px; background-color: #141010; border-radius: 8px;">
                 <h1>Invoice Payment Confirmation</h1>
-                <p>Your invoice has been marked as <span class="status">PAID</span>.</p>
+                <p style="color: #eeeeee;">Your invoice has been marked as <span style="font-weight: bold; color: #4CAF50;">PAID</span>.</p>
                 <p><strong>Invoice Number:</strong> ${invoiceData.invoiceNumber}</p>
                 <p><strong>Amount:</strong> ${invoiceData.amount} USDT</p>
-                <p>Thank you for your prompt payment. Your account is now active and in good standing.</p>
+                <p style="color: #eeeeee;">Thank you for your prompt payment. Your account is now active and in good standing.</p>
             </div>
-            <div class="footer">
+            <div style="text-align: center; padding: 20px 0; font-size: 12px; color: #B5B5B5;">
                 <p>&copy; 2024 Digital Utopia. All rights reserved.</p>
             </div>
         </div>
