@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button, Input, Select, SelectItem } from "@nextui-org/react";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, deleteDoc, doc, onSnapshot, query, where } from "firebase/firestore";
+import { Button, Input, Select, SelectItem } from "@nextui-org/react";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  query
+} from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 interface Resource {
@@ -20,7 +27,11 @@ interface Category {
 
 const ResourcesManagement = () => {
   const [resources, setResources] = useState<Resource[]>([]);
-  const [newResource, setNewResource] = useState({ title: "", youtubeUrl: "", category: "" });
+  const [newResource, setNewResource] = useState({
+    title: "",
+    youtubeUrl: "",
+    category: "",
+  });
 
   useEffect(() => {
     const resourcesQuery = query(collection(db, "resources"));
@@ -61,7 +72,6 @@ const ResourcesManagement = () => {
 
   const handleAddCategory = async () => {
     try {
-
       await addDoc(collection(db, "categories"), {
         category: newCategory,
       });
@@ -79,9 +89,9 @@ const ResourcesManagement = () => {
 
   // Function to handle checkbox change
   const handleCategoryChange = (category: string) => {
-    setSelectedCategories(prevSelected =>
+    setSelectedCategories((prevSelected) =>
       prevSelected.includes(category)
-        ? prevSelected.filter(c => c !== category)
+        ? prevSelected.filter((c) => c !== category)
         : [...prevSelected, category]
     );
   };
@@ -101,24 +111,24 @@ const ResourcesManagement = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleSearchResourcesByTitle = async (searchQuery: string) => {
-    const resourcesQuery = query(collection(db, "resources"));
-    const unsubscribe = onSnapshot(resourcesQuery, (snapshot) => {
-      const resourcesData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Resource[];
+  // const handleSearchResourcesByTitle = async (searchQuery: string) => {
+  //   const resourcesQuery = query(collection(db, "resources"));
+  //   const unsubscribe = onSnapshot(resourcesQuery, (snapshot) => {
+  //     const resourcesData = snapshot.docs.map((doc) => ({
+  //       id: doc.id,
+  //       ...doc.data(),
+  //     })) as Resource[];
 
-      // Search resources that contain the search query in the title
-      const searchedResources = resourcesData.filter(resource =>
-        resource.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  //     // Search resources that contain the search query in the title
+  //     const searchedResources = resourcesData.filter((resource) =>
+  //       resource.title.toLowerCase().includes(searchQuery.toLowerCase())
+  //     );
 
-      setResources(searchedResources);
-    });
+  //     setResources(searchedResources);
+  //   });
 
-    return () => unsubscribe();
-  };
+  //   return () => unsubscribe();
+  // };
 
   const handleFilterResourcesByCategory = () => {
     const resourcesQuery = query(collection(db, "resources"));
@@ -129,7 +139,7 @@ const ResourcesManagement = () => {
       })) as Resource[];
 
       // Filter resources that match the selected categories
-      const filteredResources = resourcesData.filter(resource =>
+      const filteredResources = resourcesData.filter((resource) =>
         selectedCategories.includes(resource.category)
       );
 
@@ -155,7 +165,7 @@ const ResourcesManagement = () => {
     return () => unsubscribe();
   };
 
-  const [searchQuery, setSearchQuery] = useState("");
+  // const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearchAndFilterResources = () => {
     const resourcesQuery = query(collection(db, "resources"));
@@ -166,9 +176,13 @@ const ResourcesManagement = () => {
       })) as Resource[];
 
       // Filter resources based on partial match of newResource.title and selected categories
-      const filteredResources = resourcesData.filter(resource => {
-        const matchesSearchQuery = resource.title.toLowerCase().includes(newResource.title.toLowerCase());
-        const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(resource.category);
+      const filteredResources = resourcesData.filter((resource) => {
+        const matchesSearchQuery = resource.title
+          .toLowerCase()
+          .includes(newResource.title.toLowerCase());
+        const matchesCategory =
+          selectedCategories.length === 0 ||
+          selectedCategories.includes(resource.category);
         return matchesSearchQuery && matchesCategory;
       });
 
@@ -181,21 +195,21 @@ const ResourcesManagement = () => {
   const [categoriesToDelete, setCategoriesToDelete] = useState<string[]>([]);
 
   const handleCategoryDeleteChange = (categoryId: string) => {
-    setCategoriesToDelete(prevSelected =>
+    setCategoriesToDelete((prevSelected) =>
       prevSelected.includes(categoryId)
-        ? prevSelected.filter(id => id !== categoryId)
+        ? prevSelected.filter((id) => id !== categoryId)
         : [...prevSelected, categoryId]
     );
   };
 
-
-
   const handleDeleteSelectedCategories = async () => {
-    const confirmDelete = window.confirm("Are you sure you want to delete the selected categories?");
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete the selected categories?"
+    );
     if (!confirmDelete) return;
 
     try {
-      const deletePromises = categoriesToDelete.map(categoryId =>
+      const deletePromises = categoriesToDelete.map((categoryId) =>
         deleteDoc(doc(db, "categories", categoryId))
       );
       await Promise.all(deletePromises);
@@ -214,37 +228,56 @@ const ResourcesManagement = () => {
           type="text"
           label="Title"
           value={newResource.title}
-          onChange={(e) => setNewResource({ ...newResource, title: e.target.value })}
+          onChange={(e) =>
+            setNewResource({ ...newResource, title: e.target.value })
+          }
           className="text-light"
         />
         <Input
           type="text"
           label="YouTube URL"
           value={newResource.youtubeUrl}
-          onChange={(e) => setNewResource({ ...newResource, youtubeUrl: e.target.value })}
+          onChange={(e) =>
+            setNewResource({ ...newResource, youtubeUrl: e.target.value })
+          }
           className="text-light"
         />
         <Select
           label="Category"
           value={newResource.category}
-          onChange={(e) => setNewResource({ ...newResource, category: e.target.value })}
+          onChange={(e) =>
+            setNewResource({ ...newResource, category: e.target.value })
+          }
           className="text-light"
         >
           <SelectItem key="Select a category" value="">
             Select a category
           </SelectItem>
-          {categories.map((category) => (
-            <SelectItem key={category.id} value={category.category} className="select-item-text">
-              {category.category}
-            </SelectItem>
-          ))}
+          {/* Wrap the mapped items in a fragment */}
+          <>
+            {categories.map((category) => (
+              <SelectItem
+                key={category.id}
+                value={category.category}
+                className="select-item-text"
+              >
+                {category.category}
+              </SelectItem>
+            ))}
+          </>
         </Select>
-        
       </div>
-      <div className=" space-y-2 md:space-x-4">
-        <Button onClick={handleAddResource} color="primary">Add Resource</Button>
-        <Button onClick={handleSearchAndFilterResources} color="primary">Search Resources</Button>
-        <Button onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)} color="primary">
+      <div className="space-y-2 md:space-x-4">
+        <Button onClick={handleAddResource} color="primary">
+          Add Resource
+        </Button>
+        <Button onClick={handleSearchAndFilterResources} color="primary">
+          Search Resources
+        </Button>
+        <Button
+          onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+          color="primary"
+        >
           Filter Resources
         </Button>
       </div>
@@ -252,42 +285,59 @@ const ResourcesManagement = () => {
       {isFilterDropdownOpen && (
         <div className="dropdown-content">
           <h3>Filter by Categories</h3>
-          {categories.map((category) => (
-            <div key={category.id}>
-              <input
-                type="checkbox"
-                id={category.id}
-                value={category.category}
-                checked={selectedCategories.includes(category.category)}
-                onChange={() => handleCategoryChange(category.category)}
-              />
-              <label htmlFor={category.id}>{category.category}</label>
-            </div>
-          ))}
-          <div className=" space-y-2 md:space-x-4">
-            <Button onClick={handleFilterResourcesByCategory} color="primary">Apply Filter</Button>
-            <Button onClick={handleClearFilter} color="secondary">Clear</Button>
+          {/* Wrap the mapped elements in a fragment */}
+          <>
+            {categories.map((category) => (
+              <div key={category.id}>
+                <input
+                  type="checkbox"
+                  id={category.id}
+                  value={category.category}
+                  checked={selectedCategories.includes(category.category)}
+                  onChange={() => handleCategoryChange(category.category)}
+                />
+                <label htmlFor={category.id}>{category.category}</label>
+              </div>
+            ))}
+          </>
+          <div className="space-y-2 md:space-x-4">
+            <Button onClick={handleFilterResourcesByCategory} color="primary">
+              Apply Filter
+            </Button>
+            <Button onClick={handleClearFilter} color="secondary">
+              Clear
+            </Button>
           </div>
         </div>
       )}
       <hr className="my-4" />
       <div className=" space-y-2 md:space-x-4">
-      <Button onClick={() => setIsDropdownOpen(!isDropdownOpen)} color="primary">Add Category</Button>
-      {isDropdownOpen && (
-        <div className="mt-2">
-          <Input
-            type="text"
-            label="New Category"
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            className="text-light mb-2"
-          />
-          <Button onClick={handleAddCategory} color="primary">Submit</Button>
-        </div>
-      )}
-      <Button onClick={() => setIsDeleteDropdownOpen(!isDeleteDropdownOpen)} color="primary">
-        Delete Categories
-      </Button>
+        <Button
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          color="primary"
+        >
+          Add Category
+        </Button>
+        {isDropdownOpen && (
+          <div className="mt-2">
+            <Input
+              type="text"
+              label="New Category"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              className="text-light mb-2"
+            />
+            <Button onClick={handleAddCategory} color="primary">
+              Submit
+            </Button>
+          </div>
+        )}
+        <Button
+          onClick={() => setIsDeleteDropdownOpen(!isDeleteDropdownOpen)}
+          color="primary"
+        >
+          Delete Categories
+        </Button>
       </div>
       {isDeleteDropdownOpen && (
         <div className="dropdown-content">
@@ -301,23 +351,40 @@ const ResourcesManagement = () => {
                 checked={categoriesToDelete.includes(category.id)}
                 onChange={() => handleCategoryDeleteChange(category.id)}
               />
-              <label htmlFor={`delete-${category.id}`}>{category.category}</label>
+              <label htmlFor={`delete-${category.id}`}>
+                {category.category}
+              </label>
             </div>
           ))}
-          <Button onClick={handleDeleteSelectedCategories} color="danger">Delete Selected</Button>
+          <Button onClick={handleDeleteSelectedCategories} color="danger">
+            Delete Selected
+          </Button>
         </div>
       )}
 
       <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4 text-light">Existing Resources</h2>
+        <h2 className="text-xl font-semibold mb-4 text-light">
+          Existing Resources
+        </h2>
         <div className="space-y-4">
           {resources.map((resource) => (
-            <div key={resource.id} className="flex items-center justify-between bg-darker p-4 rounded-lg">
+            <div
+              key={resource.id}
+              className="flex items-center justify-between bg-darker p-4 rounded-lg"
+            >
               <div>
-                <h3 className="text-lg font-medium text-light">{resource.title}</h3>
+                <h3 className="text-lg font-medium text-light">
+                  {resource.title}
+                </h3>
                 <p className="text-sm text-gray">{resource.youtubeUrl}</p>
               </div>
-              <Button onClick={() => handleDeleteResource(resource.id)} color="danger" size="sm">Delete</Button>
+              <Button
+                onClick={() => handleDeleteResource(resource.id)}
+                color="danger"
+                size="sm"
+              >
+                Delete
+              </Button>
             </div>
           ))}
         </div>
