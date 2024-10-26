@@ -1,11 +1,11 @@
 "use client";
 
-import { db } from "@/lib/firebase"; 
+import { db } from "@/lib/firebase";
 import { Button, Input, Spinner } from "@nextui-org/react";
 import {
   createUserWithEmailAndPassword,
-  onAuthStateChanged,
   updateProfile,
+  User
 } from "firebase/auth";
 import { addDoc, collection, getDocs, Timestamp } from "firebase/firestore";
 import Image from "next/image";
@@ -14,7 +14,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth } from "../../lib/firebase";
 import styles from "./register.module.css";
-import Layout from "../common/Layout";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -22,7 +21,6 @@ export default function Register() {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
-  const [user, setUser] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
 
@@ -52,13 +50,13 @@ export default function Register() {
       if (user) {
         await updateProfile(user, { displayName: name });
 
-        // Store user info in Firestore, including isDisabled set to false
         await addDoc(collection(db, "users"), {
           uid: user.uid,
           email: user.email,
           displayName: name,
           createdAt: new Date(),
-          isDisabled: false, // Set isDisabled to false
+          isDisabled: false, 
+          isAdmin: false
         });
 
         if (user.email) {
@@ -89,27 +87,21 @@ export default function Register() {
     }
   };
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(true);
-        router.push("/");
-      } else {
-        setUser(false);
-        setIsPageLoading(false);
-      }
-    });
+   useEffect(() => {
+     const unsubscribe = auth.onAuthStateChanged((user: User | null) => {
+       if (!user) setIsPageLoading(false);
+       else console.log(user)
+       
+     });
 
-    return () => unsubscribe();
-  }, [router]);
+     return () => unsubscribe();
+   }, [router]);
 
-  if (!user && isPageLoading) {
+  if (isPageLoading) {
     return (
-      <Layout>
         <div className="flex justify-center items-center h-screen">
           <Spinner size="md" />
         </div>
-      </Layout>
     );
   }
 
@@ -123,13 +115,13 @@ export default function Register() {
       invoiceNumber: invoiceNumber,
       description: "Monthly Subscription Fee",
       amount: "70 USDT",
-      date: new Date().toISOString(), 
+      date: new Date().toISOString(),
       status: "pending",
       userId: userId,
       userEmail: userEmail,
-      createdAt: Timestamp.now(), 
-      userName: name, 
-      country: "User's Country", 
+      createdAt: Timestamp.now(),
+      userName: name,
+      country: "User's Country",
     };
 
     await addDoc(invoicesRef, invoiceData); 

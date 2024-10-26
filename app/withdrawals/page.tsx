@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Spinner, Input } from "@nextui-org/react";
+import { Spinner, Input, Card } from "@nextui-org/react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import Layout from "@/app/common/Layout";
 import { formatDate } from "@/helpers/date";
 import { User } from "firebase/auth";
+import gsap from "gsap";
 
 interface Withdrawal {
   id: string;
@@ -22,6 +23,10 @@ export default function Withdrawals() {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  
+  const titleRef = useRef(null);
+  const cardRef = useRef(null);
+  const tableRef = useRef(null);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user: User | null) => {
@@ -34,6 +39,14 @@ export default function Withdrawals() {
 
     return () => unsubscribe();
   }, [router]);
+
+  useEffect(() => {
+    if (!loading) {
+      gsap.from(titleRef.current, { opacity: 0, y: -50, duration: 1, ease: "power3.out" });
+      gsap.from(cardRef.current, { opacity: 0, y: 50, duration: 1, delay: 0.3, ease: "power3.out" });
+      gsap.from(tableRef.current, { opacity: 0, y: 50, duration: 1, delay: 0.6, ease: "power3.out" });
+    }
+  }, [loading]);
 
   const fetchWithdrawals = async (userEmail: string) => {
     setLoading(true);
@@ -56,60 +69,62 @@ export default function Withdrawals() {
 
   const filteredWithdrawals = withdrawals.filter(withdrawal => {
     const dateMatch = formatDate(withdrawal.date).toLowerCase().includes(searchTerm.toLowerCase());
-    return dateMatch || searchTerm === ""; // Only filter by date
+    return dateMatch || searchTerm === "";
   });
 
   if (loading) {
     return (
-      <Layout>
         <div className="flex justify-center items-center h-screen">
-          <Spinner size="md" />
+          <Spinner size="lg" />
         </div>
-      </Layout>
     );
   }
 
   return (
     <Layout>
-      <h1 className="text-2xl font-bold mb-4 text-light">Your Withdrawals</h1>
-      <p className="text-light mb-2">Use the search bar to filter withdrawals by date.</p>
-      <Input
-        isClearable
-        placeholder="Search by Date"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="mb-4"
-      />
-      {filteredWithdrawals.length === 0 ? (
-        <p className="text-light">No withdrawals found.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="text-light min-w-full">
-            <thead>
-              <tr className="text-gray-400 text-xs sm:text-sm border-b border-dashed border-gray">
-                <th className="text-left p-2">Date</th>
-                <th className="text-left p-2">Status</th>
-                <th className="text-right p-2">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredWithdrawals.map((withdrawal) => (
-                <tr key={withdrawal.id} className="border-b border-gray hover:bg-gray-700">
-                  <td className="py-2">{formatDate(withdrawal.date)}</td>
-                  <td className="py-2">
-                    {withdrawal.status === "Pending" ? (
-                      <span className="text-orange-500">Pending</span>
-                    ) : (
-                      <span className="text-green-500">Completed</span>
-                    )}
-                  </td>
-                  <td className="py-2 text-right">${withdrawal.amount.toFixed(2)}</td>
+      <div className="p-4 md:p-8 max-w-6xl mx-auto">
+        <h1 ref={titleRef} className="text-3xl md:text-4xl font-bold mb-6 text-light text-center">Your Withdrawals</h1>
+        <Card ref={cardRef} className="bg-darker p-6 mb-8">
+          <p className="text-light mb-4">Use the search bar to filter withdrawals by date.</p>
+          <Input
+            isClearable
+            placeholder="Search by Date"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="mb-4"
+          />
+        </Card>
+        {filteredWithdrawals.length === 0 ? (
+          <p className="text-light text-center">No withdrawals found.</p>
+        ) : (
+          <div ref={tableRef} className="overflow-x-auto">
+            <table className="text-light min-w-full">
+              <thead>
+                <tr className="text-gray-400 text-sm md:text-base border-b border-gray-700">
+                  <th className="text-left p-3">Date</th>
+                  <th className="text-left p-3">Status</th>
+                  <th className="text-right p-3">Amount</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {filteredWithdrawals.map((withdrawal) => (
+                  <tr key={withdrawal.id} className="border-b border-gray-700 hover:bg-gray-800 transition-colors duration-200">
+                    <td className="py-4 px-3">{formatDate(withdrawal.date)}</td>
+                    <td className="py-4 px-3">
+                      {withdrawal.status === "Pending" ? (
+                        <span className="text-orange-500 bg-orange-500 bg-opacity-20 px-2 py-1 rounded-full text-xs font-semibold">Pending</span>
+                      ) : (
+                        <span className="text-green-500 bg-green-500 bg-opacity-20 px-2 py-1 rounded-full text-xs font-semibold">Completed</span>
+                      )}
+                    </td>
+                    <td className="py-4 px-3 text-right">${withdrawal.amount.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </Layout>
   );
 }

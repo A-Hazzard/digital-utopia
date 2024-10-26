@@ -7,6 +7,7 @@ import ProfileSettingsModal from "@/components/ProfileSettingsModal";
 import WithdrawCryptoModal from "@/components/WithdrawCryptoModal";
 import { useProfileModal } from "@/context/ProfileModalContext";
 import { UserProvider, useUser } from "@/context/UserContext";
+import { auth, db } from "@/lib/firebase";
 import { Avatar, Button, Spinner } from "@nextui-org/react";
 import { onAuthStateChanged } from "firebase/auth";
 import {
@@ -25,7 +26,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { auth, db } from "@/lib/firebase";
 
 type Trade = {
   id: string;
@@ -61,31 +61,38 @@ function Dashboard() {
   );
   const [hasPendingDeposit, setHasPendingDeposit] = useState(false);
   const [pendingDepositId, setPendingDepositId] = useState<string | null>(null);
-
+ 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUsername(user.displayName?.trim() || "");
         setAvatar(user.photoURL);
 
-        if (
-          user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL1 ||
-          user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL2 ||
-          user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL3
-        ) {
-          navigation.push("/admin/invoices");
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("email", "==", user.email));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const userDoc = querySnapshot.docs[0];
+          const isAdmin = userDoc.data().isAdmin;
+
+          if (isAdmin) {
+            navigation.push("/admin/invoices");
+          } else {
+            listenToTrades(user.email);
+            listenToProfit(user.email);
+            listenToWalletChanges(user.email);
+            checkConfirmedInvoice(user.email);
+            listenToPendingWithdrawals(user.email);
+            listenToPendingDeposits(user.email);
+            setLoading(false);
+          }
         } else {
-          listenToTrades(user.email);
-          listenToProfit(user.email);
-          listenToWalletChanges(user.email);
-          checkConfirmedInvoice(user.email);
-          listenToPendingWithdrawals(user.email);
-          listenToPendingDeposits(user.email);
-          setLoading(false);
+          console.error("User document not found");
+          navigation.push("/login");
         }
       } else {
         navigation.push("/login");
-        setLoading(false); // Set loading to false when user is not logged in
       }
     });
 
@@ -309,11 +316,9 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <Layout>
         <div className="flex justify-center items-center h-screen">
           <Spinner size="md" />
         </div>
-      </Layout>
     );
   }
 

@@ -1,5 +1,6 @@
 "use client";
 import { sendSignInLink } from "@/helpers/auth";
+import { db } from "@/lib/firebase";
 import { Button, Input, Spinner } from "@nextui-org/react";
 import {
   isSignInWithEmailLink,
@@ -7,15 +8,13 @@ import {
   signInWithEmailAndPassword,
   signInWithEmailLink,
 } from "firebase/auth";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth } from "../../lib/firebase";
 import styles from "./login.module.css";
-import Layout from "../common/Layout";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -89,7 +88,6 @@ export default function Login() {
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        setUser(true);
         router.push("/");
       } else {
         setUser(false);
@@ -103,11 +101,9 @@ export default function Login() {
 
   if (!user && isPageLoading) {
     return (
-      <Layout>
         <div className="flex justify-center items-center h-screen">
           <Spinner size="md" />
         </div>
-      </Layout>
     );
   }
 

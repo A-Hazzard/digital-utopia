@@ -2,7 +2,6 @@
 
 import AdminLayout from "@/app/common/AdminLayout";
 import ResourcesManagement from "@/components/ResourcesManagement";
-import withAdminProtection from "@/app/withAdminProtection";
 
 const ManageResourcesPage = () => {
   return (
@@ -15,4 +14,4 @@ const ManageResourcesPage = () => {
   );
 };
 
-export default withAdminProtection(ManageResourcesPage);
+export default ManageResourcesPage;

@@ -5,15 +5,16 @@ import { useState, useEffect } from "react";
 import { Menu, X, LogOut } from "lucide-react";
 import { useProfileModal } from "@/context/ProfileModalContext";
 import ProfileSettingsModal from "./ProfileSettingsModal";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 const Navbar = () => {
   const pathname = usePathname();
   const [isNavOpen, setIsNavOpen] = useState(false);
   const { isOpen, openModal, closeModal } = useProfileModal();
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // Use null for loading state
-  const [loading, setLoading] = useState(true); // Loading state
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null); 
+  const [loading, setLoading] = useState(true); 
 
   const toggleNavbar = () => {
     setIsNavOpen(!isNavOpen);
@@ -34,25 +35,29 @@ const Navbar = () => {
   };
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        setIsAdmin(
-          user.email === (process.env.NEXT_PUBLIC_ADMIN_EMAIL1 ||
-            user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL2 ||
-            user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL3)
-        );
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("email", "==", user.email));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const userDoc = querySnapshot.docs[0];
+          setIsAdmin(userDoc.data().isAdmin || false);
+        } else {
+          setIsAdmin(false);
+        }
       } else {
-        setIsAdmin(false); // Reset if no user is logged in
+        setIsAdmin(false);
       }
-      setLoading(false); // Set loading to false after checking
+      setLoading(false);
     });
 
-    return () => unsubscribe(); // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
-  // Show a loading state while checking authentication
   if (loading) {
-    return null; // You can customize this loading state
+    return null; 
   }
 
   return (

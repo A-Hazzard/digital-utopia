@@ -22,6 +22,7 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
+  Checkbox,
 } from "@nextui-org/react";
 import {
   DocumentData,
@@ -29,6 +30,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import { gsap } from "gsap"; 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -51,7 +53,7 @@ interface WithdrawalRequest {
   status: "pending" | "confirmed";
   address: string;
   withdrawalId: string;
-  userId: string; // Ensure this line is present
+  userId: string; 
 }
 
 const WithdrawalManagement = () => {
@@ -91,6 +93,11 @@ const WithdrawalManagement = () => {
       unsubscribeWithdrawals();
       unsubscribeWithdrawalRequests();
     };
+  }, []);
+
+  useEffect(() => {
+    // GSAP animation for the component
+    gsap.from(".withdrawal-table", { opacity: 0, y: -50, duration: 0.5, stagger: 0.1 });
   }, []);
 
   const handleWithdrawalPageChange = (page: number) => {
@@ -136,11 +143,9 @@ const WithdrawalManagement = () => {
 
   if (loading) {
     return (
-      <Layout>
         <div className="flex justify-center items-center h-screen">
           <Spinner size="md" />
         </div>
-      </Layout>
     );
   }
 
@@ -152,38 +157,20 @@ const WithdrawalManagement = () => {
     <Layout>
       <ToastContainer />
       <div className="mb-8">
-        <h2 className="text-xl font-bold mb-2 text-light">
-          Search Withdrawals
-        </h2>
-        <div className="flex flex-wrap gap-4">
+        <h2 className="text-xl font-bold mb-2 text-light">Search Withdrawals</h2>
+        <div className="flex flex-wrap gap-4 items-center">
           <Input
             type="text"
-            placeholder={
-              searchByWithdrawalId
-                ? "Search by Withdrawal ID"
-                : "Search by User Email"
-            }
+            placeholder={searchByWithdrawalId ? "Search by Withdrawal ID" : "Search by User Email"}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
           />
-          <div className="flex items-center">
-            <label className="mr-4 text-light">
-              <input
-                type="radio"
-                checked={!searchByWithdrawalId}
-                onChange={() => setSearchByWithdrawalId(false)}
-              />
-              Filter by User Email
-            </label>
-            <label className="text-light">
-              <input
-                type="radio"
-                checked={searchByWithdrawalId}
-                onChange={() => setSearchByWithdrawalId(true)}
-              />
-              Filter by Withdrawal ID
-            </label>
-          </div>
+          <Checkbox
+            isSelected={searchByWithdrawalId}
+            onChange={(e) => setSearchByWithdrawalId(e.target.checked)}
+          >
+            Search by Withdrawal ID
+          </Checkbox>
           <Button onClick={handleSearch} disabled={!searchInput}>
             Search
           </Button>
@@ -193,7 +180,7 @@ const WithdrawalManagement = () => {
       <h3 className="text-xl font-bold mb-2 text-light">Withdrawals</h3>
       <Table
         aria-label="Withdrawals Table"
-        className="mb-8 text-light rounded-lg shadow-md bg-transparent"
+        className="withdrawal-table mb-8 text-light rounded-lg shadow-md bg-transparent"
       >
         <TableHeader>
           <TableColumn>Withdrawal ID</TableColumn>

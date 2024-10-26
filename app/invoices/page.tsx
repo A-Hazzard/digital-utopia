@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Layout from "@/app/common/Layout";
 import { Invoice } from '@/types/invoice';
@@ -9,15 +9,16 @@ import { UserProvider } from "@/context/UserContext";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { auth } from "@/lib/firebase"; 
-import { Spinner, Input, Checkbox } from "@nextui-org/react";
+import { Spinner, Input, Checkbox, Card } from "@nextui-org/react";
 import { formatDate } from "@/helpers/date";
 import { User } from "firebase/auth";
+import gsap from "gsap";
 
 const InvoicesPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 100; // Set items per page to 100
+  const itemsPerPage = 100; 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [invoicesData, setInvoicesData] = useState<Invoice[]>([]);
@@ -28,17 +29,29 @@ const InvoicesPage = () => {
     overdue: false,
   });
 
+  const titleRef = useRef(null);
+  const searchRef = useRef(null);
+  const filterRef = useRef(null);
+  const tableRef = useRef(null);
+
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user: User | null) => {
-      if (!user) {
-        router.push("/login");
-      } else {
+      if (user) {
         fetchInvoices(user.email || "");
       }
     });
 
     return () => unsubscribe();
   }, [router]);
+
+  useEffect(() => {
+    if (!loading) {
+      gsap.from(titleRef.current, { opacity: 0, y: -50, duration: 1, ease: "power3.out" });
+      gsap.from(searchRef.current, { opacity: 0, y: 50, duration: 1, delay: 0.3, ease: "power3.out" });
+      gsap.from(filterRef.current, { opacity: 0, y: 50, duration: 1, delay: 0.6, ease: "power3.out" });
+      gsap.from(tableRef.current, { opacity: 0, y: 50, duration: 1, delay: 0.9, ease: "power3.out" });
+    }
+  }, [loading]);
 
   const fetchInvoices = async (userEmail: string) => {
     const invoicesRef = collection(db, "invoices");
@@ -88,36 +101,39 @@ const InvoicesPage = () => {
             <Spinner size="md" />
           ) : (
             <>
-              <h2 className="text-lg font-bold mb-2">Search and Filter Invoices</h2>
-              <p className="mb-4">Use the search bar to find invoices by invoice number or date. You can also filter by status to narrow down your results.</p>
-              <Input
-                isClearable
-                placeholder="Search by Invoice Number, Date, or Status"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="mb-4"
-              />
-              <div className="flex mb-4 gap-4"> {/* Added gap for spacing */}
-                <Checkbox
-                  isSelected={statusFilters.paid}
-                  onChange={() => handleStatusChange('paid')}
-                >
-                  Paid
-                </Checkbox>
-                <Checkbox
-                  isSelected={statusFilters.pending}
-                  onChange={() => handleStatusChange('pending')}
-                >
-                  Pending
-                </Checkbox>
-                <Checkbox
-                  isSelected={statusFilters.overdue}
-                  onChange={() => handleStatusChange('overdue')}
-                >
-                  Overdue
-                </Checkbox>
-              </div>
-              <div className="overflow-x-auto">
+              <h2 ref={titleRef} className="text-3xl font-bold mb-6 text-center">Invoices</h2>
+              <Card ref={searchRef} className="bg-darker p-6 mb-6">
+                <h3 className="text-lg font-bold mb-2">Search and Filter Invoices</h3>
+                <p className="mb-4">Use the search bar to find invoices by invoice number or date. You can also filter by status to narrow down your results.</p>
+                <Input
+                  isClearable
+                  placeholder="Search by Invoice Number, Date, or Status"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="mb-4"
+                />
+                <div ref={filterRef} className="flex mb-4 gap-4">
+                  <Checkbox
+                    isSelected={statusFilters.paid}
+                    onChange={() => handleStatusChange('paid')}
+                  >
+                    Paid
+                  </Checkbox>
+                  <Checkbox
+                    isSelected={statusFilters.pending}
+                    onChange={() => handleStatusChange('pending')}
+                  >
+                    Pending
+                  </Checkbox>
+                  <Checkbox
+                    isSelected={statusFilters.overdue}
+                    onChange={() => handleStatusChange('overdue')}
+                  >
+                    Overdue
+                  </Checkbox>
+                </div>
+              </Card>
+              <div ref={tableRef} className="mt-20 overflow-x-auto">
                 <table className="text-light min-w-full">
                   <thead>
                     <tr className="text-gray-400 text-xs sm:text-sm border-b border-dashed border-gray">
@@ -155,6 +171,7 @@ const InvoicesPage = () => {
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
+                  className="px-4 py-2 bg-primary text-white rounded disabled:opacity-50"
                 >
                   Previous
                 </button>
@@ -162,6 +179,7 @@ const InvoicesPage = () => {
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-primary text-white rounded disabled:opacity-50"
                 >
                   Next
                 </button>

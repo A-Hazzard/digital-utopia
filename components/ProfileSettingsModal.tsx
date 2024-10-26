@@ -1,23 +1,22 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import { useUser } from "@/context/UserContext";
 import { auth, storage } from "@/lib/firebase";
+import { Avatar, Button, Input, Spinner } from "@nextui-org/react";
 import {
   onAuthStateChanged,
-  updateProfile,
-  updatePassword,
   signInWithEmailAndPassword,
+  updatePassword,
+  updateProfile,
 } from "firebase/auth";
 import {
-  uploadBytes,
+  deleteObject,
   getDownloadURL,
   ref,
-  deleteObject,
+  uploadBytes,
 } from "firebase/storage";
-import { Avatar, Button, Input, Spinner } from "@nextui-org/react";
-import { useUser } from "@/context/UserContext";
+import React, { useEffect, useRef, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Layout from "@/app/common/Layout";
 
 export default function ProfileSettingsModal({
   onClose,
@@ -248,11 +247,9 @@ export default function ProfileSettingsModal({
 
   if (loading) {
     return (
-      <Layout>
         <div className="flex justify-center items-center h-screen">
           <Spinner size="md" />
         </div>
-      </Layout>
     );
   }
 

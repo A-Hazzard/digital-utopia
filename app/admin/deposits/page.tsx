@@ -2,7 +2,6 @@
 
 import AdminLayout from "@/app/common/AdminLayout";
 import DepositManagement from "@/components/DepositManagement";
-import withAdminProtection from "@/app/withAdminProtection";
 
 const DepositsPage = () => {
   return (
@@ -15,4 +14,4 @@ const DepositsPage = () => {
   );
 };
 
-export default withAdminProtection(DepositsPage);
+export default DepositsPage;

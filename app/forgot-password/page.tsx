@@ -1,9 +1,9 @@
 "use client";
 
-import { Button, Input } from "@nextui-org/react";
-import { sendPasswordResetEmail } from "firebase/auth";
+import { Button, Input, Spinner } from "@nextui-org/react";
+import { sendPasswordResetEmail, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { auth } from "../../lib/firebase";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,7 +13,20 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.push("/");
+      } else {
+        setIsPageLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
 
   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -39,6 +52,14 @@ export default function ForgotPassword() {
       setIsLoading(false);
     }
   };
+
+  if (isPageLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col lg:flex-row-reverse text-dark lg:h-screen">

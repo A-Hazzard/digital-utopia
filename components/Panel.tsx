@@ -4,9 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import ProfileSettingsModal from "./ProfileSettingsModal";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 export default function Panel() {
   const pathname = usePathname();
@@ -25,20 +26,25 @@ export default function Panel() {
   };
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        setIsAdmin(
-          user.email === (process.env.NEXT_PUBLIC_ADMIN_EMAIL1 ||
-            user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL2 ||
-            user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL3)
-        );
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("email", "==", user.email));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const userDoc = querySnapshot.docs[0];
+          setIsAdmin(userDoc.data().isAdmin || false);
+        } else {
+          setIsAdmin(false);
+        }
       } else {
-        setIsAdmin(false); // Reset if no user is logged in
+        setIsAdmin(false);
       }
-      setLoading(false); // Set loading to false after checking
+      setLoading(false);
     });
 
-    return () => unsubscribe(); // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
   // Show a loading state while checking authentication

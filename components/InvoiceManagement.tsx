@@ -1,6 +1,5 @@
 "use client";
 
-import Layout from "@/app/common/Layout";
 import { db } from "@/lib/firebase";
 import { Invoice } from "@/types/invoice";
 import {
@@ -15,12 +14,12 @@ import {
   TableRow,
 } from "@nextui-org/react";
 import {
-  collection,
-  getDocs,
   addDoc,
-  updateDoc,
+  collection,
   doc,
   DocumentData,
+  getDocs,
+  updateDoc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
@@ -132,11 +131,9 @@ const InvoiceManagement = () => {
 
   if (loading) {
     return (
-      <Layout>
-        <div className="flex justify-center items-center h-screen">
-          <Spinner size="md" />
-        </div>
-      </Layout>
+      <div className="flex justify-center items-center h-screen">
+        <Spinner size="md" />
+      </div>
     );
   }
 
