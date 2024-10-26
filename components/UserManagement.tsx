@@ -3,7 +3,7 @@
 import { formatDate } from "@/helpers/date";
 import { auth, db } from "@/lib/firebase";
 import { Button, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@nextui-org/react";
-import { collection, doc, getDocs, onSnapshot, query, updateDoc, where, writeBatch } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, onSnapshot, query, updateDoc, where, writeBatch } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -89,24 +89,37 @@ const UserManagement = () => {
         const batch = writeBatch(db);
         const userToDelete = users.find(user => user.uid === userId); // Get the user being deleted
 
+        if (!userToDelete || !userToDelete.email) {
+          throw new Error("User not found or email is missing");
+        }
+
         // Delete user document
         batch.delete(doc(db, "users", userId));
 
         // Delete user's data from other collections
-        const collections = ["users", "invoices", "deposits", "withdrawals", "withdrawalRequests", "wallets"];
+        const collections = ["users", "profits", "trades", "invoices", "deposits", "withdrawals", "withdrawalRequests", "wallets"];
         
         for (const collectionName of collections) {
-          const q = query(collection(db, collectionName), where("userEmail", "==", userToDelete?.email)); // Check for userEmail
-          const querySnapshot = await getDocs(q);
-          querySnapshot.forEach((doc) => {
+          // Method 1: Check for userEmail
+          const q1 = query(collection(db, collectionName), where("userEmail", "==", userToDelete.email));
+          const querySnapshot1 = await getDocs(q1);
+          querySnapshot1.forEach((doc) => {
             batch.delete(doc.ref);
           });
 
-          const q2 = query(collection(db, collectionName), where("email", "==", userToDelete?.email)); // Check for email
+          // Method 2: Check for email
+          const q2 = query(collection(db, collectionName), where("email", "==", userToDelete.email));
           const querySnapshot2 = await getDocs(q2);
           querySnapshot2.forEach((doc) => {
             batch.delete(doc.ref);
           });
+
+          // Method 3: Check if document ID equals user email
+          const docRef = doc(db, collectionName, userToDelete.email);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            batch.delete(docRef);
+          }
         }
 
         await batch.commit();
@@ -129,7 +142,6 @@ const UserManagement = () => {
   return (
     <div className="space-y-4">
         <ToastContainer />
-      <h1 className="text-2xl font-bold text-light">User Management</h1>
       <Table aria-label="User management table" className="text-light">
         <TableHeader>
           <TableColumn className="text-dark">Username</TableColumn>
