@@ -15,7 +15,7 @@ interface Resource {
   title: string;
   youtubeUrl: string;
   description: string;
-  category: string;
+  categories: string[];
 }
 
 interface Category {
@@ -99,9 +99,16 @@ export default function ResourcesPage() {
         ...doc.data(),
       })) as Resource[];
 
+      const categoryNameToIdMap = categories.reduce((map, category) => {
+        map[category.category] = category.id;
+        return map;
+      }, {} as Record<string, string>);
+
+      const selectedCategoryIds = selectedCategories.map(name => categoryNameToIdMap[name]);
+
       const filteredResources = resourcesData.filter(resource => {
         const matchesSearchQuery = resource.title.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(resource.category);
+        const matchesCategory = selectedCategoryIds.length === 0 || resource.categories.some(categoryId => selectedCategoryIds.includes(categoryId));
         return matchesSearchQuery && matchesCategory;
       });
 
@@ -109,7 +116,7 @@ export default function ResourcesPage() {
     });
 
     return () => unsubscribe();
-  }, [searchQuery, selectedCategories]);
+  }, [searchQuery, selectedCategories, categories]);
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategories(prevSelected =>
@@ -117,6 +124,10 @@ export default function ResourcesPage() {
         ? prevSelected.filter(c => c !== category)
         : [...prevSelected, category]
     );
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(prev => !prev);
   };
 
   if (loading) {
@@ -142,9 +153,9 @@ export default function ResourcesPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="text-light"
           />
-          <Dropdown>
+          <Dropdown isOpen={isDropdownOpen}>
             <DropdownTrigger>
-              <Button>Filter by Category</Button>
+              <Button onClick={toggleDropdown}>Filter by Category</Button>
             </DropdownTrigger>
             <DropdownMenu>
               {categories.map((category) => (
@@ -155,8 +166,11 @@ export default function ResourcesPage() {
                     value={category.category}
                     checked={selectedCategories.includes(category.category)}
                     onChange={() => handleCategoryChange(category.category)}
+                    className="mb-1 mr-1"
                   />
-                  <label htmlFor={category.id}>{category.category}</label>
+                  <label htmlFor={category.id} style={{ color: 'white' }}>
+                    {category.category}
+                  </label>
                 </DropdownItem>
               ))}
             </DropdownMenu>
@@ -165,6 +179,8 @@ export default function ResourcesPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {resources.map((resource, index) => (
+        <div className="flex flex-wrap gap-4">
+          {resources.map((resource) => (
             <div
               key={resource.id}
               ref={(el) => {
