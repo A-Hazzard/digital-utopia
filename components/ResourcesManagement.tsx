@@ -1,7 +1,7 @@
 "use client";
 
 import { db } from "@/lib/firebase";
-import { Button, Input } from "@nextui-org/react";
+import { Button, Input, Checkbox } from "@nextui-org/react";
 import {
   addDoc,
   collection,
@@ -159,11 +159,6 @@ const ResourcesManagement = () => {
   };
 
   const handleDeleteSelectedCategories = async () => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete the selected categories?"
-    );
-    if (!confirmDelete) return;
-
     try {
       const deletePromises = categoriesToDelete.map((categoryId) =>
         deleteDoc(doc(db, "categories", categoryId))
@@ -177,7 +172,7 @@ const ResourcesManagement = () => {
     }
   };
 
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+ 
   const [isAddCategoryDropdownOpen, setIsAddCategoryDropdownOpen] = useState<string | null>(null);
   const [newCategoriesForResource, setNewCategoriesForResource] = useState<string[]>([]);
 
@@ -205,6 +200,36 @@ const ResourcesManagement = () => {
     } catch (error) {
       console.error("Error adding categories:", error);
       toast.error("Failed to add categories");
+    }
+  };
+
+  const [selectedCategoriesForNewResource, setSelectedCategoriesForNewResource] = useState<string[]>([]);
+
+  const handleCategorySelectionChange = (categoryId: string) => {
+    setSelectedCategoriesForNewResource((prevSelected) =>
+      prevSelected.includes(categoryId)
+        ? prevSelected.filter((id) => id !== categoryId)
+        : [...prevSelected, categoryId]
+    );
+  };
+
+  const handleAddResource = async () => {
+    try {
+      const resourceToAdd = {
+        ...newResource,
+        categories: selectedCategoriesForNewResource,
+      };
+      await addDoc(collection(db, "resources"), resourceToAdd);
+      toast.success("Resource added successfully");
+      setNewResource({
+        title: "",
+        youtubeUrl: "",
+        categories: [],
+      });
+      setSelectedCategoriesForNewResource([]); // Reset selected categories
+    } catch (error) {
+      console.error("Error adding resource:", error);
+      toast.error("Failed to add resource");
     }
   };
 
@@ -243,45 +268,30 @@ const ResourcesManagement = () => {
           className="text-light"
         />
 
-        <div className="space-y-2">
-          <Button
-            onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-            className="w-full text-left shadow-xl bg-default-200/50 dark:bg-default/60 backdrop-blur-xl backdrop-saturate-200 hover:bg-default-200/70 focus-within:!bg-default-200/50 dark:hover:bg-default/70 dark:focus-within:!bg-default/60 !cursor-text"
-            style={{
-              borderRadius: '0.375rem',
-              padding: '0.5rem 1rem',
-              height: '2.5rem',
-              fontSize: '1rem',
-              color: 'rgba(0, 0, 0, 0.9)',
-            }}
-          >
-            Select Categories
-          </Button>
-          {isCategoryDropdownOpen && (
-            <div className="dropdown-content bg-gray-200 p-2 rounded shadow-md max-h-24 overflow-y-auto">
-              {categories.map((category) => (
-                <div key={category.id} className="flex items-center mb-2">
-                  <input
-                    type="checkbox"
-                    id={`category-${category.id}`}
-                    value={category.id}
-                    checked={selectedCategories.includes(category.id)}
-                    onChange={() => handleCategoryChange(category.id)}
-                    className="mr-2"
-                  />
-                  <label htmlFor={`category-${category.id}`} className="text-black">
-                    {category.category}
-                  </label>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+<div className="space-y-2 ">
+  <p className="font-semibold">Categories</p>
+  <div className="flex gap-2 overflow-x-scroll overflow-y-hidden whitespace-nowrap">
+    {categories.map((category) => (
+      <Checkbox
+        key={category.id}
+        isSelected={selectedCategoriesForNewResource.includes(category.id)}
+        onChange={() => handleCategorySelectionChange(category.id)}
+        className="inline-block"
+      >
+        {category.category}
+      </Checkbox>
+    ))}
+  </div>
+</div>
       </div>
       <div className="space-y-2 md:space-x-4">
-
-
-      </div>
+  <Button
+    onClick={handleAddResource}
+    color="primary"
+  >
+    Add Resource
+  </Button>
+</div>
 
 
 
@@ -360,16 +370,14 @@ const ResourcesManagement = () => {
           <h3>Filter by Categories</h3>
           <>
             {categories.map((category) => (
-              <div key={category.id}>
-                <input
-                  type="checkbox"
-                  id={category.id}
-                  value={category.id}
-                  checked={selectedCategories.includes(category.id)}
-                  onChange={() => handleCategoryChange(category.id)}
-                />
-                <label htmlFor={category.id}>{category.category}</label>
-              </div>
+              <Checkbox
+                key={category.id}
+                isSelected={selectedCategories.includes(category.id)}
+                onChange={() => handleCategoryChange(category.id)}
+                className="inline-block mr-2" 
+              >
+                {category.category}
+              </Checkbox>
             ))}
           </>
           <div className="space-y-2 md:space-x-4">
@@ -404,16 +412,19 @@ const ResourcesManagement = () => {
                   <p className="text-sm text-gray fit break-words">
                     {resource.youtubeUrl}
                   </p>
-                  <p className="text-sm text-gray fit break-words">
-                    Categories: {resource.categories.map((categoryId) => {
+                  <div className="flex items-center">
+                    {resource.categories.map((categoryId) => {
                       const category = categories.find(cat => cat.id === categoryId);
                       if (!category) return null;
 
                       return (
-                        <span key={categoryId} className="flex items-center">
+                        <div
+                          key={categoryId}
+                          className="relative flex items-center text-xs py-1 px-2 rounded-md bg-gray-700 text-white mr-2"
+                        >
                           {category.category}
                           <X
-                            className="mb-1 cursor-pointer text-red-500 hover:text-red-700"
+                            className="ml-1 cursor-pointer text-red-500 hover:text-red-700"
                             style={{ width: '15px', height: '15px' }}
                             onClick={async (e: React.MouseEvent) => {
                               e.stopPropagation();
@@ -428,56 +439,72 @@ const ResourcesManagement = () => {
                               }
                             }}
                           />
-                        </span>
+                        </div>
                       );
                     }).filter(Boolean)}
-                  </p>
+                  </div>
                 </div>
-                <div className="space-y-2 space-x-1 md:space-x-4">
-                  <Button
-                    onClick={() => handleAddResourceCategory(resource.id)}
-                    color="warning"
-                    size="sm"
-                    className="self-end md:self-auto"
-                  >
-                    Add Category
-                  </Button>
+                <div className="space-y-2 md:space-x-4">
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={() => handleAddResourceCategory(resource.id)}
+                      color="warning"
+                      size="sm"
+                      className="self-end md:self-auto"
+                    >
+                      Add Category
+                    </Button>
+                    {newCategoriesForResource.length > 0 && (
+                      <Button
+                        onClick={() => applyNewCategories(resource.id)}
+                        color="primary"
+                        size="sm"
+                        className="self-end md:self-auto"
+                      >
+                        Apply
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => handleDeleteResource(resource.id)}
+                      color="danger"
+                      size="sm"
+                      className="self-end md:self-auto"
+                    >
+                      Delete
+                    </Button>
+                  </div>
                   {isAddCategoryDropdownOpen === resource.id && (
-                    <div className="dropdown-content bg-gray-200 p-2 rounded shadow-md max-h-24 overflow-y-auto">
+                    <div className="flex flex-wrap gap-2 mt-2">
                       {categories
                         .filter(category => !resource.categories.includes(category.id))
                         .map(category => (
-                          <div key={category.id} className="flex items-center mb-2">
-                            <input
-                              type="checkbox"
-                              id={`new-category-${category.id}`}
-                              value={category.id}
-                              checked={newCategoriesForResource.includes(category.id)}
-                              onChange={() => handleNewCategoryChange(category.id)}
-                              className="mr-2"
-                            />
-                            <label htmlFor={`new-category-${category.id}`} className="text-black">
-                              {category.category}
-                            </label>
+                          <div
+                            key={category.id}
+                            className={`relative flex items-center text-xs py-1 px-2 rounded-md cursor-pointer transition-colors ${
+                              newCategoriesForResource.includes(category.id)
+                                ? "bg-white text-black"
+                                : "bg-gray-700 text-white hover:bg-gray-600"
+                            }`}
+                            onClick={() => handleNewCategoryChange(category.id)}
+                          >
+                            {category.category}
+                            
                           </div>
                         ))}
-                      <Button onClick={() => applyNewCategories(resource.id)} color="primary">
-                        Apply
-                      </Button>
                     </div>
                   )}
-                  <Button
-                    onClick={() => handleDeleteResource(resource.id)}
-                    color="danger"
-                    size="sm"
-                    className="self-end md:self-auto"
-                  >
-                    Delete
-                  </Button>
                 </div>
               </div>
             ))}
         </div>
+      </div>
+      <div className="space-y-2 md:space-x-4">
+        <Button
+          onClick={handleAddResource}
+          color="primary"
+        >
+          Add Resource
+        </Button>
       </div>
     </div>
   );
