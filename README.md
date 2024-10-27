@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="public/logo.png" alt="Digital Utopia Logo" width="200"/>
-</p>
+<img src="public/logo.png" alt="Digital Utopia Logo" width="200"/>
 # Digital Utopia - Empowering Financial Independence
 
 Digital Utopia is a comprehensive platform designed to empower individuals on their journey to financial independence through cryptocurrency trading and investment.
