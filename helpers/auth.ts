@@ -10,7 +10,7 @@ export const sendSignInLink = async (email: string) => {
     url:
       process.env.NODE_ENV === "development"
         ? "http://localhost:3000/login"
-        : "https://digitalutopia.vercel.app/login",
+        : "https://digital-utopia.vercel.app/login",
     handleCodeInApp: true,
   };
 
