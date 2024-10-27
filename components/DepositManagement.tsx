@@ -119,7 +119,6 @@ const DepositManagement = () => {
             transaction.set(walletRef, { balance: depositData.amount });
           }
           
-          // Call handleAddDeposit when confirming a deposit
           await handleAddDeposit();
         } else if (newStatus === "failed" && depositData.status === "confirmed") {
           const walletRef = doc(db, "wallets", depositData.userEmail);

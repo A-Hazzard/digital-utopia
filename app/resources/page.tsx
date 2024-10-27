@@ -38,7 +38,6 @@ export default function ResourcesPage() {
 
   useEffect(() => {
     if (!loading) {
-      // Animate title
       gsap.from(titleRef.current, {
         opacity: 0,
         y: -20,
@@ -46,7 +45,6 @@ export default function ResourcesPage() {
         ease: "power3.out"
       });
 
-      // Animate cards
       gsap.from(cardsRef.current, {
         opacity: 0,
         y: 20,

@@ -90,7 +90,7 @@ export default function Register() {
    useEffect(() => {
      const unsubscribe = auth.onAuthStateChanged((user: User | null) => {
        if (!user) setIsPageLoading(false);
-       else console.log(user)
+       else router.push("/");
        
      });
 

@@ -24,7 +24,6 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
   };
 
   const handleProofOfTransaction = () => {
-    // Simply show the ProofOfPayment component
     setShowProofOfPayment(true);
   };
 
@@ -50,7 +49,6 @@ const DepositFundsModal: React.FC<DepositFundsModalProps> = ({ onClose }) => {
           </div>
 
           <div className={`transition-opacity duration-300 ${showProofOfPayment ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}>
-            {/* Original content */}
             <div className="space-y-4 flex-grow overflow-y-auto">
               <div>
                 <label className="block mb-1">Currency</label>

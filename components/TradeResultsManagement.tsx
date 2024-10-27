@@ -15,12 +15,11 @@ import {
 } from "@nextui-org/react";
 import { addDoc, collection, deleteDoc, doc, getDocs, limit, onSnapshot, orderBy, query, runTransaction, where } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { X } from "lucide-react"; // Import the X icon
+import { X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-// Define the Trade interface
 interface Trade {
   id: string;
   date: string;
@@ -29,22 +28,20 @@ interface Trade {
   tradingPair: string;
   userEmail: string;
   iconUrl: string;
-  username: string; // Add username to the Trade interface
+  username: string;
 }
 
-// Define the TradingPair interface
 interface TradingPair {
   id: string;
   pair: string;
   iconUrl: string;
 }
 
-// Define the ProfitData interface
 interface ProfitData {
   profit: number;
   username: string;
   email?: string;
-  [key: string]: number | string | undefined; // Replace 'any' with more specific types
+  [key: string]: number | string | undefined;
 }
 
 const ITEMS_PER_PAGE = 50;
@@ -53,13 +50,13 @@ const TradeResultsManagement = () => {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [tradingPairs, setTradingPairs] = useState<TradingPair[]>([]);
   const [newTrade, setNewTrade] = useState<Omit<Trade, "id">>({
-    date: new Date().toISOString().split("T")[0], // Set default date to current date
+    date: new Date().toISOString().split("T")[0],
     type: "win",
     amount: 0,
     tradingPair: "",
     userEmail: "",
     iconUrl: "",
-    username: "", // Add default username
+    username: "",
   });
   const [showAddPair, setShowAddPair] = useState(false);
   const [newPair, setNewPair] = useState("");
@@ -69,10 +66,9 @@ const TradeResultsManagement = () => {
   const [isFormValid, setIsFormValid] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [username, setUsername] = useState(""); // State for username input
-  const [possibleEmails, setPossibleEmails] = useState<string[]>([]); // State for possible emails
+  const [username, setUsername] = useState("");
+  const [possibleEmails, setPossibleEmails] = useState<string[]>([]);
 
-  // Function to fetch trades from Firestore
   const fetchTrades = async () => {
     const tradesCollection = collection(db, "trades");
     const q = query(tradesCollection, orderBy("date", "desc"), limit(ITEMS_PER_PAGE));
@@ -86,7 +82,6 @@ const TradeResultsManagement = () => {
     setTotalPages(Math.ceil(tradesSnapshot.size / ITEMS_PER_PAGE));
   };
 
-  // Function to fetch trading pairs from Firestore
   const fetchTradingPairs = async () => {
     const pairsCollection = collection(db, "tradingPairs");
     const pairsSnapshot = await getDocs(pairsCollection);
@@ -97,7 +92,6 @@ const TradeResultsManagement = () => {
     setTradingPairs(pairsData);
   };
 
-  // Fetch trades and trading pairs when the component mounts
   useEffect(() => {
     const unsubscribeTrades = listenToTrades();
     const unsubscribePairs = listenToTradingPairs();
@@ -131,8 +125,6 @@ const TradeResultsManagement = () => {
     });
   };
 
-  
-
   useEffect(() => {
     const validateForm = () => {
       const isValid = 
@@ -153,14 +145,12 @@ const TradeResultsManagement = () => {
     }
 
     try {
-      // Fetch the display name based on the user email
       const usersCollection = collection(db, "users");
       const q = query(usersCollection, where("email", "==", newTrade.userEmail));
       const snapshot = await getDocs(q);
       const userDoc = snapshot.docs[0];
       const username = userDoc ? userDoc.data().displayName : "";
 
-      // Add the trade
       await addDoc(collection(db, "trades"), {
         ...newTrade,
         tradingPair: selectedPair,
@@ -168,7 +158,6 @@ const TradeResultsManagement = () => {
         username: username,
       });
 
-      // Update or create the profit document
       const profitAmount = newTrade.type === "win" ? newTrade.amount : -newTrade.amount;
       await updateUserProfit(newTrade.userEmail, username, profitAmount);
 
@@ -180,7 +169,6 @@ const TradeResultsManagement = () => {
     }
   };
 
-  // Function to update user profit
   const updateUserProfit = async (userEmail: string, username: string, profitAmount: number) => {
     const profitRef = doc(db, "profits", userEmail);
     
@@ -188,32 +176,29 @@ const TradeResultsManagement = () => {
       await runTransaction(db, async (transaction) => {
         const profitDoc = await transaction.get(profitRef);
         if (profitDoc.exists()) {
-          // If the document exists, update the profit
           const currentData = profitDoc.data() as ProfitData;
           const currentProfit = currentData.profit || 0;
           const updateData: ProfitData = {
             profit: currentProfit + profitAmount,
-            username: username // Ensure username is always up to date
+            username: username
           };
 
-          // Check if email field exists, if not, add it
           if (!currentData.email) {
             updateData.email = userEmail;
           }
 
           transaction.update(profitRef, updateData);
         } else {
-          // If the document doesn't exist, create it
           transaction.set(profitRef, {
             profit: profitAmount,
             username: username,
-            email: userEmail // Add email field
+            email: userEmail
           });
         }
       });
     } catch (error) {
       console.error("Error updating profit:", error);
-      throw error; // Rethrow the error to be caught in the calling function
+      throw error;
     }
   };
 
@@ -232,7 +217,6 @@ const TradeResultsManagement = () => {
       setIconPreview(null);
       setShowAddPair(false);
       
-      // Refresh the trading pairs
       await fetchTradingPairs();
     }
   };
@@ -245,7 +229,7 @@ const TradeResultsManagement = () => {
       tradingPair: "",
       userEmail: "",
       iconUrl: "",
-      username: "", // Add default username
+      username: "",
     });
     setSelectedPair(null);
   };
@@ -269,39 +253,36 @@ const TradeResultsManagement = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    fetchTrades(); // Fetch trades for the selected page
+    fetchTrades();
   };
 
-  // Function to fetch user email by username
   const fetchUserEmailByUsername = async (username: string) => {
     if (!username) {
-      setPossibleEmails([]); // Clear possible emails if username is empty
-      return; // Exit if the username is empty
+      setPossibleEmails([]);
+      return;
     }
 
     try {
-      const usersCollection = collection(db, "users"); // Reference to the users collection
-      const snapshot = await getDocs(usersCollection); // Fetch all users
+      const usersCollection = collection(db, "users");
+      const snapshot = await getDocs(usersCollection);
 
-      // Filter emails based on case-insensitive match
       const emails = snapshot.docs
-          .filter(doc => doc.data().displayName.toLowerCase().includes(username.toLowerCase())) // Case-insensitive check
-          .map(doc => doc.data().email); // Extract emails from the documents
+          .filter(doc => doc.data().displayName.toLowerCase().includes(username.toLowerCase()))
+          .map(doc => doc.data().email);
 
-      setPossibleEmails(emails); // Set the list of possible emails
+      setPossibleEmails(emails);
     } catch (error) {
       console.error("Error fetching user email:", error);
-      setPossibleEmails([]); // Clear possible emails on error
+      setPossibleEmails([]);
     }
   };
 
-  // Function to delete a trading pair
   const handleDeletePair = async (pairId: string) => {
     try {
       const pairDoc = doc(db, "tradingPairs", pairId);
-      await deleteDoc(pairDoc); // Delete the trading pair document
+      await deleteDoc(pairDoc);
       toast.success("Trading pair deleted successfully");
-      await fetchTradingPairs(); // Refresh the trading pairs list
+      await fetchTradingPairs();
     } catch (error) {
       console.error("Error deleting trading pair:", error);
       toast.error("Failed to delete trading pair");
@@ -310,7 +291,6 @@ const TradeResultsManagement = () => {
 
   return (
     <div>
-      {/* Username Search Section */}
       <div className="mb-4">
         <h2 className="text-lg font-semibold">Search User by Username</h2>
         <p className="text-sm text-light mb-2">
@@ -322,7 +302,7 @@ const TradeResultsManagement = () => {
           value={username}
           onChange={(e) => {
             setUsername(e.target.value);
-            fetchUserEmailByUsername(e.target.value); // Fetch email on input change
+            fetchUserEmailByUsername(e.target.value);
           }}
         />
         {possibleEmails.length > 0 && (
@@ -338,7 +318,7 @@ const TradeResultsManagement = () => {
           </div>
         )}
       </div>
-      <hr className="mt-4 mb-10" /> {/* Horizontal rule for separation */}
+      <hr className="mt-4 mb-10" />
 
       <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
@@ -380,7 +360,6 @@ const TradeResultsManagement = () => {
         />
       </div>
 
-      {/* Trading Pair Selection */}
       <div className="mb-4">
         <p className="text-sm text-light mb-2">Trading Pairs:</p>
         <div className="flex flex-wrap gap-2">
@@ -406,10 +385,10 @@ const TradeResultsManagement = () => {
               {pair.pair}
               <X
                 className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 cursor-pointer text-red-500 hover:text-red-700"
-                style={{ width: '15px', height: '15px' }} // Set the size of the icon
+                style={{ width: '15px', height: '15px' }}
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevent the click from triggering the pair selection
-                  handleDeletePair(pair.id); // Call the delete function
+                  e.stopPropagation();
+                  handleDeletePair(pair.id);
                 }}
               />
             </div>
@@ -452,7 +431,6 @@ const TradeResultsManagement = () => {
 
       <Button onClick={handleAddTrade} disabled={!isFormValid} className={`${!isFormValid ? "bg-gray-400 text-gray-600 cursor-not-allowed" : "bg-blue-500 text-white hover:bg-blue-600"}`}>Add Trade</Button>
 
-      {/* Trades Table */}
       <Table
         aria-label="Trades Table"
         className="mt-4 text-light rounded-lg shadow-md bg-transparent"

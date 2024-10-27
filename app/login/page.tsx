@@ -32,7 +32,6 @@ export default function Login() {
     setIsLoading(true);
     setError("");
     try {
-      // Check if the user account is disabled
       const userQuery = query(collection(db, "users"), where("email", "==", email));
       const querySnapshot = await getDocs(userQuery);
 
@@ -41,11 +40,10 @@ export default function Login() {
         if (userDoc.isDisabled) {
           setError("Your account is disabled. Please contact support.");
           setIsLoading(false);
-          return; // Exit if the account is disabled
+          return; 
         }
       }
 
-      // Proceed with login if the account is not disabled
       if (isPasswordLogin) {
         await signInWithEmailAndPassword(auth, email, password);
         router.push("/");

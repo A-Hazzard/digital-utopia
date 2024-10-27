@@ -122,7 +122,6 @@ function Dashboard() {
             type: data.type,
           };
         });
-        console.log("Updated trades:", tradesData);
         setTrades(tradesData);
         setLoadingTrades(false);
       },
@@ -437,7 +436,7 @@ function Dashboard() {
                 </p>
                 <Button
                   className="bg-red-600 text-white mt-2"
-                  onClick={handleCancelDeposit} // Call the cancel deposit function
+                  onClick={handleCancelDeposit} 
                 >
                   Cancel Deposit
                 </Button>

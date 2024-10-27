@@ -35,7 +35,6 @@ const sendCancellationNotification = async (cancellationData: {
 }) => {
   const logoPath = path.join(process.cwd(), "public", "logo.png");
 
-  // Check if the logo file exists
   if (!fs.existsSync(logoPath)) {
     console.error(`Logo file not found at path: ${logoPath}`);
     throw new Error("Logo file not found");
@@ -50,7 +49,7 @@ const sendCancellationNotification = async (cancellationData: {
       {
         filename: "logo.png",
         path: logoPath,
-        cid: "logo", // This cid is used in the HTML template to reference the logo
+        cid: "logo",
       },
     ],
   };

@@ -38,7 +38,6 @@ const sendWithdrawNotification = async (withdrawData: {
 }) => {
   const logoPath = path.join(process.cwd(), "public", "logo.png");
 
-  // Check if the file exists
   if (!fs.existsSync(logoPath)) {
     console.error(`Logo file not found at path: ${logoPath}`);
     throw new Error("Logo file not found");

@@ -29,7 +29,6 @@ export const metadata: Metadata = {
     images: ["https://digital-utopia.vercel.app/logo.svg"],
   },
 };
-//TODO add nextso to all pages
 export default function RootLayout({
   children,
 }: Readonly<{

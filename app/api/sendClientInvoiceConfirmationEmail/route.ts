@@ -13,7 +13,6 @@ const transporter = nodemailer.createTransport({
 
 export async function POST(req: Request) {
   const invoiceData = await req.json();
-  console.log("Received invoice data:", invoiceData);
 
   try {
     await sendClientInvoiceConfirmation(invoiceData);

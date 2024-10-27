@@ -10,9 +10,9 @@ export const formatDate = (
   let formattedDate: string;
 
   if (date instanceof Date) {
-    formattedDate = date.toLocaleDateString(); // Change to toLocaleDateString()
+    formattedDate = date.toLocaleDateString();
   } else if (typeof date === "string" || typeof date === "number") {
-    formattedDate = new Date(date).toLocaleDateString(); // Change to toLocaleDateString()
+    formattedDate = new Date(date).toLocaleDateString();
   } else {
     return "Invalid Date";
   }

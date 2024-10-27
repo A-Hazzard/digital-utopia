@@ -11,19 +11,14 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-
 const sendSignUpEmail = async (userData: { displayName: string; email: string }) => {
-  console.log("Sending email to user and admin", userData);
-
   const logoPath = path.join(process.cwd(), 'public', 'logo.png');
 
-  // Check if the file exists
   if (!fs.existsSync(logoPath)) {
     console.error(`Logo file not found at path: ${logoPath}`);
     throw new Error('Logo file not found');
   }
 
-  // Email to the new user
   const userMailOptions = {
     from: process.env.ADMIN_EMAIL,
     to: userData.email,
@@ -38,10 +33,9 @@ const sendSignUpEmail = async (userData: { displayName: string; email: string })
     ],
   };
 
-  // Email to the admin
   const adminMailOptions = {
     from: process.env.ADMIN_EMAIL,
-    to: process.env.ADMIN_EMAIL, // Admin email from environment variables
+    to: process.env.ADMIN_EMAIL,
     subject: "New User Registration",
     html: createAdminNotificationTemplate(userData.displayName, userData.email),
     attachments: [
@@ -53,7 +47,6 @@ const sendSignUpEmail = async (userData: { displayName: string; email: string })
     ],
   };
 
-  // Send both emails
   await transporter.sendMail(userMailOptions);
   await transporter.sendMail(adminMailOptions);
 };
@@ -63,14 +56,12 @@ export async function POST(req: Request) {
 
   try {
     await sendSignUpEmail({ displayName, email });
-    console.log("Emails sent successfully");
     return NextResponse.json({ message: 'Emails sent successfully' });
   } catch (error) {
     console.error('Error sending emails:', error);
     return NextResponse.json({ error: 'Failed to send emails' }, { status: 500 });
   }
 }
-
 
 const createEmailTemplate = (displayName: string) => {
   return `
@@ -132,4 +123,3 @@ const createAdminNotificationTemplate = (displayName: string, email: string) => 
     </html>
   `;
 };
-

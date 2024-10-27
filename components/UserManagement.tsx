@@ -46,7 +46,7 @@ const UserManagement = () => {
   const [currentUserUid, setCurrentUserUid] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isMakingAdmin, setIsMakingAdmin] = useState(true); // Track if making admin or removing admin
+  const [isMakingAdmin, setIsMakingAdmin] = useState(true);
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
@@ -61,8 +61,8 @@ const UserManagement = () => {
         uid: doc.id,
         ...doc.data(),
         isDisabled:
-          doc.data().isDisabled !== undefined ? doc.data().isDisabled : false, // Ensure isDisabled is set
-        isAdmin: doc.data().isAdmin !== undefined ? doc.data().isAdmin : false, // Ensure isAdmin is set
+          doc.data().isDisabled !== undefined ? doc.data().isDisabled : false,
+        isAdmin: doc.data().isAdmin !== undefined ? doc.data().isAdmin : false,
       })) as User[];
       setUsers(usersData);
       setLoading(false);
@@ -78,20 +78,16 @@ const UserManagement = () => {
     userId: string,
     currentStatus: boolean
   ) => {
-    console.log(
-      `Toggling status for userId: ${userId}, currentStatus: ${currentStatus}`
-    ); // Debug log
+   
     try {
-      // Find the user by email instead of userId
       const userToToggle = users.find((user) => user.uid === userId);
       if (!userToToggle) {
         toast.error("User does not exist.");
-        return; // Exit if the user document does not exist
+        return;
       }
 
-      const userEmail = userToToggle.email; // Get the user's email
+      const userEmail = userToToggle.email;
 
-      // Query the user document by email
       const userQuery = query(
         collection(db, "users"),
         where("email", "==", userEmail)
@@ -100,13 +96,12 @@ const UserManagement = () => {
 
       if (querySnapshot.empty) {
         toast.error("User does not exist.");
-        return; // Exit if no user document is found
+        return;
       }
 
-      const userDoc = querySnapshot.docs[0]; // Get the first document
-      const userDocRef = doc(db, "users", userDoc.id); // Reference to the user document
+      const userDoc = querySnapshot.docs[0];
+      const userDocRef = doc(db, "users", userDoc.id);
 
-      // Now toggle the status
       await updateDoc(userDocRef, {
         isDisabled: !currentStatus,
       })
@@ -133,16 +128,14 @@ const UserManagement = () => {
       try {
         setLoading(true);
         const batch = writeBatch(db);
-        const userToDelete = users.find((user) => user.uid === userId); // Get the user being deleted
+        const userToDelete = users.find((user) => user.uid === userId);
 
         if (!userToDelete || !userToDelete.email) {
           throw new Error("User not found or email is missing");
         }
 
-        // Delete user document
         batch.delete(doc(db, "users", userId));
 
-        // Delete user's data from other collections
         const collections = [
           "users",
           "profits",
@@ -155,7 +148,6 @@ const UserManagement = () => {
         ];
 
         for (const collectionName of collections) {
-          // Method 1: Check for userEmail
           const q1 = query(
             collection(db, collectionName),
             where("userEmail", "==", userToDelete.email)
@@ -165,7 +157,6 @@ const UserManagement = () => {
             batch.delete(doc.ref);
           });
 
-          // Method 2: Check for email
           const q2 = query(
             collection(db, collectionName),
             where("email", "==", userToDelete.email)
@@ -175,7 +166,6 @@ const UserManagement = () => {
             batch.delete(doc.ref);
           });
 
-          // Method 3: Check if document ID equals user email
           const docRef = doc(db, collectionName, userToDelete.email);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
@@ -215,7 +205,6 @@ const UserManagement = () => {
 
     setLoading(true);
     try {
-      // Query for all documents where email matches
       const usersRef = collection(db, "users");
       const userQuery = query(
         usersRef,
@@ -228,17 +217,14 @@ const UserManagement = () => {
         return;
       }
 
-      // Use a batch to update all matching documents
       const batch = writeBatch(db);
       querySnapshot.forEach((userDoc) => {
         const userRef = doc(db, "users", userDoc.id);
         batch.update(userRef, { isAdmin: isMakingAdmin });
       });
 
-      // Commit the batch
       await batch.commit();
 
-      // Update local state
       setUsers(
         users.map((user) =>
           user.email === selectedUser.email
@@ -250,7 +236,7 @@ const UserManagement = () => {
       toast.success(
         `User ${isMakingAdmin ? "made" : "removed as"} admin successfully`
       );
-      setModalVisible(false); // Close the modal after successful update
+      setModalVisible(false);
     } catch (error) {
       console.error("Error updating admin status:", error);
       toast.error("Failed to update admin status");
@@ -298,7 +284,7 @@ const UserManagement = () => {
         </TableHeader>
         <TableBody>
           {users
-            .filter((user) => user.uid !== currentUserUid) // Exclude current user
+            .filter((user) => user.uid !== currentUserUid)
             .map((user) => (
               <TableRow key={user.uid} className="text-light">
                 <TableCell className="text-light">{user.displayName}</TableCell>

@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState } from "react";
 
 interface User {
-  email: string; // Add other user properties as needed
+  email: string; 
 }
 
 const UserContext = createContext<{
-  user: User | null; // User can be null if not logged in
+  user: User | null; 
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   username: string;
   setUsername: React.Dispatch<React.SetStateAction<string>>;
@@ -14,7 +14,7 @@ const UserContext = createContext<{
 } | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null); // Initialize user state
+  const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
 

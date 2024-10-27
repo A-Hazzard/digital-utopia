@@ -1,11 +1,10 @@
 "use client";
 
-import { db } from '@/lib/firebase'; // Adjust the import based on your project structure
+import { db } from '@/lib/firebase';
 import { Button, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@nextui-org/react";
 import { collection, getDocs } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
-// Define the Payment interface
 interface Payment {
   id: string;
   userName: string;

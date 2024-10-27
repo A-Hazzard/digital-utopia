@@ -160,7 +160,10 @@ export const fetchMoreWithdrawalRequests = async (
       id: doc.id,
       ...doc.data(),
     })) as WithdrawalRequest[];
-    setWithdrawalRequests((prevRequests) => [...prevRequests, ...newRequests]);
+    setWithdrawalRequests((prevRequests) => [
+      ...prevRequests,
+      ...newRequests,
+    ]);
     setLastVisibleRequest(snapshot.docs[snapshot.docs.length - 1]);
   } catch (error) {
     console.error("Error fetching more withdrawal requests:", error);
@@ -171,45 +174,51 @@ export const fetchMoreWithdrawalRequests = async (
 export const handleUpdateStatus = async (
   requestId: string,
   withdrawalId: string,
-  newStatus: string,
+  newStatus: "confirmed" | "pending",
   isConfirmation: boolean
 ) => {
   try {
+    const requestRef = doc(db, "withdrawalRequests", requestId);
+    const requestDoc = await getDoc(requestRef);
+
+    if (!requestDoc.exists()) {
+      throw new Error("Request not found");
+    }
+
+    const requestData = requestDoc.data() as WithdrawalRequest;
+
     await runTransaction(db, async (transaction) => {
-      // Perform all reads first
-      const requestRef = doc(db, "withdrawalRequests", requestId);
-      const requestDoc = await transaction.get(requestRef);
+      const withdrawalRef = doc(db, "withdrawals", withdrawalId);
+      const withdrawalDoc = await transaction.get(withdrawalRef);
 
-      if (!requestDoc.exists()) {
-        throw new Error("Withdrawal request not found");
+      if (!withdrawalDoc.exists()) {
+        throw new Error("Withdrawal not found");
       }
 
-      const requestData = requestDoc.data();
-      const { userEmail, amount } = requestData;
+      const withdrawalData = withdrawalDoc.data();
 
-      const profitRef = doc(db, "profits", userEmail);
-      const profitDoc = await transaction.get(profitRef);
-
-      if (!profitDoc.exists()) {
-        throw new Error("Profit document not found");
-      }
-
-      // Now perform all writes
       if (isConfirmation) {
+        const profitRef = doc(db, "profits", requestData.userEmail);
+        const profitDoc = await transaction.get(profitRef);
+
+        if (!profitDoc.exists()) {
+          throw new Error("Profit document not found");
+        }
+
         const currentProfit = profitDoc.data().profit || 0;
-        const newProfit = Math.max(currentProfit - amount, 0);
-        transaction.update(profitRef, { profit: newProfit });
+        transaction.update(profitRef, { profit: currentProfit - requestData.amount });
       }
 
+      transaction.update(withdrawalRef, { status: newStatus });
       transaction.update(requestRef, { status: newStatus });
 
-      // Use the withdrawalId as the document ID for the withdrawal
-      const withdrawalRef = doc(db, "withdrawals", withdrawalId);
-      transaction.set(withdrawalRef, {
-        ...requestData,
+      const withdrawalDataWithStatus = {
+        ...withdrawalData,
         status: newStatus,
         withdrawalId: withdrawalId,
-      });
+      };
+
+      transaction.set(withdrawalRef, withdrawalDataWithStatus);
     });
 
     toast.success(`Withdrawal ${isConfirmation ? "confirmed" : "updated"} successfully`);
@@ -320,7 +329,6 @@ export const confirmWithdrawal = async (requestData: WithdrawalRequest) => {
 export const revertWithdrawal = async (withdrawalId: string) => {
   try {
     await runTransaction(db, async (transaction) => {
-      // Read operations
       const withdrawalRef = doc(db, "withdrawals", withdrawalId);
       const withdrawalDoc = await transaction.get(withdrawalRef);
 
@@ -331,7 +339,6 @@ export const revertWithdrawal = async (withdrawalId: string) => {
       const withdrawalData = withdrawalDoc.data();
       const { userEmail, amount } = withdrawalData;
 
-      // Find the corresponding withdrawal request
       const requestsRef = collection(db, "withdrawalRequests");
       const requestQuery = query(requestsRef, where("withdrawalId", "==", withdrawalId));
       const requestSnapshot = await getDocs(requestQuery);
@@ -349,14 +356,11 @@ export const revertWithdrawal = async (withdrawalId: string) => {
         throw new Error("Profit document not found");
       }
 
-      // Write operations
       const currentProfit = profitDoc.data().profit || 0;
       transaction.update(profitRef, { profit: currentProfit + amount });
 
-      // Delete the withdrawal document
       transaction.delete(withdrawalRef);
 
-      // Update the withdrawal request status back to pending
       transaction.update(requestDoc.ref, { status: "pending" });
     });
 

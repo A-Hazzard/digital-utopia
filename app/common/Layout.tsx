@@ -46,7 +46,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           <Navbar />
         </ProfileModalProvider>
         <main className={`flex-1 flex flex-col gap-4 pt-10 px-10 lg:p-8 overflow-y-auto`}>
-          {children} {/* Render children only when not loading */}
+          {children}
         </main>
       </div>
     </UserProvider>

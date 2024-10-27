@@ -96,7 +96,6 @@ const WithdrawalManagement = () => {
   }, []);
 
   useEffect(() => {
-    // GSAP animation for the component
     gsap.from(".withdrawal-table", { opacity: 0, y: -50, duration: 0.5, stagger: 0.1 });
   }, []);
 

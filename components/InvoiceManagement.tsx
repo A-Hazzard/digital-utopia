@@ -33,7 +33,7 @@ const InvoiceManagement = () => {
   >({
     invoiceNumber: "",
     description: "",
-    amount: 0, // Ensure amount is a number
+    amount: 0,
     status: "pending",
     userName: "",
     country: "",
@@ -52,20 +52,20 @@ const InvoiceManagement = () => {
       const invoicesCollection = collection(db, "invoices");
       const invoicesSnapshot = await getDocs(invoicesCollection);
       const invoicesData: Invoice[] = invoicesSnapshot.docs.map((doc) => {
-        const data = doc.data() as DocumentData; // Type the data as DocumentData
+        const data = doc.data() as DocumentData;
         return {
           id: doc.id,
           invoiceNumber: data.invoiceNumber || "",
           description: data.description || "",
-          amount: parseFloat(data.amount) || 0, // Ensure amount is a number
-          date: data.date instanceof Date ? data.date : new Date(data.date), // Ensure date is a Date object
+          amount: parseFloat(data.amount) || 0,
+          date: data.date instanceof Date ? data.date : new Date(data.date),
           status: data.status || "",
           userId: data.userId || "",
           userEmail: data.userEmail || "",
           createdAt: data.createdAt || new Date().toISOString(),
           userName: data.userName || "",
           country: data.country || "",
-        } as Invoice; // Type assertion to Invoice
+        } as Invoice;
       });
       setInvoices(invoicesData);
     } catch (err) {
@@ -80,7 +80,7 @@ const InvoiceManagement = () => {
     try {
       const newInvoiceWithDate = {
         ...newInvoice,
-        date: new Date(), // Set date as a Date object
+        date: new Date(),
         createdAt: new Date().toISOString(),
         userId: "",
         userEmail: "",
@@ -93,7 +93,7 @@ const InvoiceManagement = () => {
       setNewInvoice({
         invoiceNumber: "",
         description: "",
-        amount: 0, // Reset to number
+        amount: 0,
         status: "pending",
         userName: "",
         country: "",
@@ -200,14 +200,14 @@ const InvoiceManagement = () => {
         />
         <Input
           label="Amount"
-          type="number" // Ensure type is number
-          value={newInvoice.amount.toString()} // Convert number to string for input
+          type="number"
+          value={newInvoice.amount.toString()}
           onChange={
             (e) =>
               setNewInvoice({
                 ...newInvoice,
                 amount: parseFloat(e.target.value) || 0,
-              }) // Ensure amount is a number
+              })
           }
           className="mb-2"
         />

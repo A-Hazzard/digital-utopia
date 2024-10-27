@@ -32,11 +32,10 @@ const sendClientWithdrawalNotification = async (withdrawalData: {
   userEmail: string;
   amount: string;
   date: string;
-  withdrawalId: string; // Add withdrawalId
+  withdrawalId: string;
 }) => {
   const logoPath = path.join(process.cwd(), 'public', 'logo.png');
 
-  // Check if the file exists
   if (!fs.existsSync(logoPath)) {
     console.error(`Logo file not found at path: ${logoPath}`);
     throw new Error('Logo file not found');
@@ -59,12 +58,11 @@ const sendClientWithdrawalNotification = async (withdrawalData: {
   await transporter.sendMail(mailOptions);
 };
 
-// Update the template to include withdrawalId
 const createWithdrawalConfirmationTemplate = (withdrawalData: {
   amount: string;
   date: string;
-  withdrawalId: string; // Add withdrawalId
-  userEmail: string; // Include userEmail for the template
+  withdrawalId: string;
+  userEmail: string;
 }) => {
   return `
     <!DOCTYPE html>

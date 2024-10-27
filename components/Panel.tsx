@@ -13,8 +13,8 @@ export default function Panel() {
   const pathname = usePathname();
   const { isOpen, openModal, closeModal } = useProfileModal();
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // Use null for loading state
-  const [loading, setLoading] = useState(true); // Loading state
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const handleSignOut = async () => {
     try {
@@ -47,9 +47,8 @@ export default function Panel() {
     return () => unsubscribe();
   }, []);
 
-  // Show a loading state while checking authentication
   if (loading) {
-    return null; // You can customize this loading state
+    return null;
   }
 
   return (
@@ -103,7 +102,6 @@ export default function Panel() {
           Profile
         </button>
         
-        {/* Conditionally render admin links based on user's email */}
         {isAdmin && (
           <>
             <Link

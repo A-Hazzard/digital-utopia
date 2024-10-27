@@ -15,7 +15,7 @@ import { Image as ImageIcon, X as XIcon } from "lucide-react";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
-import { auth, db, storage } from "../lib/firebase"; // Import Firebase storage and Firestore
+import { auth, db, storage } from "../lib/firebase";
 
 interface ProofOfPaymentProps {
   onBack: () => void;
