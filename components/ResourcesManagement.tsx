@@ -18,14 +18,14 @@ import { toast, ToastContainer } from "react-toastify";
 import { X } from "lucide-react";
 import 'react-toastify/dist/ReactToastify.css';
 
-interface Resource {
+type Resource = {
   id: string;
   title: string;
   youtubeUrl: string;
   categories: string[];
 }
 
-interface Category {
+type Category = {
   id: string;
   category: string;
 }
@@ -268,33 +268,33 @@ const ResourcesManagement = () => {
           className="text-light"
         />
 
-<div className="space-y-2 ">
-  <p className="font-semibold">Categories</p>
-  <div className="flex gap-2 overflow-x-scroll overflow-y-hidden whitespace-nowrap">
-    {categories.map((category) => (
-      <Checkbox
-        key={category.id}
-        isSelected={selectedCategoriesForNewResource.includes(category.id)}
-        onChange={() => handleCategorySelectionChange(category.id)}
-        className="inline-block"
-      >
-        {category.category}
-      </Checkbox>
-    ))}
-  </div>
-</div>
+      <div className="space-y-2 ">
+        <p className="font-semibold">Categories</p>
+          <div className="pb-4 flex gap-2 overflow-x-scroll overflow-y-hidden whitespace-nowrap">
+            {categories.map((category) => (
+              <Checkbox
+                key={category.id}
+                isSelected={selectedCategoriesForNewResource.includes(category.id)}
+                onChange={() => handleCategorySelectionChange(category.id)}
+                className="inline-block"
+              >
+                {category.category}
+              </Checkbox>
+            ))}
+          </div>
       </div>
+
+      </div>
+
+
       <div className="space-y-2 md:space-x-4">
-  <Button
-    onClick={handleAddResource}
-    color="primary"
-  >
-    Add Resource
-  </Button>
-</div>
-
-
-
+        <Button
+          onClick={handleAddResource}
+          color="primary"
+        >
+          Add Resource
+        </Button>
+      </div>
 
       <hr className="my-4" />
 
@@ -506,6 +506,7 @@ const ResourcesManagement = () => {
           Add Resource
         </Button>
       </div>
+
     </div>
   );
 };

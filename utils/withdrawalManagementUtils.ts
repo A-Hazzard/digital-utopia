@@ -22,7 +22,7 @@ import { toast } from "react-toastify";
 
 const ITEMS_PER_PAGE = 50;
 
-interface Withdrawal {
+type Withdrawal = {
   id: string;
   userEmail: string;
   username: string;
@@ -32,7 +32,7 @@ interface Withdrawal {
   withdrawalId?: string;
 }
 
-interface WithdrawalRequest {
+type WithdrawalRequest = {
   id: string;
   userEmail: string;
   username: string;

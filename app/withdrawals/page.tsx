@@ -10,7 +10,7 @@ import { formatDate } from "@/helpers/date";
 import { User } from "firebase/auth";
 import gsap from "gsap";
 
-interface Withdrawal {
+type Withdrawal = {
   id: string;
   userEmail: string;
   amount: number;

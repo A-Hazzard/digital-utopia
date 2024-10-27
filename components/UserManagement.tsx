@@ -31,7 +31,7 @@ import {
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 
-interface User {
+type User = {
   uid: string;
   createdAt: string;
   email: string;

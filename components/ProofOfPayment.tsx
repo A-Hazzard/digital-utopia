@@ -17,7 +17,7 @@ import React, { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import { auth, db, storage } from "../lib/firebase";
 
-interface ProofOfPaymentProps {
+type ProofOfPaymentProps = {
   onBack: () => void;
   userId?: string;
   purpose: "deposit" | "invoice";

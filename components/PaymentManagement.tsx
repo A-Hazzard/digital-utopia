@@ -5,7 +5,7 @@ import { Button, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader,
 import { collection, getDocs } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
-interface Payment {
+type Payment = {
   id: string;
   userName: string;
   amount: string;

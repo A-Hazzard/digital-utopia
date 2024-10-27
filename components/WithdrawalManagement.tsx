@@ -34,7 +34,7 @@ import { gsap } from "gsap";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-interface Withdrawal {
+type Withdrawal = {
   id: string;
   userEmail: string;
   username: string;
@@ -44,7 +44,7 @@ interface Withdrawal {
   withdrawalId?: string;
 }
 
-interface WithdrawalRequest {
+type WithdrawalRequest = {
   id: string;
   userEmail: string;
   username: string;

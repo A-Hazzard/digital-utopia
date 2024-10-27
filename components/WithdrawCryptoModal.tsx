@@ -21,11 +21,11 @@ import {
   getWithdrawalCount,
 } from "@/utils/withdrawCryptoModalUtils";
 
-interface WithdrawCryptoModalProps {
+type WithdrawCryptoModalProps = {
   onClose: () => void;
 }
 
-interface Trade {
+type Trade = {
   amount: number;
 }
 

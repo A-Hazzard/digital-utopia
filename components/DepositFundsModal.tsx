@@ -9,7 +9,7 @@ import { auth } from "../lib/firebase";
 import CustomInput from "./CustomInput";
 import ProofOfPayment from "./ProofOfPayment";
 
-interface DepositFundsModalProps {
+type DepositFundsModalProps = {
   onClose: () => void; 
 }
 

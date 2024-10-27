@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { User } from "firebase/auth";
 import gsap from "gsap";
 
-interface Resource {
+type Resource = {
   id: string;
   title: string;
   youtubeUrl: string;
@@ -18,7 +18,7 @@ interface Resource {
   categories: string[];
 }
 
-interface Category {
+type Category = {
   id: string;
   category: string;
 }

@@ -68,7 +68,9 @@ export default function Panel() {
           <>
             <Link
               href="/"
-              className={`text-lg text-light ${pathname === "/" ? "underline font-bold" : ""}`}
+              className={`text-lg text-light ${
+                pathname === "/" ? "underline font-bold" : ""
+              }`}
             >
               Dashboard
             </Link>
@@ -91,17 +93,10 @@ export default function Panel() {
           </>
         )}
 
-        <Link
-          href="/resources"
-          className={`text-lg text-light ${pathname === "/resources" ? "underline font-bold" : ""}`}
-        >
-          Resources
-        </Link>
-
         <button className="bg-none inline w-fit" onClick={openModal}>
           Profile
         </button>
-        
+
         {isAdmin && (
           <>
             <Link
@@ -116,6 +111,15 @@ export default function Panel() {
               className={pathname === "/admin/deposits" ? "underline" : ""}
             >
               Deposits
+            </Link>
+
+            <Link
+              href="/resources"
+              className={`text-lg text-light ${
+                pathname === "/resources" ? "underline font-bold" : ""
+              }`}
+            >
+              Resources
             </Link>
 
             <Link
@@ -134,14 +138,18 @@ export default function Panel() {
 
             <Link
               href="/admin/manage-resources"
-              className={pathname === "/admin/manage-resources" ? "underline" : ""}
+              className={
+                pathname === "/admin/manage-resources" ? "underline" : ""
+              }
             >
               Manage Resources
             </Link>
 
             <Link
               href="/admin/user-management"
-              className={pathname === "/admin/user-management" ? "underline" : ""}
+              className={
+                pathname === "/admin/user-management" ? "underline" : ""
+              }
             >
               User Management
             </Link>

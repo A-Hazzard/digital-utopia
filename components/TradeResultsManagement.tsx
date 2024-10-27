@@ -20,7 +20,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-interface Trade {
+type Trade = {
   id: string;
   date: string;
   type: "win" | "loss";
@@ -31,13 +31,13 @@ interface Trade {
   username: string;
 }
 
-interface TradingPair {
+type TradingPair = {
   id: string;
   pair: string;
   iconUrl: string;
 }
 
-interface ProfitData {
+type ProfitData = {
   profit: number;
   username: string;
   email?: string;

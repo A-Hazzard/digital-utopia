@@ -7,7 +7,7 @@ import React, { useEffect, useState } from "react";
 import PaymentMethod from "./PaymentMethod";
 import { Invoice } from "@/types/invoice";
 
-interface InvoiceModalProps {
+type InvoiceModalProps = {
   visible: boolean;
   onClose: () => void;
   invoice: Invoice;
