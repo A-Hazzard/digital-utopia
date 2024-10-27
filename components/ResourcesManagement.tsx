@@ -1,7 +1,7 @@
 "use client";
 
 import { db } from "@/lib/firebase";
-import { Button, Input, Select, SelectItem } from "@nextui-org/react";
+import { Button, Input } from "@nextui-org/react";
 import {
   addDoc,
   collection,
@@ -51,20 +51,7 @@ const ResourcesManagement = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleAddResource = async () => {
-    try {
-      await addDoc(collection(db, "resources"), {
-        ...newResource,
-        categories: selectedCategories, // Include selected categories
-      });
-      setNewResource({ title: "", youtubeUrl: "", categories: [] });
-      setSelectedCategories([]); // Clear selected categories after adding
-      toast.success("Resource added successfully");
-    } catch (error) {
-      console.error("Error adding resource:", error);
-      toast.error("Failed to add resource");
-    }
-  };
+
 
   const handleDeleteResource = async (resourceId: string) => {
     try {
@@ -120,24 +107,6 @@ const ResourcesManagement = () => {
     return () => unsubscribe();
   }, []);
 
-  // const handleSearchResourcesByTitle = async (searchQuery: string) => {
-  //   const resourcesQuery = query(collection(db, "resources"));
-  //   const unsubscribe = onSnapshot(resourcesQuery, (snapshot) => {
-  //     const resourcesData = snapshot.docs.map((doc) => ({
-  //       id: doc.id,
-  //       ...doc.data(),
-  //     })) as Resource[];
-
-  //     // Search resources that contain the search query in the title
-  //     const searchedResources = resourcesData.filter((resource) =>
-  //       resource.title.toLowerCase().includes(searchQuery.toLowerCase())
-  //     );
-
-  //     setResources(searchedResources);
-  //   });
-
-  //   return () => unsubscribe();
-  // };
 
   const handleFilterResourcesByCategory = () => {
     const resourcesQuery = query(collection(db, "resources"));
@@ -147,7 +116,7 @@ const ResourcesManagement = () => {
         ...doc.data(),
       })) as Resource[];
 
-      // Filter resources that match any of the selected categories
+
       const filteredResources = resourcesData.filter((resource) =>
         selectedCategories.length === 0 ||
         selectedCategories.some(categoryId => resource.categories.includes(categoryId))
@@ -160,9 +129,9 @@ const ResourcesManagement = () => {
   };
 
   const handleClearFilter = () => {
-    setSelectedCategories([]); // Clear selected categories
+    setSelectedCategories([]);
 
-    // Fetch all resources again
+
     const resourcesQuery = query(collection(db, "resources"));
     const unsubscribe = onSnapshot(resourcesQuery, (snapshot) => {
       const resourcesData = snapshot.docs.map((doc) => ({
@@ -177,30 +146,7 @@ const ResourcesManagement = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
 
-  const handleSearchAndFilterResources = () => {
-    const resourcesQuery = query(collection(db, "resources"));
-    const unsubscribe = onSnapshot(resourcesQuery, (snapshot) => {
-      const resourcesData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Resource[];
 
-      // Filter resources based on partial match of newResource.title and selected categories
-      const filteredResources = resourcesData.filter((resource) => {
-        const matchesSearchQuery = resource.title
-          .toLowerCase()
-          .includes(newResource.title.toLowerCase());
-        const matchesCategory =
-          selectedCategories.length === 0 ||
-          selectedCategories.some(categoryId => resource.categories.includes(categoryId));
-        return matchesSearchQuery && matchesCategory;
-      });
-
-      setResources(filteredResources);
-    });
-
-    return () => unsubscribe();
-  };
   const [isDeleteDropdownOpen, setIsDeleteDropdownOpen] = useState(false);
   const [categoriesToDelete, setCategoriesToDelete] = useState<string[]>([]);
 
@@ -224,7 +170,7 @@ const ResourcesManagement = () => {
       );
       await Promise.all(deletePromises);
       toast.success("Selected categories deleted successfully");
-      setCategoriesToDelete([]); // Clear selected categories after deletion
+      setCategoriesToDelete([]);
     } catch (error) {
       console.error("Error deleting categories:", error);
       toast.error("Failed to delete selected categories");
@@ -264,7 +210,6 @@ const ResourcesManagement = () => {
 
   return (
     <div className="space-y-4 text-light">
-      {/* ToastContainer for displaying toast notifications */}
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -275,7 +220,7 @@ const ResourcesManagement = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="colored" // Ensure this matches the theme used in other pages
+        theme="colored"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -307,7 +252,7 @@ const ResourcesManagement = () => {
               padding: '0.5rem 1rem',
               height: '2.5rem',
               fontSize: '1rem',
-              color: 'rgba(0, 0, 0, 0.9)', // Match Input text color
+              color: 'rgba(0, 0, 0, 0.9)',
             }}
           >
             Select Categories
@@ -334,9 +279,8 @@ const ResourcesManagement = () => {
         </div>
       </div>
       <div className="space-y-2 md:space-x-4">
-        <Button onClick={handleAddResource} color="primary">
-          Add Resource
-        </Button>
+
+
       </div>
 
 
@@ -414,14 +358,13 @@ const ResourcesManagement = () => {
       {isFilterDropdownOpen && (
         <div className="dropdown-content">
           <h3>Filter by Categories</h3>
-          {/* Wrap the mapped elements in a fragment */}
           <>
             {categories.map((category) => (
               <div key={category.id}>
                 <input
                   type="checkbox"
                   id={category.id}
-                  value={category.id} // Use category ID here
+                  value={category.id}
                   checked={selectedCategories.includes(category.id)}
                   onChange={() => handleCategoryChange(category.id)}
                 />
@@ -475,7 +418,6 @@ const ResourcesManagement = () => {
                             onClick={async (e: React.MouseEvent) => {
                               e.stopPropagation();
                               try {
-                                // Update the resource document to remove the category
                                 await updateDoc(doc(db, "resources", resource.id), {
                                   categories: arrayRemove(categoryId)
                                 });

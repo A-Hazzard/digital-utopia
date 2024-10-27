@@ -32,6 +32,7 @@ export default function ResourcesPage() {
   const router = useRouter();
   const titleRef = useRef(null);
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user: User | null) => {
@@ -179,8 +180,6 @@ export default function ResourcesPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {resources.map((resource, index) => (
-        <div className="flex flex-wrap gap-4">
-          {resources.map((resource) => (
             <div
               key={resource.id}
               ref={(el) => {
