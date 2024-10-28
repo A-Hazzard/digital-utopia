@@ -1,14 +1,13 @@
 "use client";
 
 import Layout from "@/app/common/Layout";
-import { db } from "@/lib/firebase";
-import { collection, onSnapshot, query } from "firebase/firestore";
-import { useEffect, useState, useRef } from "react";
-import { Spinner, Input, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Card, Button } from "@nextui-org/react";
-import { auth } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
+import { auth, db } from "@/lib/firebase";
+import { Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Spinner } from "@nextui-org/react";
 import { User } from "firebase/auth";
-import gsap from "gsap";
+import { collection, onSnapshot, query } from "firebase/firestore";
+import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 type Resource = {
   id: string;
@@ -23,16 +22,19 @@ type Category = {
   category: string;
 }
 
+const animationVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: { opacity: 1, y: 0 }
+};
+
 export default function ResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const router = useRouter();
-  const titleRef = useRef(null);
-  const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user: User | null) => {
@@ -45,25 +47,6 @@ export default function ResourcesPage() {
 
     return () => unsubscribe();
   }, [router]);
-
-  useEffect(() => {
-    if (!loading) {
-      gsap.from(titleRef.current, {
-        opacity: 0,
-        y: -20,
-        duration: 0.5,
-        ease: "power3.out"
-      });
-
-      gsap.from(cardsRef.current, {
-        opacity: 0,
-        y: 20,
-        duration: 0.5,
-        stagger: 0.1,
-        ease: "power3.out"
-      });
-    }
-  }, [loading]);
 
   const fetchResources = () => {
     const resourcesQuery = query(collection(db, "resources"));
@@ -131,93 +114,125 @@ export default function ResourcesPage() {
     setIsDropdownOpen(prev => !prev);
   };
 
+  function getYoutubeVideoId(url: string): string {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : "";
+  }
+
   if (loading) {
     return (
-        <div className="flex justify-center items-center h-screen">
-          <Spinner size="lg" />
-        </div>
+      <div className="flex justify-center items-center h-screen">
+        <Spinner size="lg" />
+      </div>
     );
   }
 
   return (
     <Layout>
-      <div className="p-8 text-light">
-        <h1 ref={titleRef} className="text-4xl font-bold mb-8 text-center">
+      <div className="max-w-7xl mx-auto px-4 py-6 text-light">
+        <motion.h1 
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-4xl font-bold mb-8 text-center"
+        >
           Trading Resources
-        </h1>
-
-        <div className="flex mb-4 space-x-4">
-          <Input
-            type="text"
-            placeholder="Search by title"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="text-light"
-          />
-          <Dropdown isOpen={isDropdownOpen}>
-            <DropdownTrigger>
-              <Button onClick={toggleDropdown}>Filter by Category</Button>
-            </DropdownTrigger>
-            <DropdownMenu>
-              {categories.map((category) => (
-                <DropdownItem key={category.id}>
-                  <input
-                    type="checkbox"
-                    id={category.id}
-                    value={category.category}
-                    checked={selectedCategories.includes(category.category)}
-                    onChange={() => handleCategoryChange(category.category)}
-                    className="mb-1 mr-1"
-                  />
-                  <label htmlFor={category.id} style={{ color: 'white' }}>
-                    {category.category}
-                  </label>
-                </DropdownItem>
-              ))}
-            </DropdownMenu>
-          </Dropdown>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {resources.map((resource, index) => (
-            <div
-              key={resource.id}
-              ref={(el) => {
-                if (el) {
-                  cardsRef.current[index] = el;
-                }
+        </motion.h1>
+  
+        <motion.div 
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="bg-darker p-6 rounded-xl border border-readonly/30 mb-8"
+        >
+          <div className="flex flex-wrap gap-4 items-center">
+            <Input
+              type="text"
+              placeholder="Search by title"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-md"
+              classNames={{
+                input: "bg-dark text-light",
+                label: "text-gray"
               }}
-            >
-              <Card className="bg-darker hover:bg-dark transition-colors duration-300">
-                <div className="p-4">
+            />
+            <Dropdown isOpen={isDropdownOpen}>
+              <DropdownTrigger>
+                <Button onClick={toggleDropdown} className="bg-orange hover:bg-orange/90">
+                  Filter by Category
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu>
+                {categories.map((category) => (
+                  <motion.div key={category.id} initial="hidden" animate="visible" variants={animationVariants}>
+                    <DropdownItem className="category-chip">
+                      <input
+                        type="checkbox"
+                        id={category.id}
+                        value={category.category}
+                        checked={selectedCategories.includes(category.category)}
+                        onChange={() => handleCategoryChange(category.category)}
+                        className="mb-1 mr-1"
+                      />
+                      <label htmlFor={category.id} className="text-light">
+                        {category.category}
+                      </label>
+                    </DropdownItem>
+                  </motion.div>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        </motion.div>
+  
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+        >
+          {resources.map((resource) => (
+            <motion.div key={resource.id} variants={animationVariants}>
+              <Card className="bg-darker hover:bg-dark/80 transition-colors duration-300 border border-readonly/30">
+                <div className="p-6">
                   <h3 className="text-xl font-semibold mb-4">{resource.title}</h3>
-                  <div className="aspect-w-16 aspect-h-9 mb-4">
+                  <div className="aspect-w-16 aspect-h-9 mb-4 rounded-lg overflow-hidden">
                     <iframe
-                      src={`https://www.youtube.com/embed/${getYoutubeVideoId(resource.youtubeUrl)}`}
+                      src={`https://www.youtube.com/embed/${getYoutubeVideoId(resource.youtubeUrl)}?enablejsapi=1&origin=${window.location.origin}`}
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
-                      className="w-full h-full rounded-lg"
+                      loading="lazy"
+                      className="w-full h-full"
                     ></iframe>
                   </div>
-                  <p className="text-gray-300 mb-4">{resource.description}</p>
+                  <p className="text-gray mb-4">{resource.description}</p>
                   <Button 
-                    color="primary" 
+                    className="bg-orange hover:bg-orange/90 w-full"
                     onClick={() => window.open(resource.youtubeUrl, "_blank")}
                   >
                     Watch on YouTube
                   </Button>
                 </div>
               </Card>
-            </div>
+            </motion.div>
           ))}
-        </div>
+
+{resources.length === 0 && (
+  <motion.div 
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    className="col-span-full flex flex-col items-center justify-center p-12 bg-darker rounded-xl border border-readonly/30"
+  >
+    <h3 className="text-2xl font-bold text-light mb-2">No Resources Available</h3>
+    <p className="text-gray text-center">Check back later for new trading resources and educational content.</p>
+  </motion.div>
+)}
+
+        </motion.div>
       </div>
     </Layout>
   );
-}
-
-function getYoutubeVideoId(url: string): string {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  const match = url.match(regExp);
-  return match && match[2].length === 11 ? match[2] : "";
+  
 }

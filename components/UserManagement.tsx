@@ -250,84 +250,104 @@ const UserManagement = () => {
   }
 
   return (
-    <div className="space-y-4">
-      <ToastContainer />
-      <Modal
-        closeButton
-        isOpen={modalVisible}
-        onClose={() => setModalVisible(false)}
-      >
-        <ModalContent>
-          <ModalHeader>
-            <h2>{isMakingAdmin ? "Make Admin" : "Remove Admin"}</h2>
-          </ModalHeader>
-          <ModalBody>
-            <p className="text-light">Are you sure you want to {isMakingAdmin ? "make" : "remove"} {selectedUser?.displayName} as an admin?</p>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" color="warning" onClick={() => setModalVisible(false)}>
-              No
-            </Button>
-            <Button color="primary" onClick={confirmAdminToggle}>
-              Yes
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-      <Table aria-label="User management table" className="text-light">
-        <TableHeader>
-          <TableColumn className="text-dark">Username</TableColumn>
-          <TableColumn className="text-dark">Email</TableColumn>
-          <TableColumn className="text-dark">Created At</TableColumn>
-          <TableColumn className="text-dark">Status</TableColumn>
-          <TableColumn className="text-dark">Actions</TableColumn>
-        </TableHeader>
-        <TableBody>
-          {users
-            .filter((user) => user.uid !== currentUserUid)
-            .map((user) => (
-              <TableRow key={user.uid} className="text-light">
-                <TableCell className="text-light">{user.displayName}</TableCell>
-                <TableCell className="text-light">{user.email}</TableCell>
-                <TableCell className="text-light">
-                  {formatDate(user.createdAt)}
-                </TableCell>
-                <TableCell className="text-light">
+    <div className="max-w-7xl mx-auto px-4 py-6 text-light">
+  <ToastContainer />
+  
+  <div className="bg-darker p-6 rounded-xl border border-readonly/30">
+    <h2 className="text-xl font-bold mb-6">User Management</h2>
+    <Table 
+      aria-label="User management table" 
+      className="rounded-lg shadow-md"
+      classNames={{
+        th: "bg-readonly text-light",
+        td: "text-gray"
+      }}
+    >
+      <TableHeader>
+        <TableColumn>Username</TableColumn>
+        <TableColumn>Email</TableColumn>
+        <TableColumn>Created At</TableColumn>
+        <TableColumn>Status</TableColumn>
+        <TableColumn>Actions</TableColumn>
+      </TableHeader>
+      <TableBody>
+        {users
+          .filter((user) => user.uid !== currentUserUid)
+          .map((user) => (
+            <TableRow key={user.uid}>
+              <TableCell className="font-semibold text-light">{user.displayName}</TableCell>
+              <TableCell>{user.email}</TableCell>
+              <TableCell>{formatDate(user.createdAt)}</TableCell>
+              <TableCell>
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  user.isDisabled 
+                    ? 'bg-red-500/20 text-red-500' 
+                    : 'bg-green-500/20 text-green-500'
+                }`}>
                   {user.isDisabled ? "Disabled" : "Active"}
-                </TableCell>
-                <TableCell className="text-light">
-                  <div className="flex space-x-2">
-                    <Button
-                      size="sm"
-                      color={user.isDisabled ? "success" : "warning"}
-                      onClick={() => handleToggleDisable(user.uid, user.isDisabled)}
-                      className="text-light"
-                    >
-                      {user.isDisabled ? "Enable" : "Disable"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      color="danger"
-                      onClick={() => handleDeleteUser(user.uid)}
-                      className="text-light"
-                    >
-                      Delete
-                    </Button>
-                    <Button
-                      size="sm"
-                      color={user.isAdmin ? "warning" : "primary"}
-                      onClick={() => handleAdminToggle(user)}
-                      className="text-light"
-                    >
-                      {user.isAdmin ? "Remove Admin" : "Make Admin"}
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-        </TableBody>
-      </Table>
-    </div>
+                </span>
+              </TableCell>
+              <TableCell>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className={user.isDisabled ? "bg-green-500/20 text-green-500" : "bg-orange/20 text-orange"}
+                    onClick={() => handleToggleDisable(user.uid, user.isDisabled)}
+                  >
+                    {user.isDisabled ? "Enable" : "Disable"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-red-500/20 text-red-500"
+                    onClick={() => handleDeleteUser(user.uid)}
+                  >
+                    Delete
+                  </Button>
+                  <Button
+                    size="sm"
+                    className={user.isAdmin ? "bg-orange/20 text-orange" : "bg-blue-500/20 text-blue-500"}
+                    onClick={() => handleAdminToggle(user)}
+                  >
+                    {user.isAdmin ? "Remove Admin" : "Make Admin"}
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+      </TableBody>
+    </Table>
+  </div>
+
+  <Modal
+    closeButton
+    isOpen={modalVisible}
+    onClose={() => setModalVisible(false)}
+    classNames={{
+      base: "bg-darker border border-readonly/30",
+      header: "border-b border-readonly/30",
+      body: "text-light py-6",
+      footer: "border-t border-readonly/30"
+    }}
+  >
+    <ModalContent>
+      <ModalHeader>
+        <h2 className="text-xl font-bold">{isMakingAdmin ? "Make Admin" : "Remove Admin"}</h2>
+      </ModalHeader>
+      <ModalBody>
+        <p>Are you sure you want to {isMakingAdmin ? "make" : "remove"} {selectedUser?.displayName} as an admin?</p>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="light" className="bg-readonly text-gray" onClick={() => setModalVisible(false)}>
+          Cancel
+        </Button>
+        <Button className="bg-orange hover:bg-orange/90" onClick={confirmAdminToggle}>
+          Confirm
+        </Button>
+      </ModalFooter>
+    </ModalContent>
+  </Modal>
+  </div>
+
   );
 };
 

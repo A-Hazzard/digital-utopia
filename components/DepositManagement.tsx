@@ -155,12 +155,17 @@ const DepositManagement = () => {
   }
 
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-2 text-light">Deposits</h2>
-      <Table
-        aria-label="Deposits Table"
-        className="deposit-table text-light rounded-lg shadow-md bg-transparent"
-      >
+    <div className="max-w-7xl mx-auto px-4 py-6 text-light">
+  <div className="bg-darker p-6 rounded-xl border border-readonly/30">
+    <h2 className="text-xl font-bold mb-6">Deposits</h2>
+    <Table
+      aria-label="Deposits Table"
+      className="deposit-table"
+      classNames={{
+        th: "bg-readonly text-light",
+        td: "text-gray"
+      }}
+    >
         <TableHeader>
           <TableColumn key="documentId">Document ID</TableColumn>
           <TableColumn key="username">Username</TableColumn>
@@ -218,6 +223,7 @@ const DepositManagement = () => {
           )}
         </TableBody>
       </Table>
+    </div>
     </div>
   );
 };

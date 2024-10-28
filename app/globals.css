@@ -97,3 +97,11 @@ body {
 .select-item-text {
   color: #ffffff; 
 }
+
+.resource-card,
+.category-chip,
+.search-section,
+.text-light {
+  opacity: 1;
+}
+

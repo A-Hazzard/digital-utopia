@@ -290,27 +290,37 @@ const TradeResultsManagement = () => {
   };
 
   return (
-    <div>
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold">Search User by Username</h2>
-        <p className="text-sm text-light mb-2">
-          Enter a username to find the associated user email. This can help you quickly locate user information if you cannot remember their email.
+    <div className="max-w-7xl mx-auto px-4 py-6 text-light">
+      {/* User Search Section */}
+      <div className="bg-darker p-6 rounded-xl border border-readonly/30 mb-8">
+        <h2 className="text-xl font-bold mb-2">Search User</h2>
+        <p className="text-gray mb-4">
+          Enter a username to find the associated user email.
         </p>
         <Input
           type="text"
           label="Search by Username"
           value={username}
+          classNames={{
+            input: "bg-dark text-light",
+            label: "text-gray"
+          }}
           onChange={(e) => {
             setUsername(e.target.value);
             fetchUserEmailByUsername(e.target.value);
           }}
+          className="max-w-md"
         />
         {possibleEmails.length > 0 && (
-          <div className="bg-white border rounded mt-2 p-2">
-            <h3 className="text-sm font-semibold">Possible Emails:</h3>
-            <ul className="list-disc pl-5">
+          <div className="mt-4 p-4 bg-dark rounded-lg border border-readonly/30">
+            <h3 className="font-semibold mb-2">Matching Emails:</h3>
+            <ul className="space-y-2">
               {possibleEmails.map((email, index) => (
-                <li key={index} className="text-sm text-dark cursor-pointer" onClick={() => setNewTrade({ ...newTrade, userEmail: email })}>
+                <li 
+                  key={index} 
+                  className="text-gray hover:text-orange cursor-pointer transition-colors p-2 rounded hover:bg-readonly"
+                  onClick={() => setNewTrade({ ...newTrade, userEmail: email })}
+                >
                   {email}
                 </li>
               ))}
@@ -318,167 +328,185 @@ const TradeResultsManagement = () => {
           </div>
         )}
       </div>
-      <hr className="mt-4 mb-10" />
 
-      <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          type="date"
-          label="Date"
-          value={newTrade.date}
-          onChange={(e) => setNewTrade({ ...newTrade, date: e.target.value })}
-          required
-        />
-        <select
-          value={newTrade.type}
-          onChange={(e) =>
-            setNewTrade({ ...newTrade, type: e.target.value as "win" | "loss" })
-          }
-          className="p-2 border rounded bg-transparent text-light"
-          required
-        >
-          <option value="">Select Type</option>
-          <option value="win">Win</option>
-          <option value="loss">Loss</option>
-        </select>
-        <Input
-          type="number"
-          label="Amount"
-          value={newTrade.amount.toString()}
-          onChange={(e) =>
-            setNewTrade({ ...newTrade, amount: Number(e.target.value) })
-          }
-          required
-        />
-        <Input
-          type="email"
-          label="User Email"
-          value={newTrade.userEmail}
-          onChange={(e) =>
-            setNewTrade({ ...newTrade, userEmail: e.target.value })
-          }
-          required
-        />
-      </div>
-
-      <div className="mb-4">
-        <p className="text-sm text-light mb-2">Trading Pairs:</p>
-        <div className="flex flex-wrap gap-2">
-          {tradingPairs.map((pair) => (
-            <div
-              key={pair.id}
-              className={`relative flex items-center text-xs py-1 px-2 rounded-md cursor-pointer transition-colors ${
-                selectedPair === pair.pair
-                  ? "bg-white text-black"
-                  : "bg-gray-700 text-white hover:bg-gray-600"
-              }`}
-              onClick={() => handlePairSelect(pair.pair)}
+      {/* Trade Input Form */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="bg-darker p-6 rounded-xl border border-readonly/30">
+          <h2 className="text-xl font-bold mb-4">Add New Trade</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <Input
+              type="date"
+              label="Date"
+              value={newTrade.date}
+              onChange={(e) => setNewTrade({ ...newTrade, date: e.target.value })}
+              className="w-full"
+            />
+            <select
+              value={newTrade.type}
+              onChange={(e) => setNewTrade({ ...newTrade, type: e.target.value as "win" | "loss" })}
+              className="w-full p-2 border rounded bg-dark/50 text-light focus:ring-2 focus:ring-primary"
             >
-              {pair.iconUrl && (
-                <Image
-                  src={pair.iconUrl}
-                  alt={`${pair.pair} icon`}
-                  width={16}
-                  height={16}
-                  className="mr-1"
-                />
-              )}
-              {pair.pair}
-              <X
-                className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 cursor-pointer text-red-500 hover:text-red-700"
-                style={{ width: '15px', height: '15px' }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeletePair(pair.id);
-                }}
-              />
-            </div>
-          ))}
-          <div
-            className="bg-blue-500 text-white text-xs py-1 px-2 rounded-md cursor-pointer hover:bg-blue-600 transition-colors"
-            onClick={() => setShowAddPair(true)}
-          >
-            Add Trading Pair
+              <option value="">Select Type</option>
+              <option value="win">Win</option>
+              <option value="loss">Loss</option>
+            </select>
+            <Input
+              type="number"
+              label="Amount"
+              value={newTrade.amount.toString()}
+              onChange={(e) => setNewTrade({ ...newTrade, amount: Number(e.target.value) })}
+            />
+            <Input
+              type="email"
+              label="User Email"
+              value={newTrade.userEmail}
+              onChange={(e) => setNewTrade({ ...newTrade, userEmail: e.target.value })}
+            />
           </div>
+          <Button 
+            onClick={handleAddTrade} 
+            disabled={!isFormValid} 
+            className={`w-full ${!isFormValid ? "bg-readonly text-gray" : "bg-orange hover:bg-orange/90"} transition-colors`}
+          >
+            Add Trade
+          </Button>
         </div>
-      </div>
 
-      {showAddPair && (
-        <div className="mb-4 flex flex-col gap-2">
-          <Input
-            type="text"
-            placeholder="Enter new trading pair"
-            value={newPair}
-            onChange={(e) => setNewPair(e.target.value)}
-          />
-          <Input
-            type="file"
-            accept="image/*"
-            onChange={handleIconFileChange}
-          />
-          {iconPreview && (
-            <div className="w-8 h-8 relative">
-              <Image
-                src={iconPreview}
-                alt="Icon preview"
-                layout="fill"
-                objectFit="contain"
+        {/* Trading Pairs Section */}
+        <div className="bg-darker p-6 rounded-xl border border-readonly/30">
+          <h2 className="text-xl font-bold mb-4">Trading Pairs</h2>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {tradingPairs.map((pair) => (
+              <div
+                key={pair.id}
+                className={`relative group flex items-center text-sm py-2 px-3 rounded-lg cursor-pointer transition-all ${
+                  selectedPair === pair.pair
+                    ? "bg-orange text-light"
+                    : "bg-readonly text-gray hover:text-light"
+                }`}
+                onClick={() => handlePairSelect(pair.pair)}
+              >
+                {pair.iconUrl && (
+                  <Image
+                    src={pair.iconUrl}
+                    alt={`${pair.pair} icon`}
+                    width={20}
+                    height={20}
+                    className="mr-2"
+                  />
+                )}
+                {pair.pair}
+                <X
+                  className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 text-white rounded-full p-1"
+                  style={{ width: '20px', height: '20px' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeletePair(pair.id);
+                  }}
+                />
+              </div>
+            ))}
+            <Button
+              className="bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+              onClick={() => setShowAddPair(true)}
+            >
+              Add Pair
+            </Button>
+          </div>
+
+          {showAddPair && (
+            <div className="space-y-4 p-4 bg-white/5 rounded-lg">
+              <Input
+                type="text"
+                placeholder="Enter trading pair"
+                value={newPair}
+                onChange={(e) => setNewPair(e.target.value)}
               />
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleIconFileChange}
+              />
+              {iconPreview && (
+                <div className="w-12 h-12 relative rounded-lg overflow-hidden">
+                  <Image
+                    src={iconPreview}
+                    alt="Icon preview"
+                    layout="fill"
+                    objectFit="contain"
+                  />
+                </div>
+              )}
+              <Button onClick={handleAddPair} className="w-full bg-primary hover:bg-primary/80">
+                Add Trading Pair
+              </Button>
             </div>
           )}
-          <Button onClick={handleAddPair}>Add Pair</Button>
         </div>
-      )}
+      </div>
 
-      <Button onClick={handleAddTrade} disabled={!isFormValid} className={`${!isFormValid ? "bg-gray-400 text-gray-600 cursor-not-allowed" : "bg-blue-500 text-white hover:bg-blue-600"}`}>Add Trade</Button>
-
-      <Table
-        aria-label="Trades Table"
-        className="mt-4 text-light rounded-lg shadow-md bg-transparent"
-      >
-        <TableHeader>
-          <TableColumn key="date">Date</TableColumn>
-          <TableColumn key="type">Type</TableColumn>
-          <TableColumn key="amount">Amount</TableColumn>
-          <TableColumn key="userEmail">User Email</TableColumn>
-          <TableColumn key="username">Username</TableColumn>
-          <TableColumn key="tradingPair">Trading Pair</TableColumn>
-        </TableHeader>
-        <TableBody>
-          {trades.map((trade) => (
-            <TableRow key={trade.id}>
-              <TableCell>{formatDate(trade.date)}</TableCell>
-              <TableCell>{trade.type}</TableCell>
-              <TableCell>{trade.amount}</TableCell>
-              <TableCell>{trade.userEmail}</TableCell>
-              <TableCell>{trade.username}</TableCell>
-              <TableCell>
-                <div className="flex items-center">
-                  {trade.iconUrl && (
-                    <Image
-                      src={trade.iconUrl}
-                      alt={`${trade.tradingPair} icon`}
-                      width={20}
-                      height={20}
-                      className="mr-2"
-                    />
-                  )}
-                  {trade.tradingPair}
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-
-      <Pagination
-        total={totalPages}
-        initialPage={1}
-        page={currentPage}
-        onChange={handlePageChange}
-        className="mt-4"
-      />
+      {/* Trades Table */}
+      <div className="bg-darker p-6 rounded-xl border border-readonly/30">
+        <h2 className="text-xl font-bold mb-4">Trade History</h2>
+        <Table
+          aria-label="Trades Table"
+          className="rounded-lg shadow-md"
+          classNames={{
+            th: "bg-readonly text-light",
+            td: "text-gray"
+          }}
+        >
+          <TableHeader>
+            <TableColumn key="date">Date</TableColumn>
+            <TableColumn key="type">Type</TableColumn>
+            <TableColumn key="amount">Amount</TableColumn>
+            <TableColumn key="userEmail">User Email</TableColumn>
+            <TableColumn key="username">Username</TableColumn>
+            <TableColumn key="tradingPair">Trading Pair</TableColumn>
+          </TableHeader>
+          <TableBody>
+            {trades.map((trade) => (
+              <TableRow key={trade.id}>
+                <TableCell>{formatDate(trade.date)}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    trade.type === 'win' 
+                      ? 'bg-green-500/20 text-green-500' 
+                      : 'bg-red-500/20 text-red-500'
+                  }`}>
+                    {trade.type}
+                  </span>
+                </TableCell>
+                <TableCell>${trade.amount}</TableCell>
+                <TableCell>{trade.userEmail}</TableCell>
+                <TableCell>{trade.username}</TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    {trade.iconUrl && (
+                      <Image
+                        src={trade.iconUrl}
+                        alt={`${trade.tradingPair} icon`}
+                        width={20}
+                        height={20}
+                      />
+                    )}
+                    <span>{trade.tradingPair}</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <Pagination
+          total={totalPages}
+          initialPage={1}
+          page={currentPage}
+          onChange={handlePageChange}
+          className="flex justify-center mt-4"
+        />
+      </div>
     </div>
-  );
+  )
 };
 
 export default TradeResultsManagement;
