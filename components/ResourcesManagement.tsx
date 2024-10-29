@@ -1,7 +1,7 @@
 "use client";
 
 import { db } from "@/lib/firebase";
-import { Button, Input, Checkbox, Modal, ModalContent, ModalHeader, ModalFooter, ModalBody } from "@nextui-org/react";
+import { Button, Input, Checkbox, Modal, ModalContent, ModalHeader, ModalFooter, ModalBody, Select, SelectItem } from "@nextui-org/react";
 import {
   addDoc,
   collection,
@@ -13,6 +13,7 @@ import {
   arrayRemove,
   arrayUnion
 } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useEffect, useRef, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import { X } from "lucide-react";
@@ -21,8 +22,12 @@ import 'react-toastify/dist/ReactToastify.css';
 type Resource = {
   id: string;
   title: string;
-  youtubeUrl: string;
+  youtubeUrl?: string;
+  articleLink?: string;
+  documentUrl?: string;
+  thumbnailUrl?: string;
   categories: string[];
+  type: ResourceType;
 }
 
 type Category = {
@@ -30,13 +35,21 @@ type Category = {
   category: string;
 }
 
+type ResourceType = "youtube" | "article" | "document";
+
 const ResourcesManagement = () => {
   const [resources, setResources] = useState<Resource[]>([]);
   const [newResource, setNewResource] = useState({
     title: "",
     youtubeUrl: "",
-    categories: [],
+    articleLink: "",
+    documentFile: null as File | null,
+    thumbnail: null as File | null,
+    categories: [] as string[],
   });
+  const [resourceType, setResourceType] = useState<ResourceType>("youtube");
+  const storage = getStorage();
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
 
   useEffect(() => {
     const resourcesQuery = query(collection(db, "resources"));
@@ -263,21 +276,64 @@ const [resourceToDelete, setResourceToDelete] = useState<string | null>(null);
     );
   };
 
+  const handleResourceTypeChange = (type: ResourceType) => {
+    setResourceType(type);
+    setNewResource({
+      title: "",
+      youtubeUrl: "",
+      articleLink: "",
+      documentFile: null,
+      thumbnail: null,
+      categories: [],
+    });
+  };
+
+  const handleInputChange = (field: keyof typeof newResource, value: string | File | null) => {
+    setNewResource(prev => ({ ...prev, [field]: value }));
+  };
+
+  const uploadFile = async (file: File, path: string): Promise<string> => {
+    const storageRef = ref(storage, path);
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
+  };
+
   const handleAddResource = async () => {
-    if (!newResource.title || !newResource.youtubeUrl) {
-      toast.error("Please fill in both Title and YouTube URL.");
+    if (!newResource.title || (resourceType === "youtube" && !newResource.youtubeUrl) || (resourceType === "article" && (!newResource.articleLink || !newResource.thumbnail)) || (resourceType === "document" && (!newResource.documentFile || !newResource.thumbnail))) {
+      toast.error("Please fill in all required fields.");
       return;
     }
+
     try {
-      const resourceToAdd = {
-        ...newResource,
+      let documentUrl = "";
+      let thumbnailUrl = "";
+
+      if (newResource.documentFile) {
+        documentUrl = await uploadFile(newResource.documentFile, `documents/${newResource.documentFile.name}`);
+      }
+
+      if (newResource.thumbnail) {
+        thumbnailUrl = await uploadFile(newResource.thumbnail, `thumbnails/${newResource.thumbnail.name}`);
+      }
+
+      const resourceToAdd: Omit<Resource, 'id'> = {
+        title: newResource.title,
         categories: selectedCategoriesForNewResource,
+        type: resourceType, // Using 'type' instead of 'resourceType' to match Resource type
+        youtubeUrl: resourceType === "youtube" ? newResource.youtubeUrl : "",
+        articleLink: resourceType === "article" ? newResource.articleLink : "",
+        documentUrl: documentUrl || "",
+        thumbnailUrl: thumbnailUrl || ""
       };
+
       await addDoc(collection(db, "resources"), resourceToAdd);
       toast.success("Resource added successfully");
       setNewResource({
         title: "",
         youtubeUrl: "",
+        articleLink: "",
+        documentFile: null,
+        thumbnail: null,
         categories: [],
       });
       setSelectedCategoriesForNewResource([]); // Reset selected categories
@@ -286,300 +342,386 @@ const [resourceToDelete, setResourceToDelete] = useState<string | null>(null);
       toast.error("Failed to add resource");
     }
   };
-  
-
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 text-light">
-    <ToastContainer />
+      <ToastContainer />
   
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-      {/* Add Resource Form */}
-      <div className="lg:col-span-2 bg-darker p-6 rounded-xl border border-readonly/30">
-        <h2 className="text-xl font-bold mb-4">Add New Resource</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <Input
-  type="text"
-  label="Title"
-  ref={titleInputRef}
-  value={newResource.title}
-  onChange={(e) => setNewResource({ ...newResource, title: e.target.value })}
-  classNames={{
-    input: `bg-dark text-light transition-all duration-300 ${isHighlighted ? 'ring-2 ring-orange' : ''}`,
-    label: "text-gray"
-  }}
-/>
-          <Input
-            type="text"
-            label="YouTube URL"
-            value={newResource.youtubeUrl}
-            onChange={(e) => setNewResource({ ...newResource, youtubeUrl: e.target.value })}
-            classNames={{
-              input: "bg-dark text-light",
-              label: "text-gray"
-            }}
-          />
-        </div>
-  
-        <div className="mb-4">
-          <p className="font-semibold mb-2">Categories</p>
-          <div className="flex flex-wrap gap-8">
-            {categories.map((category) => (
-              <Checkbox
-                key={category.id}
-                isSelected={selectedCategoriesForNewResource.includes(category.id)}
-                onChange={() => handleCategorySelectionChange(category.id)}
-                className="bg-readonly rounded-lg p-2"
-              >
-                {category.category}
-              </Checkbox>
-            ))}
-          </div>
-        </div>
-  
-        <Button 
-          onClick={handleAddResource}
-          className="w-full bg-orange hover:bg-orange/90"
-        >
-          Add Resource
-        </Button>
-      </div>
-  
-      {/* Category Management */}
-      <div className="bg-darker p-6 rounded-xl border border-readonly/30">
-        <h2 className="text-xl font-bold mb-4">Category Management</h2>
-        <div className="space-y-4">
-          <Button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-full bg-orange/20 text-orange"
-          >
-            Add Category
-          </Button>
-          <Button
-            onClick={() => setIsDeleteDropdownOpen(!isDeleteDropdownOpen)}
-            className="w-full bg-red-500/20 text-red-500"
-          >
-            Delete Categories
-          </Button>
-          
-          {isDeleteDropdownOpen && (
-            <div className="space-y-4 p-4 bg-dark rounded-lg">
-              <h3 className="font-semibold text-light mb-2">Select Categories to Delete</h3>
-              <div className="flex flex-wrap gap-8">
-                {categories.map((category) => (
-                  <Checkbox
-                    key={category.id}
-                    isSelected={categoriesToDelete.includes(category.id)}
-                    onChange={() => handleCategoryDeleteChange(category.id)}
-                    className="bg-readonly rounded-lg p-2"
-                  >
-                    {category.category}
-                  </Checkbox>
-                ))}
-              </div>
-              {categoriesToDelete.length > 0 && (
-                <Button 
-                onClick={handleBulkDeleteClick}
-                className="w-full bg-red-500 text-white hover:bg-red-600"
-              >
-                Delete Selected Categories
-              </Button>
-              
-              )}
-            </div>
-          )}
-  
-          {isDropdownOpen && (
-            <div className="space-y-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        {/* Add Resource Form */}
+        <div className="lg:col-span-2 bg-darker p-6 rounded-xl border border-readonly/30">
+          <h2 className="text-xl font-bold mb-4">Add New Resource</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <Select
+              value={resourceType}
+              onChange={(e) => handleResourceTypeChange(e.target.value as ResourceType)}
+              className="bg-dark text-black p-2 rounded"
+            >
+              <SelectItem className="text-light" value="youtube" key={"youtube"}>YouTube</SelectItem>
+              <SelectItem className="text-light" value="article" key={"article"}>Article</SelectItem>
+              <SelectItem className="text-light" value="document" key={"document"}>Document</SelectItem>
+            </Select>
+
+            <Input
+              type="text"
+              label="Title"
+              value={newResource.title}
+              onChange={(e) => handleInputChange("title", e.target.value)}
+              classNames={{
+                input: "bg-dark text-light",
+                label: "text-gray"
+              }}
+            />
+
+            {resourceType === "youtube" && (
               <Input
                 type="text"
-                label="New Category"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
+                label="YouTube URL"
+                value={newResource.youtubeUrl}
+                onChange={(e) => handleInputChange("youtubeUrl", e.target.value)}
                 classNames={{
                   input: "bg-dark text-light",
                   label: "text-gray"
                 }}
               />
-              <Button 
-                onClick={handleAddCategory}
-                className="w-full bg-orange hover:bg-orange/90"
+            )}
+
+            {resourceType === "article" && (
+              <>
+                <Input
+                  type="text"
+                  label="Article Link"
+                  value={newResource.articleLink}
+                  onChange={(e) => handleInputChange("articleLink", e.target.value)}
+                  classNames={{
+                    input: "bg-dark text-light",
+                    label: "text-gray"
+                  }}
+                />
+                <Input
+                  type="file"
+                  aria-label="Thumbnail"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files ? e.target.files[0] : null;
+                    handleInputChange("thumbnail", file);
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => {
+                        setThumbnailPreview(e.target?.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  classNames={{
+                    input: "bg-dark text-light",
+                    label: "text-gray"
+                  }}
+                />
+                {thumbnailPreview && (
+                  <div className="mt-2">
+                    <img src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-auto rounded" />
+                  </div>
+                )}
+              </>
+            )}
+
+            {resourceType === "document" && (
+              <>
+                <Input
+                  type="file"
+                  aria-label="Document File"
+                  accept=".pdf,.doc,.docx"
+                  onChange={(e) => handleInputChange("documentFile", e.target.files ? e.target.files[0] : null)}
+                  classNames={{
+                    input: "bg-dark text-light",
+                    label: "text-gray"
+                  }}
+                />
+                <label className="text-gray">Upload PDF or Document</label>
+                <Input
+                  type="file"
+                  aria-label="Thumbnail"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files ? e.target.files[0] : null;
+                    handleInputChange("thumbnail", file);
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => {
+                        setThumbnailPreview(e.target?.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  classNames={{
+                    input: "bg-dark text-light",
+                    label: "text-gray"
+                  }}
+                />
+                {thumbnailPreview && (
+                  <div className="mt-2">
+                    <img src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-auto rounded" />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="mb-4">
+            <p className="font-semibold mb-2">Categories</p>
+            <div className="flex flex-wrap gap-8">
+              {categories.map((category) => (
+                <Checkbox
+                  key={category.id}
+                  isSelected={selectedCategoriesForNewResource.includes(category.id)}
+                  onChange={() => handleCategorySelectionChange(category.id)}
+                  className="bg-readonly rounded-lg p-2"
+                >
+                  {category.category}
+                </Checkbox>
+              ))}
+            </div>
+          </div>
+  
+          <Button 
+            onClick={handleAddResource}
+            className="w-full bg-orange hover:bg-orange/90"
+          >
+            Add Resource
+          </Button>
+        </div>
+  
+        {/* Category Management */}
+        <div className="bg-darker p-6 rounded-xl border border-readonly/30">
+          <h2 className="text-xl font-bold mb-4">Category Management</h2>
+          <div className="space-y-4">
+            <Button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="w-full bg-orange/20 text-orange"
+            >
+              Add Category
+            </Button>
+            <Button
+              onClick={() => setIsDeleteDropdownOpen(!isDeleteDropdownOpen)}
+              className="w-full bg-red-500/20 text-red-500"
+            >
+              Delete Categories
+            </Button>
+          
+            {isDeleteDropdownOpen && (
+              <div className="space-y-4 p-4 bg-dark rounded-lg">
+                <h3 className="font-semibold text-light mb-2">Select Categories to Delete</h3>
+                <div className="flex flex-wrap gap-8">
+                  {categories.map((category) => (
+                    <Checkbox
+                      key={category.id}
+                      isSelected={categoriesToDelete.includes(category.id)}
+                      onChange={() => handleCategoryDeleteChange(category.id)}
+                      className="bg-readonly rounded-lg p-2"
+                    >
+                      {category.category}
+                    </Checkbox>
+                  ))}
+                </div>
+                {categoriesToDelete.length > 0 && (
+                  <Button 
+                    onClick={handleBulkDeleteClick}
+                    className="w-full bg-red-500 text-white hover:bg-red-600"
+                  >
+                    Delete Selected Categories
+                  </Button>
+                )}
+              </div>
+            )}
+  
+            {isDropdownOpen && (
+              <div className="space-y-2">
+                <Input
+                  type="text"
+                  label="New Category"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  classNames={{
+                    input: "bg-dark text-light",
+                    label: "text-gray"
+                  }}
+                />
+                <Button 
+                  onClick={handleAddCategory}
+                  className="w-full bg-orange hover:bg-orange/90"
+                >
+                  Submit
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+  
+      <div className="bg-darker p-6 rounded-xl border border-readonly/30">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold">Resources</h2>
+          <div className="flex gap-4">
+            <Input
+              type="text"
+              placeholder="Search Resources"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-xs"
+              classNames={{
+                input: "bg-dark text-light",
+                label: "text-gray"
+              }}
+            />
+            <Button
+              onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+              className="bg-orange/20 text-orange"
+            >
+              Filter Resources
+            </Button>
+          </div>
+        </div>
+  
+        {isFilterDropdownOpen && (
+          <div className="mb-6 p-4 bg-dark rounded-lg border border-readonly/30">
+            <h3 className="font-semibold mb-2">Filter by Categories</h3>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {categories.map((category) => (
+                <Checkbox
+                  key={category.id}
+                  isSelected={selectedCategories.includes(category.id)}
+                  onChange={() => handleCategoryChange(category.id)}
+                  className="bg-readonly rounded-lg p-2"
+                >
+                  {category.category}
+                </Checkbox>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleFilterResourcesByCategory} className="bg-orange hover:bg-orange/90">
+                Apply Filter
+              </Button>
+              <Button onClick={handleClearFilter} className="bg-readonly text-gray">
+                Clear
+              </Button>
+            </div>
+          </div>
+        )}
+  
+        <div className="space-y-4">
+          {resources
+            .filter((resource) =>
+              resource.title.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+            .map((resource) => (
+              <div
+                key={resource.id}
+                className="bg-dark p-4 rounded-lg border border-readonly/30"
               >
-                Submit
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold mb-2">{resource.title}</h3>
+                    <p className="text-gray text-sm mb-2">{resource.youtubeUrl}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {resource.categories.map((categoryId) => {
+                        const category = categories.find(cat => cat.id === categoryId);
+                        if (!category) return null;
+  
+                        return (
+                          <div
+                            key={categoryId}
+                            className="bg-readonly text-gray text-xs px-2 py-1 rounded-full flex items-center gap-1"
+                          >
+                            {category.category}
+                            <X
+                              className="cursor-pointer text-red-500 hover:text-red-700"
+                              style={{ width: '15px', height: '15px' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCategoryDeleteClick(resource.id, categoryId);
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="bg-orange/20 text-orange"
+                      onClick={() => handleAddResourceCategory(resource.id)}
+                    >
+                      Add Category
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="bg-red-500/20 text-red-500"
+                      onClick={() => handleDeleteClick(resource.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              
+                {isAddCategoryDropdownOpen === resource.id && (
+                  <div className="mt-4 p-4 bg-readonly rounded-lg">
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {categories
+                        .filter(category => !resource.categories.includes(category.id))
+                        .map(category => (
+                          <div
+                            key={category.id}
+                            className={`cursor-pointer px-3 py-1 rounded-full text-sm transition-colors ${
+                              newCategoriesForResource.includes(category.id)
+                                ? "bg-orange text-light"
+                                : "bg-dark text-gray hover:text-light"
+                            }`}
+                            onClick={() => handleNewCategoryChange(category.id)}
+                          >
+                            {category.category}
+                          </div>
+                        ))}
+                    </div>
+                    {newCategoriesForResource.length > 0 && (
+                      <Button
+                        onClick={() => applyNewCategories(resource.id)}
+                        className="bg-orange hover:bg-orange/90"
+                        size="sm"
+                      >
+                        Apply Categories
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+          {resources.length === 0 && (
+            <div className="flex flex-col items-center justify-center p-12 bg-dark rounded-xl border border-readonly/30">
+              <h3 className="text-xl font-bold text-light mb-2">No Resources Added Yet</h3>
+              <p className="text-gray text-center mb-4">Start by adding your first trading resource above.</p>
+              <Button
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  setTimeout(() => {
+                    titleInputRef.current?.focus();
+                    setIsHighlighted(true);
+                    setTimeout(() => setIsHighlighted(false), 1500);
+                  }, 500);
+                }}
+                className="bg-orange/20 text-orange hover:bg-orange/30"
+              >
+                Add Your First Resource
               </Button>
             </div>
           )}
         </div>
       </div>
-    </div>
   
-    {/* Resources List */}
-    <div className="bg-darker p-6 rounded-xl border border-readonly/30">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold">Resources</h2>
-        <div className="flex gap-4">
-          <Input
-            type="text"
-            placeholder="Search Resources"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-xs"
-            classNames={{
-              input: "bg-dark text-light",
-              label: "text-gray"
-            }}
-          />
-          <Button
-            onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-            className="bg-orange/20 text-orange"
-          >
-            Filter Resources
-          </Button>
-        </div>
-      </div>
-  
-      {isFilterDropdownOpen && (
-        <div className="mb-6 p-4 bg-dark rounded-lg border border-readonly/30">
-          <h3 className="font-semibold mb-2">Filter by Categories</h3>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {categories.map((category) => (
-              <Checkbox
-                key={category.id}
-                isSelected={selectedCategories.includes(category.id)}
-                onChange={() => handleCategoryChange(category.id)}
-                className="bg-readonly rounded-lg p-2"
-              >
-                {category.category}
-              </Checkbox>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleFilterResourcesByCategory} className="bg-orange hover:bg-orange/90">
-              Apply Filter
-            </Button>
-            <Button onClick={handleClearFilter} className="bg-readonly text-gray">
-              Clear
-            </Button>
-          </div>
-        </div>
-      )}
-  
-      <div className="space-y-4">
-        {resources
-          .filter((resource) =>
-            resource.title.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-          .map((resource) => (
-            <div
-              key={resource.id}
-              className="bg-dark p-4 rounded-lg border border-readonly/30"
-            >
-              <div className="flex justify-between items-start gap-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-2">{resource.title}</h3>
-                  <p className="text-gray text-sm mb-2">{resource.youtubeUrl}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {resource.categories.map((categoryId) => {
-                      const category = categories.find(cat => cat.id === categoryId);
-                      if (!category) return null;
-  
-                      return (
-                        <div
-                          key={categoryId}
-                          className="bg-readonly text-gray text-xs px-2 py-1 rounded-full flex items-center gap-1"
-                        >
-                          {category.category}
-                          <X
-  className="cursor-pointer text-red-500 hover:text-red-700"
-  style={{ width: '15px', height: '15px' }}
-  onClick={(e) => {
-    e.stopPropagation();
-    handleCategoryDeleteClick(resource.id, categoryId);
-  }}
-/>
-
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="bg-orange/20 text-orange"
-                    onClick={() => handleAddResourceCategory(resource.id)}
-                  >
-                    Add Category
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="bg-red-500/20 text-red-500"
-                    onClick={() => handleDeleteClick(resource.id)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-              
-              {isAddCategoryDropdownOpen === resource.id && (
-                <div className="mt-4 p-4 bg-readonly rounded-lg">
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {categories
-                      .filter(category => !resource.categories.includes(category.id))
-                      .map(category => (
-                        <div
-                          key={category.id}
-                          className={`cursor-pointer px-3 py-1 rounded-full text-sm transition-colors ${
-                            newCategoriesForResource.includes(category.id)
-                              ? "bg-orange text-light"
-                              : "bg-dark text-gray hover:text-light"
-                          }`}
-                          onClick={() => handleNewCategoryChange(category.id)}
-                        >
-                          {category.category}
-                        </div>
-                      ))}
-                  </div>
-                  {newCategoriesForResource.length > 0 && (
-                    <Button
-                      onClick={() => applyNewCategories(resource.id)}
-                      className="bg-orange hover:bg-orange/90"
-                      size="sm"
-                    >
-                      Apply Categories
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-
-{resources.length === 0 && (
-  <div className="flex flex-col items-center justify-center p-12 bg-dark rounded-xl border border-readonly/30">
-    <h3 className="text-xl font-bold text-light mb-2">No Resources Added Yet</h3>
-    <p className="text-gray text-center mb-4">Start by adding your first trading resource above.</p>
-    <Button
-  onClick={() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    setTimeout(() => {
-      titleInputRef.current?.focus();
-      setIsHighlighted(true);
-      setTimeout(() => setIsHighlighted(false), 1500);
-    }, 500);
-  }}
-  className="bg-orange/20 text-orange hover:bg-orange/30"
->
-  Add Your First Resource
-</Button>
-
-  </div>
-)}
-
-      </div>
-    </div>
-  
-  {/* Category Delete Modal */}
-<Modal 
-  isOpen={isCategoryDeleteModalOpen} 
+      {/* Category Delete Modal */}
+      <Modal 
+        isOpen={isCategoryDeleteModalOpen} 
   onClose={() => setIsCategoryDeleteModalOpen(false)}
   classNames={{
     base: "bg-darker border border-readonly/30",
@@ -687,8 +829,7 @@ const [resourceToDelete, setResourceToDelete] = useState<string | null>(null);
 
   </div>
   
-
   );
-};
+}
 
 export default ResourcesManagement;
