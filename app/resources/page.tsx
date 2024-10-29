@@ -15,8 +15,6 @@ type Resource = {
   youtubeUrl: string;
   description: string;
   categories: string[];
-  type: string;
-  thumbnailUrl: string;
 }
 
 type Category = {
@@ -201,32 +199,20 @@ export default function ResourcesPage() {
                 <div className="p-6">
                   <h3 className="text-xl font-semibold mb-4">{resource.title}</h3>
                   <div className="aspect-w-16 aspect-h-9 mb-4 rounded-lg overflow-hidden">
-                    {resource.type === "document" || resource.type === "article" ? (
-                      <img
-                        src={resource.thumbnailUrl}
-                        alt={resource.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <iframe
-                        src={`https://www.youtube.com/embed/${getYoutubeVideoId(resource.youtubeUrl)}?enablejsapi=1&origin=${window.location.origin}`}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        loading="lazy"
-                        className="w-full h-full"
-                      ></iframe>
-                    )}
+                    <iframe
+                      src={`https://www.youtube.com/embed/${getYoutubeVideoId(resource.youtubeUrl)}?enablejsapi=1&origin=${window.location.origin}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      loading="lazy"
+                      className="w-full h-full"
+                    ></iframe>
                   </div>
                   <p className="text-gray mb-4">{resource.description}</p>
                   <Button 
                     className="bg-orange hover:bg-orange/90 w-full"
                     onClick={() => window.open(resource.youtubeUrl, "_blank")}
                   >
-                    {resource.type === "article" 
-                      ? "Read Article" 
-                      : resource.type === "document" 
-                      ? "Download Document" 
-                      : "Watch on YouTube"}
+                    Watch on YouTube
                   </Button>
                 </div>
               </Card>
