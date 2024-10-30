@@ -2,12 +2,13 @@
 
 import Layout from "@/app/common/Layout";
 import { auth, db } from "@/lib/firebase";
-import { Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Spinner } from "@nextui-org/react";
+import { Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Spinner, Checkbox } from "@nextui-org/react";
 import { User } from "firebase/auth";
 import { collection, onSnapshot, query } from "firebase/firestore";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Download, FileText } from "lucide-react";
 
 type Resource = {
   id: string;
@@ -15,6 +16,10 @@ type Resource = {
   youtubeUrl: string;
   description: string;
   categories: string[];
+  type: string;
+  thumbnailUrl: string;
+  resourceLink?: string;
+  documentUrl?: string;
 }
 
 type Category = {
@@ -33,7 +38,9 @@ export default function ResourcesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -93,14 +100,15 @@ export default function ResourcesPage() {
       const filteredResources = resourcesData.filter(resource => {
         const matchesSearchQuery = resource.title.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = selectedCategoryIds.length === 0 || resource.categories.some(categoryId => selectedCategoryIds.includes(categoryId));
-        return matchesSearchQuery && matchesCategory;
+        const matchesType = selectedTypes.length === 0 || selectedTypes.includes(resource.type);
+        return matchesSearchQuery && matchesCategory && matchesType;
       });
 
       setResources(filteredResources);
     });
 
     return () => unsubscribe();
-  }, [searchQuery, selectedCategories, categories]);
+  }, [searchQuery, selectedCategories, categories, selectedTypes]);
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategories(prevSelected =>
@@ -110,8 +118,28 @@ export default function ResourcesPage() {
     );
   };
 
-  const toggleDropdown = () => {
-    setIsDropdownOpen(prev => !prev);
+  const toggleCategoryDropdown = () => {
+    setIsCategoryDropdownOpen(prev => !prev);
+    if (isTypeDropdownOpen) setIsTypeDropdownOpen(false);
+  };
+
+  const toggleTypeDropdown = () => {
+    setIsTypeDropdownOpen(prev => !prev);
+    if (isCategoryDropdownOpen) setIsCategoryDropdownOpen(false);
+  };
+
+  const handleTypeChange = (type: string) => {
+    setSelectedTypes(prevSelected =>
+      prevSelected.includes(type)
+        ? prevSelected.filter(t => t !== type)
+        : [...prevSelected, type]
+    );
+  };
+
+  const handleClearAll = () => {
+    setSelectedCategories([]);
+    setSelectedTypes([]);
+    setSearchQuery("");
   };
 
   function getYoutubeVideoId(url: string): string {
@@ -158,32 +186,49 @@ export default function ResourcesPage() {
                 label: "text-gray"
               }}
             />
-            <Dropdown isOpen={isDropdownOpen}>
+            <Dropdown isOpen={isCategoryDropdownOpen}>
               <DropdownTrigger>
-                <Button onClick={toggleDropdown} className="bg-orange hover:bg-orange/90">
+                <Button onClick={toggleCategoryDropdown} className="bg-orange hover:bg-orange/90 text-light">
                   Filter by Category
                 </Button>
               </DropdownTrigger>
               <DropdownMenu>
                 {categories.map((category) => (
-                  <motion.div key={category.id} initial="hidden" animate="visible" variants={animationVariants}>
-                    <DropdownItem className="category-chip">
-                      <input
-                        type="checkbox"
-                        id={category.id}
-                        value={category.category}
-                        checked={selectedCategories.includes(category.category)}
-                        onChange={() => handleCategoryChange(category.category)}
-                        className="mb-1 mr-1"
-                      />
-                      <label htmlFor={category.id} className="text-light">
-                        {category.category}
-                      </label>
-                    </DropdownItem>
-                  </motion.div>
+                  <DropdownItem key={category.id} className="category-chip">
+                    <Checkbox
+                      isSelected={selectedCategories.includes(category.category)}
+                      onChange={() => handleCategoryChange(category.category)}
+                      className="mb-1 mr-1 text-light"
+                    >
+                      {category.category}
+                    </Checkbox>
+                  </DropdownItem>
                 ))}
               </DropdownMenu>
             </Dropdown>
+            <Dropdown isOpen={isTypeDropdownOpen}>
+              <DropdownTrigger>
+                <Button onClick={toggleTypeDropdown} className="bg-orange hover:bg-orange/90 text-light">
+                  Filter by Type
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu>
+                {["resource", "document", "youtube"].map((type) => (
+                  <DropdownItem key={type} className="type-chip">
+                    <Checkbox
+                      isSelected={selectedTypes.includes(type)}
+                      onChange={() => handleTypeChange(type)}
+                      className="mb-1 mr-1 text-light"
+                    >
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </Checkbox>
+                  </DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
+            <Button onClick={handleClearAll} className="bg-red-500 hover:bg-red-600 text-light">
+    Clear All
+  </Button>
           </div>
         </motion.div>
   
@@ -199,20 +244,56 @@ export default function ResourcesPage() {
                 <div className="p-6">
                   <h3 className="text-xl font-semibold mb-4">{resource.title}</h3>
                   <div className="aspect-w-16 aspect-h-9 mb-4 rounded-lg overflow-hidden">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${getYoutubeVideoId(resource.youtubeUrl)}?enablejsapi=1&origin=${window.location.origin}`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      loading="lazy"
-                      className="w-full h-full"
-                    ></iframe>
+                    {resource.type === "document" || resource.type === "resource" ? (
+                      resource.type === "document" ? (
+                        resource.thumbnailUrl ? (
+                          <img
+                            src={resource.thumbnailUrl}
+                            alt={resource.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Download className="w-full h-full text-gray-500" />
+                        )
+                      ) : (
+                        resource.thumbnailUrl ? (
+                          <img
+                            src={resource.thumbnailUrl}
+                            alt={resource.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <FileText className="w-full h-full text-gray-500" />
+                        )
+                      )
+                    ) : (
+                      <iframe
+                        src={`https://www.youtube.com/embed/${getYoutubeVideoId(resource.youtubeUrl)}?enablejsapi=1&origin=${window.location.origin}`}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        loading="lazy"
+                        className="w-full h-full"
+                      ></iframe>
+                    )}
                   </div>
                   <p className="text-gray mb-4">{resource.description}</p>
                   <Button 
                     className="bg-orange hover:bg-orange/90 w-full"
-                    onClick={() => window.open(resource.youtubeUrl, "_blank")}
+                    onClick={() => {
+                      if (resource.type === "resource") {
+                        window.open(resource.resourceLink, "_blank");
+                      } else if (resource.type === "document") {
+                        window.open(resource.documentUrl, "_blank");
+                      } else {
+                        window.open(resource.youtubeUrl, "_blank");
+                      }
+                    }}
                   >
-                    Watch on YouTube
+                    {resource.type === "resource" 
+                      ? "Read Resource" 
+                      : resource.type === "document" 
+                      ? "Download Document" 
+                      : "Watch on YouTube"}
                   </Button>
                 </div>
               </Card>
