@@ -587,7 +587,7 @@ const ResourcesManagement = () => {
 
             <h3 className="font-semibold mb-2">Filter by Types</h3>
             <div className="flex flex-wrap gap-2 mb-4">
-              {["resource", "document", "video"].map((type) => (
+              {["resource", "document", "youtube"].map((type) => (
                 <Checkbox
                   key={type}
                   isSelected={selectedTypes.includes(type)}
