@@ -1,7 +1,7 @@
 "use client";
 
 import { db } from "@/lib/firebase";
-import { Button, Input, Checkbox, Modal, ModalContent, ModalHeader, ModalFooter, ModalBody, Select, SelectItem } from "@nextui-org/react";
+import { Button, Input, Checkbox, Modal, ModalContent, ModalHeader, ModalFooter, ModalBody, Select, SelectItem, Pagination } from "@nextui-org/react";
 import {
   addDoc,
   collection,
@@ -14,7 +14,7 @@ import {
   arrayUnion
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import { X } from "lucide-react";
 import 'react-toastify/dist/ReactToastify.css';
@@ -234,7 +234,7 @@ const ResourcesManagement = () => {
       toast.error("Failed to add categories");
     }
   };
-  const titleInputRef = useRef<HTMLInputElement>(null);
+  
 
   const [selectedCategoriesForNewResource, setSelectedCategoriesForNewResource] = useState<string[]>([]);
 
@@ -329,6 +329,14 @@ const ResourcesManagement = () => {
     return matchesCategory && matchesType;
   });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
+  const currentResources = filteredResources.slice(indexOfFirstItem, indexOfLastItem);
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 text-light">
       <ToastContainer />
@@ -343,7 +351,7 @@ const ResourcesManagement = () => {
               className="bg-dark text-black p-2 rounded"
             >
               <SelectItem className="text-light" value="youtube" key={"youtube"}>YouTube</SelectItem>
-              <SelectItem className="text-light" value="Resource" key={"Resource"}>Resource</SelectItem>
+              <SelectItem className="text-light" value="resource" key={"resource"}>Resource</SelectItem>
               <SelectItem className="text-light" value="document" key={"document"}>Document</SelectItem>
             </Select>
 
@@ -371,46 +379,46 @@ const ResourcesManagement = () => {
               />
             )}
 
-            {resourceType === "resource" && (
-              <>
-                <Input
-                  type="text"
-                  label="Resource Link"
-                  value={newResource.resourceLink}
-                  onChange={(e) => handleInputChange("resourceLink", e.target.value)}
-                  classNames={{
-                    input: "bg-dark text-light",
-                    label: "text-gray"
-                  }}
-                />
-                <Input
-                  type="file"
-                  aria-label="Thumbnail"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files ? e.target.files[0] : null;
-                    handleInputChange("thumbnail", file);
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (e) => {
-                        setThumbnailPreview(e.target?.result as string);
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                  classNames={{
-                    input: "bg-dark text-light",
-                    label: "text-gray"
-                  }}
-                />
-                <p className="text-gray">Thumbnail image</p>
-                {thumbnailPreview && (
-                  <div className="mt-2">
-                    <img src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-auto rounded" />
-                  </div>
-                )}
-              </>
-            )}
+{resourceType === "resource" && (
+  <>
+    <Input
+      type="text"
+      label="Resource Link"
+      value={newResource.resourceLink}
+      onChange={(e) => handleInputChange("resourceLink", e.target.value)}
+      classNames={{
+        input: "bg-dark text-light",
+        label: "text-gray"
+      }}
+    />
+    <Input
+      type="file"
+      aria-label="Thumbnail"
+      accept="image/*"
+      onChange={(e) => {
+        const file = e.target.files ? e.target.files[0] : null;
+        handleInputChange("thumbnail", file);
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            setThumbnailPreview(e.target?.result as string);
+          };
+          reader.readAsDataURL(file);
+        }
+      }}
+      classNames={{
+        input: "bg-dark text-light",
+        label: "text-gray"
+      }}
+    />
+    <p className="text-gray">Thumbnail image</p>
+    {thumbnailPreview && (
+      <div className="mt-2">
+        <img src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-auto rounded" />
+      </div>
+    )}
+  </>
+)}
 
             {resourceType === "document" && (
               <>
@@ -546,15 +554,15 @@ const ResourcesManagement = () => {
       </div>
 
       <div className="bg-darker p-6 rounded-xl border border-readonly/30">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">Resources</h2>
-          <div className="flex gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-4">
+          <h2 className="text-xl font-bold mb-2 md:mb-0">Resources</h2>
+          <div className="flex flex-col md:flex-row gap-2 md:justify-end w-full md:w-auto">
             <Input
               type="text"
               placeholder="Search Resources"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-xs"
+              className="w-full md:max-w-xs mt-2 md:mt-0"
               classNames={{
                 input: "bg-dark text-light",
                 label: "text-gray"
@@ -562,7 +570,7 @@ const ResourcesManagement = () => {
             />
             <Button
               onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-              className="bg-orange/20 text-orange"
+              className="bg-orange/20 text-orange w-full md:w-auto"
             >
               Filter Resources
             </Button>
@@ -608,124 +616,116 @@ const ResourcesManagement = () => {
         )}
 
         <div className="space-y-4">
-          {filteredResources
-            .filter((resource) =>
-              resource.title.toLowerCase().includes(searchQuery.toLowerCase())
-            )
-            .map((resource) => (
-              <div
-                key={resource.id}
-                className="bg-dark p-4 rounded-lg border border-readonly/30"
-              >
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold mb-2">{resource.title}</h3>
-                    <p className="text-gray text-sm mb-2">
-                      {resource.youtubeUrl ? (
-                        <a href={resource.youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                          {resource.youtubeUrl}
-                        </a>
-                      ) : resource.resourceLink ? (
-                        <a href={resource.resourceLink} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                          {resource.resourceLink}
-                        </a>
-                      ) : (
-                        resource.documentUrl ? resource.documentUrl.split('/').pop()?.split('?')[0].split('.').pop()?.toUpperCase() : ""
-                      )}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {resource.categories.map((categoryId) => {
-                        const category = categories.find(cat => cat.id === categoryId);
-                        if (!category) return null;
-  
-                        return (
-                          <div
-                            key={categoryId}
-                            className="bg-readonly text-gray text-xs px-2 py-1 rounded-full flex items-center gap-1"
-                          >
-                            {category.category}
-                            <X
-                              className="cursor-pointer text-red-500 hover:text-red-700"
-                              style={{ width: '15px', height: '15px' }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCategoryDeleteClick(resource.id, categoryId);
-                              }}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      className="bg-orange/20 text-orange"
-                      onClick={() => handleAddResourceCategory(resource.id)}
-                    >
-                      Add Category
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="bg-red-500/20 text-red-500"
-                      onClick={() => handleDeleteClick(resource.id)}
-                    >
-                      Delete
-                    </Button>
+          {currentResources.map((resource) => (
+            <div
+              key={resource.id}
+              className="bg-dark p-4 rounded-lg border border-readonly/30"
+            >
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-2">{resource.title}</h3>
+                  <p className="text-gray text-sm mb-2 break-words">
+                    {resource.youtubeUrl ? (
+                      <a href={resource.youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                        {resource.youtubeUrl}
+                      </a>
+                    ) : resource.resourceLink ? (
+                      <a href={resource.resourceLink} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                        {resource.resourceLink}
+                      </a>
+                    ) : (
+                      resource.documentUrl ? resource.documentUrl.split('/').pop()?.split('?')[0].split('.').pop()?.toUpperCase() : ""
+                    )}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {resource.categories.map((categoryId) => {
+                      const category = categories.find(cat => cat.id === categoryId);
+                      if (!category) return null;
+
+                      return (
+                        <div
+                          key={categoryId}
+                          className="bg-readonly text-gray text-xs px-2 py-1 rounded-full flex items-center gap-1"
+                        >
+                          {category.category}
+                          <X
+                            className="cursor-pointer text-red-500 hover:text-red-700"
+                            style={{ width: '15px', height: '15px' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCategoryDeleteClick(resource.id, categoryId);
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              
-                {isAddCategoryDropdownOpen === resource.id && (
-                  <div className="mt-4 p-4 bg-readonly rounded-lg">
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {categories
-                        .filter(category => !resource.categories.includes(category.id))
-                        .map(category => (
-                          <div
-                            key={category.id}
-                            className={`cursor-pointer px-3 py-1 rounded-full text-sm transition-colors ${
-                              newCategoriesForResource.includes(category.id)
-                                ? "bg-orange text-light"
-                                : "bg-dark text-gray hover:text-light"
-                            }`}
-                            onClick={() => handleNewCategoryChange(category.id)}
-                          >
-                            {category.category}
-                          </div>
-                        ))}
-                    </div>
-                    {newCategoriesForResource.length > 0 && (
-                      <Button
-                        onClick={() => applyNewCategories(resource.id)}
-                        className="bg-orange hover:bg-orange/90"
-                        size="sm"
-                      >
-                        Apply Categories
-                      </Button>
-                    )}
-                  </div>
-                )}
+                <div className="flex flex-col md:flex-row gap-2 mt-4">
+                  <Button
+                    size="sm"
+                    className="bg-orange/20 text-orange"
+                    onClick={() => handleAddResourceCategory(resource.id)}
+                  >
+                    Add Category
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-red-500/20 text-red-500"
+                    onClick={() => handleDeleteClick(resource.id)}
+                  >
+                    Delete
+                  </Button>
+                </div>
               </div>
-            ))}
+            
+              {isAddCategoryDropdownOpen === resource.id && (
+                <div className="mt-4 p-4 bg-readonly rounded-lg">
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {categories
+                      .filter(category => !resource.categories.includes(category.id))
+                      .map(category => (
+                        <div
+                          key={category.id}
+                          className={`cursor-pointer px-3 py-1 rounded-full text-sm transition-colors ${
+                            newCategoriesForResource.includes(category.id)
+                              ? "bg-orange text-light"
+                              : "bg-dark text-gray hover:text-light"
+                          }`}
+                          onClick={() => handleNewCategoryChange(category.id)}
+                        >
+                          {category.category}
+                        </div>
+                      ))}
+                  </div>
+                  {newCategoriesForResource.length > 0 && (
+                    <Button
+                      onClick={() => applyNewCategories(resource.id)}
+                      className="bg-orange hover:bg-orange/90"
+                      size="sm"
+                    >
+                      Apply Categories
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
 
-          {filteredResources.length === 0 && (
+          {currentResources.length === 0 && (
             <div className="flex flex-col items-center justify-center p-12 bg-dark rounded-xl border border-readonly/30">
-              <h3 className="text-xl font-bold text-light mb-2">No Resources Added Yet</h3>
-              <p className="text-gray text-center mb-4">Start by adding your first trading resource above.</p>
-              <Button
-                onClick={() => {
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                  setTimeout(() => {
-                    titleInputRef.current?.focus();
-                  }, 500);
-                }}
-                className="bg-orange/20 text-orange hover:bg-orange/30"
-              >
-                Add Your First Resource
-              </Button>
+              <h3 className="text-xl font-bold text-light mb-2">No Resources Found</h3>
+              <p className="text-gray text-center mb-4">Try adjusting your search or filters.</p>
             </div>
           )}
         </div>
+
+        <Pagination
+          total={Math.ceil(filteredResources.length / itemsPerPage)}
+          initialPage={1}
+          onChange={(page) => setCurrentPage(page)}
+          className="mt-4"
+        />
       </div>
 
       <Modal 

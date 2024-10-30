@@ -2,7 +2,7 @@
 
 import Layout from "@/app/common/Layout";
 import { auth, db } from "@/lib/firebase";
-import { Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Spinner, Checkbox } from "@nextui-org/react";
+import { Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Input, Spinner, Checkbox, Pagination } from "@nextui-org/react";
 import { User } from "firebase/auth";
 import { collection, onSnapshot, query } from "firebase/firestore";
 import { motion } from "framer-motion";
@@ -42,6 +42,8 @@ export default function ResourcesPage() {
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const router = useRouter();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user: User | null) => {
@@ -148,6 +150,13 @@ export default function ResourcesPage() {
     return match && match[2].length === 11 ? match[2] : "";
   }
 
+  // Calculate the index of the first and last item on the current page
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
+  // Slice the resources array to get only the items for the current page
+  const currentResources = resources.slice(indexOfFirstItem, indexOfLastItem);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -238,7 +247,7 @@ export default function ResourcesPage() {
           variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
-          {resources.map((resource) => (
+          {currentResources.map((resource) => (
             <motion.div key={resource.id} variants={animationVariants}>
               <Card className="bg-darker hover:bg-dark/80 transition-colors duration-300 border border-readonly/30">
                 <div className="p-6">
@@ -300,7 +309,7 @@ export default function ResourcesPage() {
             </motion.div>
           ))}
 
-{resources.length === 0 && (
+{currentResources.length === 0 && (
   <motion.div 
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
@@ -312,6 +321,14 @@ export default function ResourcesPage() {
 )}
 
         </motion.div>
+
+        {/* Pagination Component */}
+        <Pagination
+          total={Math.ceil(resources.length / itemsPerPage)}
+          initialPage={1}
+          onChange={(page) => setCurrentPage(page)}
+          className="mt-8"
+        />
       </div>
     </Layout>
   );
