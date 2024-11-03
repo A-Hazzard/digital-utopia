@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Download, FileText } from "lucide-react";
+import Image from "next/image";
 
 type Resource = {
   id: string;
@@ -256,7 +257,9 @@ export default function ResourcesPage() {
                     {resource.type === "document" || resource.type === "resource" ? (
                       resource.type === "document" ? (
                         resource.thumbnailUrl ? (
-                          <img
+                          <Image
+                            width={100}
+                            height={100}
                             src={resource.thumbnailUrl}
                             alt={resource.title}
                             className="w-full h-full object-cover"
@@ -266,7 +269,9 @@ export default function ResourcesPage() {
                         )
                       ) : (
                         resource.thumbnailUrl ? (
-                          <img
+                          <Image
+                            width={100}
+                            height={100}
                             src={resource.thumbnailUrl}
                             alt={resource.title}
                             className="w-full h-full object-cover"
@@ -299,7 +304,7 @@ export default function ResourcesPage() {
                     }}
                   >
                     {resource.type === "resource" 
-                      ? "Read Resource" 
+                      ? "View Resource" 
                       : resource.type === "document" 
                       ? "Download Document" 
                       : "Watch on YouTube"}

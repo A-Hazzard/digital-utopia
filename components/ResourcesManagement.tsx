@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import { X } from "lucide-react";
 import 'react-toastify/dist/ReactToastify.css';
+import Image from "next/image";
 
 type Resource = {
   id: string;
@@ -414,11 +415,11 @@ const ResourcesManagement = () => {
     <p className="text-gray">Thumbnail image</p>
     {thumbnailPreview && (
       <div className="mt-2">
-        <img src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-auto rounded" />
+        <Image src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-auto rounded" />
       </div>
     )}
-  </>
-)}
+              </>
+            )}
 
             {resourceType === "document" && (
               <>
@@ -456,7 +457,7 @@ const ResourcesManagement = () => {
                 <p className="text-gray">Thumbnail image</p>
                 {thumbnailPreview && (
                   <div className="mt-2">
-                    <img src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-auto rounded" />
+                    <Image src={thumbnailPreview} alt="Thumbnail Preview" className="w-full h-auto rounded" />
                   </div>
                 )}
               </>

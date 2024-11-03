@@ -125,7 +125,7 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack, invoiceNumber, am
               <div className="p-4 border border-gray rounded md:flex md:items-start md:space-x-4">
                 <div className="md:flex-shrink-0">
                   <QRCodeSVG
-                    value="TNUT4394NUN439TUN9GFNUSG9NFGFGFIOJ4094MM"
+                    value="TY43pW2JjCSkczf2QNwCEaDrjC8UYDGEq2"
                     size={128}
                   />
                 </div>
@@ -133,11 +133,11 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack, invoiceNumber, am
                 <div className="mt-2 md:mt-0 md:flex-grow">
                   <div className="text-gray">Tron (TRC 20)</div>
                   <div className="text-light break-all flex items-center">
-                    <span>TNUT4394NUN439TUN9GFNUSG9NFGFGFIOJ4094MM</span>
+                    <span>TY43pW2JjCSkczf2QNwCEaDrjC8UYDGEq2</span>
                     <Copy
                       size={18}
                       className="ml-2 cursor-pointer"
-                      onClick={() => navigator.clipboard.writeText("TNUT4394NUN439TUN9GFNUSG9NFGFGFIOJ4094MM")}
+                      onClick={() => navigator.clipboard.writeText("TY43pW2JjCSkczf2QNwCEaDrjC8UYDGEq2")}
                     />
                   </div>
                 </div>
