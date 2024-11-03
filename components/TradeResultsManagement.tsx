@@ -161,6 +161,19 @@ const TradeResultsManagement = () => {
       const profitAmount = newTrade.type === "win" ? newTrade.amount : -newTrade.amount;
       await updateUserProfit(newTrade.userEmail, username, profitAmount);
 
+      // Send trade results notification
+      await fetch('/api/sendTradeResultsNotification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userEmail: newTrade.userEmail,
+          amount: profitAmount,
+          tradingPair: selectedPair,
+        }),
+      });
+
       resetForm();
       toast.success("Trade added successfully");
     } catch (error) {
