@@ -344,7 +344,7 @@ const TradeResultsManagement = () => {
             <select
               value={newTrade.type}
               onChange={(e) => setNewTrade({ ...newTrade, type: e.target.value as "win" | "loss" })}
-              className="w-full p-2 border rounded bg-dark/50 text-light focus:ring-2 focus:ring-primary"
+              className="w-full p-2 border rounded bg-dark/50 text-dark focus:ring-2 focus:ring-primary"
             >
               <option value="">Select Type</option>
               <option value="win">Win</option>

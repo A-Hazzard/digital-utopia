@@ -22,27 +22,29 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Error sending deposit notification:", error);
     return NextResponse.json(
-      { error: "Failed to send deposit notification" },
+      { error: "Failed to send deposit notifications" },
       { status: 500 }
     );
   }
 }
 
-const sendDepositNotification = async (depositData: {
+type DepositData = {
   userId: string;
   userEmail: string;
   username: string;
   transactionId: string;
   receiptURL: string;
   amount: number;
-}) => {
+}
+
+const sendDepositNotification = async (depositData: DepositData) => {
   const logoPath = path.join(process.cwd(), 'public', 'logo.png');
 
   if (!fs.existsSync(logoPath)) {
     console.error(`Logo file not found at path: ${logoPath}`);
     throw new Error('Logo file not found');
   }
-
+  console.log(depositData, 'is deposit data');
   const adminMailOptions = {
     from: process.env.ADMIN_EMAIL,
     to: process.env.ADMIN_EMAIL,

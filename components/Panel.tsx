@@ -93,6 +93,15 @@ export default function Panel() {
           </>
         )}
 
+        <Link
+          href="/resources"
+          className={`text-lg text-light ${
+            pathname === "/resources" ? "underline font-bold" : ""
+          }`}
+        >
+          Resources
+        </Link>
+
         <button className="bg-none inline w-fit" onClick={openModal}>
           Profile
         </button>
@@ -111,15 +120,6 @@ export default function Panel() {
               className={pathname === "/admin/deposits" ? "underline" : ""}
             >
               Deposits
-            </Link>
-
-            <Link
-              href="/resources"
-              className={`text-lg text-light ${
-                pathname === "/resources" ? "underline font-bold" : ""
-              }`}
-            >
-              Resources
             </Link>
 
             <Link

@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow
 } from "@nextui-org/react";
-import { addDoc, collection, doc, getDoc, onSnapshot, orderBy, query, runTransaction, Timestamp, updateDoc } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, orderBy, query, runTransaction, Timestamp, updateDoc } from "firebase/firestore";
 import { gsap } from "gsap";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -30,12 +30,6 @@ const DepositManagement = () => {
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newDeposit, setNewDeposit] = useState<Omit<Deposit, "id" | "createdAt">>({
-    username: "",
-    userEmail: "",
-    amount: 0,
-    status: "pending",
-  });
 
   useEffect(() => {
     const depositsCollection = collection(db, "deposits");
@@ -61,80 +55,63 @@ const DepositManagement = () => {
     gsap.from(".deposit-table", { opacity: 0, y: -50, duration: 0.5, stagger: 0.1 });
   }, []);
 
-  const handleAddDeposit = async () => {
+  
+
+  const updateWallet = async (depositData: Deposit, newStatus: "confirmed" | "failed") => {
     try {
-      await addDoc(collection(db, "deposits"), {
-        ...newDeposit,
-        createdAt: Timestamp.now(),
+      await runTransaction(db, async (transaction) => {
+        const walletRef = doc(db, "wallets", depositData.userEmail);
+        const walletDoc = await transaction.get(walletRef);
+
+        if (newStatus === "confirmed" && depositData.status !== "confirmed") {
+          if (walletDoc.exists()) {
+            const currentBalance = walletDoc.data().balance || 0;
+            // Update the wallet balance by adding the deposit amount to the current balance
+            transaction.update(walletRef, { balance: currentBalance + depositData.amount });
+          } else {
+            // Create new wallet document with initial balance from deposit amount
+            transaction.set(walletRef, { balance: depositData.amount });
+          }
+        } 
       });
 
-      const userRef = doc(db, "users", newDeposit.userEmail);
-      const userDoc = await getDoc(userRef);
-      if (userDoc.exists()) {
-        const currentBalance = userDoc.data().walletBalance || 0;
-        await updateDoc(userRef, {
-          walletBalance: currentBalance + newDeposit.amount,
-        });
-      } else {
-        console.error("User document not found");
-      }
-
-      setNewDeposit({
-        username: "",
-        userEmail: "",
-        amount: 0,
-        status: "pending",
-      });
-      toast.success("Deposit added successfully");
+      return true; // Indicate success
     } catch (err) {
-      console.error("Error adding deposit:", err);
-      setError("Failed to add deposit");
-      toast.error("Failed to add deposit");
+      console.error("Error updating wallet:", err);
+      setError("Failed to update wallet");
+      toast.error("Failed to update wallet");
+      return false; // Indicate failure
     }
   };
 
-  const handleStatusChange = async (
-    depositId: string,
-    newStatus: "confirmed" | "failed"
-  ) => {
+  const handleStatusChange = async (depositId: string, newStatus: "confirmed" | "failed") => {
     try {
-      await runTransaction(db, async (transaction) => {
-        const depositRef = doc(db, "deposits", depositId);
-        const depositDoc = await transaction.get(depositRef);
-        
-        if (!depositDoc.exists()) {
-          throw new Error("Deposit document does not exist!");
-        }
+      const depositRef = doc(db, "deposits", depositId);
+      const depositDoc = await getDoc(depositRef);
 
-        const depositData = depositDoc.data() as Deposit;
-        
-        if (newStatus === "confirmed" && depositData.status !== "confirmed") {
-          const walletRef = doc(db, "wallets", depositData.userEmail);
-          const walletDoc = await transaction.get(walletRef);
-          
-          if (walletDoc.exists()) {
-            const currentBalance = walletDoc.data().balance || 0;
-            transaction.update(walletRef, { balance: currentBalance + depositData.amount });
-          } else {
-            transaction.set(walletRef, { balance: depositData.amount });
-          }
-          
-          await handleAddDeposit();
-        } else if (newStatus === "failed" && depositData.status === "confirmed") {
-          const walletRef = doc(db, "wallets", depositData.userEmail);
-          const walletDoc = await transaction.get(walletRef);
-          
-          if (walletDoc.exists()) {
-            const currentBalance = walletDoc.data().balance || 0;
-            const newBalance = Math.max(currentBalance - depositData.amount, 0);
-            transaction.update(walletRef, { balance: newBalance });
-          }
-        }
+      const depositData = depositDoc.data() as Deposit;
 
-        transaction.update(depositRef, { status: newStatus });
-      });
+      // Update the wallet before the status
+      const walletUpdated = await updateWallet(depositData, newStatus);
+      
+      // If wallet update is successful, update the deposit status
+      if (walletUpdated) {
+        await updateDoc(depositRef, { status: newStatus });
+        toast.success(`Deposit status updated to ${newStatus}`);
 
-      toast.success(`Deposit status updated to ${newStatus}`);
+        // Send confirmation email to the user
+        await fetch('/api/sendDepositConfirmationEmail', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userEmail: depositData.userEmail,
+            amount: depositData.amount,
+            status: newStatus,
+          }),
+        });
+      }
     } catch (err) {
       console.error("Error updating deposit status:", err);
       setError("Failed to update deposit status");
@@ -186,25 +163,27 @@ const DepositManagement = () => {
                 <TableCell>{deposit.status}</TableCell>
                 <TableCell>{formatDate(deposit.createdAt)}</TableCell>
                 <TableCell>
-                  <Button
-                    size="sm"
-                    color="primary"
-                    onClick={() =>
+                  {deposit.status !== "confirmed" && deposit.status !== "failed" && (
+                      <Button
+                        size="sm"
+                        color="primary"
+                        onClick={() =>
                       handleStatusChange(deposit.id, "confirmed")
                     }
-                    disabled={deposit.status === "confirmed"}
                   >
-                    confirm
+                    Confirm
                   </Button>
+                  )}
+                  {deposit.status !== "failed" && deposit.status !== "confirmed" && (
                   <Button
                     size="sm"
                     color="danger"
                     className="ml-2"
                     onClick={() => handleStatusChange(deposit.id, "failed")}
-                    disabled={deposit.status === "failed"}
                   >
                     Fail
                   </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))
