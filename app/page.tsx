@@ -323,6 +323,7 @@ function Dashboard() {
 
   return (
     <Layout>
+      <div className="2xl:w-7/12 2xl:mx-auto">
       <ToastContainer />
       <div className="mt-4 flex">
         <div className="w-20 h-20 xl:w-40 xl:h-40 xl:-ml-4 overflow-hidden rounded-full flex items-center justify-center">
@@ -341,7 +342,7 @@ function Dashboard() {
 
       <div className="flex flex-col lg:flex-row gap-4 lg:justify-between">
         <div className="flex-grow">
-          <p className="text-gray">Your Profits</p>
+          <p className="text-gray my-2">Your Profits</p>
           <div className="flex items-center gap-2">
             <span className="text-light text-2xl lg:text-xl font-bold">
               ${totalTradeProfit.toFixed(2)} USDT
@@ -357,7 +358,7 @@ function Dashboard() {
         </div>
 
         <div className="flex-grow">
-          <p className="text-gray">Wallet Balance</p>
+          <p className="text-gray my-2">Wallet Balance</p>
           <div className="flex items-center gap-2">
             <span className="text-light text-2xl lg:text-xl font-bold">
               ${walletBalance.toFixed(2)} USDT
@@ -374,7 +375,7 @@ function Dashboard() {
 
         <div className="flex flex-col lg:flex-row justify-center lg:justify-end gap-4 lg:gap-2 md:w-5/12">
           <Button
-            className={`flex p-4 lg:w-full items-center gap-2 ${
+            className={`flex py-4 items-center gap-2 ${
               hasConfirmedInvoice && !hasPendingDeposit
                 ? "bg-orange text-light"
                 : "bg-gray text-dark cursor-not-allowed"
@@ -387,6 +388,7 @@ function Dashboard() {
               alt="Plus Icon"
               width={24}
               height={24}
+              className="h-6 w-6"
             />
             Deposit Funds
           </Button>
@@ -405,20 +407,19 @@ function Dashboard() {
                 alt="Minus Icon"
                 width={24}
                 height={24}
+                className="h-6 w-6"
               />
               Withdraw Funds
             </Button>
             {!hasConfirmedInvoice && (
               <p className="text-red-500 text-sm mt-2">
-                Please pay your monthly subscription via the invoices page
-                before depositing or withdrawing funds.
+                Please pay your monthly subscription via the invoices page before depositing or withdrawing funds.
               </p>
             )}
             {hasPendingWithdrawal && (
               <div className="flex flex-col">
                 <p className="text-red-500 text-sm mt-2">
-                  You have a pending withdrawal request. Please wait for it to
-                  be confirmed before making another request.
+                  You have a pending withdrawal request. Please wait for it to be confirmed before making another request.
                 </p>
                 <Button
                   className="bg-red-600 text-white mt-2"
@@ -431,8 +432,7 @@ function Dashboard() {
             {hasPendingDeposit && (
               <div className="flex flex-col">
                 <p className="text-red-500 text-sm mt-2">
-                  You have a pending deposit request. Please wait for it to be
-                  confirmed before making another deposit.
+                  You have a pending deposit request. Please wait for it to be confirmed before making another deposit.
                 </p>
                 <Button
                   className="bg-red-600 text-white mt-2"
@@ -447,7 +447,7 @@ function Dashboard() {
       </div>
       <hr className="border-gray" />
 
-      <h2 className="text-light text-xl font-bold">Your Profits</h2>
+      <h2 className="text-light text-xl my-4 font-bold">Your Profits</h2>
 
       <History loading={loadingTrades} trades={trades} />
 
@@ -458,6 +458,7 @@ function Dashboard() {
         <WithdrawCryptoModal onClose={handleCloseWithdrawModal} />
       )}
       {isOpen && <ProfileSettingsModal onClose={closeModal} />}
+      </div>
     </Layout>
   );
 }
