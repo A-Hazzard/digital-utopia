@@ -321,7 +321,7 @@ export default function ResourcesPage() {
     className="col-span-full flex flex-col items-center justify-center p-12 bg-darker rounded-xl border border-readonly/30"
   >
     <h3 className="text-2xl font-bold text-light mb-2">No Resources Available</h3>
-    <p className="text-gray text-center">Check back later for new trading resources and educational content.</p>
+    <p className="text-gray text-center">Check back later for new resources and educational content.</p>
   </motion.div>
 )}
 
