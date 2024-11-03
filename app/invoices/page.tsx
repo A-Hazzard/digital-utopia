@@ -85,10 +85,8 @@ const InvoicesPage = () => {
   const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
 
   const handleRowClick = (invoice: Invoice) => {
-    if (invoice.status !== 'paid') {
-      setSelectedInvoice(invoice);
-      setModalVisible(true);
-    }
+    setSelectedInvoice(invoice);
+    setModalVisible(true);
   };
 
   const handleStatusChange = (status: string) => {
@@ -139,11 +137,11 @@ const InvoicesPage = () => {
                 <table className="text-light min-w-full">
                   <thead>
                     <tr className="text-gray-400 text-xs sm:text-sm border-b border-dashed border-gray">
-                      <th className="text-left p-4">Invoice Number</th>
-                      <th className="text-left p-4">Description</th>
-                      <th className="text-right p-4">Amount</th>
-                      <th className="text-left p-4">Date</th>
-                      <th className="text-left p-4">Status</th>
+                      <th className="text-left p-2">Invoice Number</th>
+                      <th className="text-left p-2">Description</th>
+                      <th className="text-right p-2">Amount</th>
+                      <th className="text-left p-2">Date</th>
+                      <th className="text-left p-2">Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -151,14 +149,14 @@ const InvoicesPage = () => {
                       currentInvoices.map((invoice) => (
                         <tr
                           key={invoice.id}
-                          className={`border-b border-gray hover:bg-gray-700 cursor-pointer ${invoice.status === 'pending' ? 'bg-gray-800' : ''} ${invoice.status === 'paid' ? 'cursor-default' : ''}`}
+                          className={`border-b border-gray hover:bg-gray-700 cursor-pointer`}
                           onClick={() => handleRowClick(invoice)}
                         >
-                          <td className="py-2 px-4">{invoice.invoiceNumber}</td>
-                          <td className="py-2 px-4">{invoice.description}</td>
-                          <td className="py-2 px-4 text-right">${invoice.amount.toFixed(2)}</td>
-                          <td className="py-2 px-4">{formatDate(invoice.date)}</td>
-                          <td className="py-2 px-4">{invoice.status}</td>
+                          <td className="py-2">{invoice.invoiceNumber}</td>
+                          <td className="py-2">{invoice.description}</td>
+                          <td className="py-2 text-right">${invoice.amount.toFixed(2)}</td>
+                          <td className="py-2">{formatDate(invoice.date)}</td>
+                          <td className="py-2">{invoice.status}</td>
                         </tr>
                       ))
                     ) : (
