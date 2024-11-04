@@ -64,8 +64,9 @@ const InvoicesPage = () => {
         invoiceNumber: data.invoiceNumber || "",
         description: data.description || "",
         amount: parseFloat(data.amount) || 0,
-        date: data.date instanceof Date ? data.date : new Date(data.date), 
+        date: data.date, 
         status: data.status || "",
+        createdAt: data.createdAt,
       } as Invoice; 
     });
     setInvoicesData(invoices);
@@ -139,9 +140,9 @@ const InvoicesPage = () => {
                     <tr className="text-gray-400 text-xs sm:text-sm border-b border-dashed border-gray">
                       <th className="text-left p-2">Invoice Number</th>
                       <th className="text-left p-2">Description</th>
-                      <th className="text-right p-2">Amount</th>
-                      <th className="text-left p-2">Date</th>
-                      <th className="text-left p-2">Status</th>
+                      <th className="text-left p-2 px-4">Amount</th>
+                      <th className="text-left p-2 px-4">Date</th>
+                      <th className="text-left p-2 px-4">Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -154,9 +155,9 @@ const InvoicesPage = () => {
                         >
                           <td className="py-2">{invoice.invoiceNumber}</td>
                           <td className="py-2">{invoice.description}</td>
-                          <td className="py-2 text-right">${invoice.amount.toFixed(2)}</td>
-                          <td className="py-2">{formatDate(invoice.date)}</td>
-                          <td className="py-2">{invoice.status}</td>
+                          <td className="py-2 px-4 text-right">${invoice.amount.toFixed(2)}</td>
+                          <td className="py-2 px-4">{formatDate(invoice.createdAt)}</td>
+                          <td className="py-2 px-4">{invoice.status}</td>
                         </tr>
                       ))
                     ) : (
@@ -167,19 +168,19 @@ const InvoicesPage = () => {
                   </tbody>
                 </table>
               </div>
-              <div className="flex justify-between mt-4">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 bg-primary text-white rounded disabled:opacity-50"
+                  className="w-full sm:w-auto px-4 py-2 bg-primary text-white rounded disabled:opacity-50"
                 >
                   Previous
                 </button>
-                <span>Page {currentPage} of {totalPages}</span>
+                <span className="text-center">Page {currentPage} of {totalPages}</span>
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 bg-primary text-white rounded disabled:opacity-50"
+                  disabled={currentPage === totalPages} 
+                  className="w-full sm:w-auto px-4 py-2 bg-primary text-white rounded disabled:opacity-50"
                 >
                   Next
                 </button>

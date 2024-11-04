@@ -34,7 +34,7 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack, invoiceNumber, am
   if (!userId) return null;
 
   return (
-    <div className="relative">
+    <div className="relative max-h-[80vh] overflow-y-auto">
       {!showProofOfPayment && (
         <div
           className={`transition-opacity duration-500 ease-in-out ${
