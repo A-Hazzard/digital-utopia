@@ -65,15 +65,27 @@ export default function Panel() {
 
       <ul className="flex flex-col gap-4">
         {!isAdmin && (
+          <Link
+            href="/"
+            className={`text-lg text-light ${
+              pathname === "/" ? "underline font-bold" : ""
+            }`}
+          >
+            Dashboard
+          </Link>
+        )}
+
+        <Link
+          href="/resources"
+          className={`text-lg text-light ${
+            pathname === "/resources" ? "underline font-bold" : ""
+          }`}
+        >
+          Resources
+        </Link>
+
+        {!isAdmin && (
           <>
-            <Link
-              href="/"
-              className={`text-lg text-light ${
-                pathname === "/" ? "underline font-bold" : ""
-              }`}
-            >
-              Dashboard
-            </Link>
             <Link
               href="/invoices"
               className={`text-lg text-light ${
@@ -93,77 +105,63 @@ export default function Panel() {
           </>
         )}
 
-        <Link
-          href="/resources"
-          className={`text-lg text-light ${
-            pathname === "/resources" ? "underline font-bold" : ""
-          }`}
-        >
-          Resources
-        </Link>
-
-        <button className="bg-none inline w-fit" onClick={openModal}>
-          Profile
-        </button>
-
         {isAdmin && (
           <>
+            <div className="w-full border-t border-gray my-2"></div>
+            <span className="text-gray text-sm">Admin Panel</span>
+            
+            <Link
+              href="/admin/user-management"
+              className={pathname === "/admin/user-management" ? "underline" : ""}
+            >
+              User Management
+            </Link>
             <Link
               href="/admin/invoices"
               className={pathname === "/admin/invoices" ? "underline" : ""}
             >
               Invoices
             </Link>
-
             <Link
               href="/admin/deposits"
               className={pathname === "/admin/deposits" ? "underline" : ""}
             >
               Deposits
             </Link>
-
             <Link
               href="/admin/withdrawals"
               className={pathname === "/admin/withdrawals" ? "underline" : ""}
             >
               Withdrawals
             </Link>
-
             <Link
               href="/admin/trades"
               className={pathname === "/admin/trades" ? "underline" : ""}
             >
               Trade Results
             </Link>
-
             <Link
               href="/admin/manage-resources"
-              className={
-                pathname === "/admin/manage-resources" ? "underline" : ""
-              }
+              className={pathname === "/admin/manage-resources" ? "underline" : ""}
             >
               Manage Resources
-            </Link>
-
-            <Link
-              href="/admin/user-management"
-              className={
-                pathname === "/admin/user-management" ? "underline" : ""
-              }
-            >
-              User Management
             </Link>
           </>
         )}
       </ul>
 
-      <button
-        className="bg-transparent w-fit text-light absolute bottom-0 left-0 flex items-center gap-2"
-        onClick={handleSignOut}
-      >
-        <LogOut size={20} />
-        Sign Out
-      </button>
+      <div className="mt-auto">
+        <button className="bg-none inline w-fit mb-4" onClick={openModal}>
+          Profile
+        </button>
+        <button
+          className="bg-transparent w-fit text-light flex items-center gap-2"
+          onClick={handleSignOut}
+        >
+          <LogOut size={20} />
+          Sign Out
+        </button>
+      </div>
       {isOpen && <ProfileSettingsModal onClose={closeModal} />}
     </div>
   );

@@ -80,50 +80,50 @@ const InvoiceManagement = () => {
     amountRange: "",
   });
   const [sortConfig, setSortConfig] = useState<SortConfig>({ field: '', direction: 'asc' });
-  const [unsubscribe, setUnsubscribe] = useState<(() => void) | null>(null);
 
   useEffect(() => {
-    subscribeToInvoices();
+    let unsubscribe: (() => void) | undefined;
+
+    const setupSubscription = () => {
+      setLoading(true);
+      try {
+        const invoicesCollection = collection(db, "invoices");
+        unsubscribe = onSnapshot(invoicesCollection, (snapshot) => {
+          const invoicesData: Invoice[] = snapshot.docs.map((doc) => {
+            const data = doc.data() as DocumentData;
+            return {
+              id: doc.id,
+              invoiceNumber: data.invoiceNumber,
+              description: data.description,
+              amount: parseFloat(data.amount) || 0,
+              date: data.date,
+              status: data.status,
+              userId: data.userId,
+              userEmail: data.userEmail,
+              createdAt: data.createdAt,
+              username: data.username,
+              country: data.country,
+              userName: data.username,
+            };
+          });
+          setInvoices(invoicesData);
+          setLoading(false);
+        });
+      } catch (err) {
+        console.error("Error subscribing to invoices:", err);
+        setLoading(false);
+      }
+    };
+
+    setupSubscription();
+
+    // Cleanup subscription on unmount
     return () => {
-      // Cleanup subscription on component unmount
       if (unsubscribe) {
         unsubscribe();
       }
     };
-  }, [unsubscribe]);
-
-  const subscribeToInvoices = () => {
-    setLoading(true);
-    try {
-      const invoicesCollection = collection(db, "invoices");
-      const unsub = onSnapshot(invoicesCollection, (snapshot) => {
-        const invoicesData: Invoice[] = snapshot.docs.map((doc) => {
-          const data = doc.data() as DocumentData;
-          return {
-            id: doc.id,
-            invoiceNumber: data.invoiceNumber,
-            description: data.description,
-            amount: parseFloat(data.amount) || 0,
-            date: data.date,
-            status: data.status,
-            userId: data.userId,
-            userEmail: data.userEmail,
-            createdAt: data.createdAt,
-            username: data.username,
-            country: data.country,
-            userName: data.username,
-          };
-        });
-        setInvoices(invoicesData);
-        setLoading(false);
-      });
-      
-      setUnsubscribe(() => unsub);
-    } catch (err) {
-      console.error("Error subscribing to invoices:", err);
-      setLoading(false);
-    }
-  };
+  }, []);
 
   const handleAddInvoice = async () => {
     // Validation

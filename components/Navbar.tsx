@@ -79,33 +79,17 @@ const Navbar = () => {
               className="absolute top-4 right-4 cursor-pointer text-light"
             />
             <nav className="flex flex-col items-center gap-4">
-              <Link
-                href="/"
-                className={`text-lg text-light ${
-                  pathname === "/" ? "underline font-bold" : ""
-                }`}
-                onClick={toggleNavbar}
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/invoices"
-                className={`text-lg text-light ${
-                  pathname === "/invoices" ? "underline font-bold" : ""
-                }`}
-                onClick={toggleNavbar}
-              >
-                Invoices
-              </Link>
-              <Link
-                href="/withdrawals"
-                className={`text-lg text-light ${
-                  pathname === "/withdrawals" ? "underline font-bold" : ""
-                }`}
-                onClick={toggleNavbar}
-              >
-                Withdrawals
-              </Link>
+              {!isAdmin && (
+                <Link
+                  href="/"
+                  className={`text-lg text-light ${
+                    pathname === "/" ? "underline font-bold" : ""
+                  }`}
+                  onClick={toggleNavbar}
+                >
+                  Dashboard
+                </Link>
+              )}
               <Link
                 href="/resources"
                 className={`text-lg text-light ${
@@ -115,26 +99,46 @@ const Navbar = () => {
               >
                 Resources
               </Link>
-
-              {isAdmin && (
+              {!isAdmin && (
                 <>
                   <Link
-                    href="/admin/manage-resources"
+                    href="/invoices"
                     className={`text-lg text-light ${
-                      pathname === "/admin/manage-resources"
-                        ? "underline font-bold"
-                        : ""
+                      pathname === "/invoices" ? "underline font-bold" : ""
                     }`}
                     onClick={toggleNavbar}
                   >
-                    Manage Resources
+                    Invoices
+                  </Link>
+                  <Link
+                    href="/withdrawals"
+                    className={`text-lg text-light ${
+                      pathname === "/withdrawals" ? "underline font-bold" : ""
+                    }`}
+                    onClick={toggleNavbar}
+                  >
+                    Withdrawals
+                  </Link>
+                </>
+              )}
+              {isAdmin && (
+                <>
+                  <div className="w-full border-t border-gray my-2"></div>
+                  <span className="text-gray text-sm">Admin Panel</span>
+                  
+                  <Link
+                    href="/admin/user-management"
+                    className={`text-lg text-light ${
+                      pathname === "/admin/user-management" ? "underline font-bold" : ""
+                    }`}
+                    onClick={toggleNavbar}
+                  >
+                    User Management
                   </Link>
                   <Link
                     href="/admin/invoices"
                     className={`text-lg text-light ${
-                      pathname === "/admin/invoices"
-                        ? "underline font-bold"
-                        : ""
+                      pathname === "/admin/invoices" ? "underline font-bold" : ""
                     }`}
                     onClick={toggleNavbar}
                   >
@@ -143,9 +147,7 @@ const Navbar = () => {
                   <Link
                     href="/admin/deposits"
                     className={`text-lg text-light ${
-                      pathname === "/admin/deposits"
-                        ? "underline font-bold"
-                        : ""
+                      pathname === "/admin/deposits" ? "underline font-bold" : ""
                     }`}
                     onClick={toggleNavbar}
                   >
@@ -154,9 +156,7 @@ const Navbar = () => {
                   <Link
                     href="/admin/withdrawals"
                     className={`text-lg text-light ${
-                      pathname === "/admin/withdrawals"
-                        ? "underline font-bold"
-                        : ""
+                      pathname === "/admin/withdrawals" ? "underline font-bold" : ""
                     }`}
                     onClick={toggleNavbar}
                   >
@@ -172,16 +172,17 @@ const Navbar = () => {
                     Trade Results
                   </Link>
                   <Link
-                    href="/admin/user-management"
+                    href="/admin/manage-resources"
                     className={`text-lg text-light ${
-                      pathname === "/admin/user-management" ? "underline font-bold" : ""
+                      pathname === "/admin/manage-resources" ? "underline font-bold" : ""
                     }`}
                     onClick={toggleNavbar}
                   >
-                    User Management
+                    Manage Resources
                   </Link>
                 </>
               )}
+              <div className="w-full border-t border-gray my-2"></div>
               <div className="flex flex-col items-center gap-4">
                 <button
                   className="bg-none text-light inline w-fit"
