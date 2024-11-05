@@ -1,14 +1,13 @@
 "use client";
 
 import { formatDate } from "@/helpers/date";
+import { db } from "@/lib/firebase";
 import {
   fetchMoreWithdrawalRequests,
   fetchMoreWithdrawals,
   handleSearch as handleSearchUtil,
   handleUpdateStatus,
-  listenToWithdrawalRequests,
-  listenToWithdrawals,
-  revertWithdrawal,
+  revertWithdrawal
 } from "@/utils/withdrawalManagementUtils";
 import {
   Button,
@@ -23,11 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from "@nextui-org/react";
-import {
-  DocumentData,
-  QueryDocumentSnapshot,
-  Timestamp,
-} from "firebase/firestore";
+  
+import { collection, DocumentData, limit, onSnapshot, orderBy, query, QueryDocumentSnapshot, Timestamp } from "firebase/firestore";
 import { gsap } from "gsap";
 import { useEffect, useState } from "react";
 import { ToastContainer } from "react-toastify";
@@ -76,29 +72,54 @@ const WithdrawalManagement = () => {
   const [searchInput, setSearchInput] = useState("");
 
   useEffect(() => {
-    const unsubscribeWithdrawals = listenToWithdrawals(
-      setWithdrawals,
-      setLastVisibleWithdrawal,
-      setTotalWithdrawalPages,
-      setLoading,
-      setError
-    );
-    const unsubscribeWithdrawalRequests = listenToWithdrawalRequests(
-      setWithdrawalRequests,
-      setLastVisibleRequest,
-      setTotalRequestPages,
-      setLoading,
-      setError
-    );
+    const unsubscribeWithdrawals = listenToWithdrawals();
+    const unsubscribeWithdrawalRequests = listenToWithdrawalRequests();
     return () => {
       unsubscribeWithdrawals();
       unsubscribeWithdrawalRequests();
     };
   }, []);
 
+  const listenToWithdrawals = () => {
+    const withdrawalsCollection = collection(db, "withdrawals");
+    const q = query(withdrawalsCollection, orderBy("date", "desc"), limit(ITEMS_PER_PAGE));
+    return onSnapshot(q, (snapshot) => {
+      const withdrawalsData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Withdrawal[];
+      setWithdrawals(withdrawalsData);
+      setTotalWithdrawalPages(Math.ceil(snapshot.size / ITEMS_PER_PAGE));
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching withdrawals:", error);
+      setError("Failed to load withdrawals.");
+      setLoading(false);
+    });
+  };
+
+  const listenToWithdrawalRequests = () => {
+    const requestsCollection = collection(db, "withdrawalRequests");
+    const q = query(requestsCollection, orderBy("date", "desc"), limit(ITEMS_PER_PAGE));
+    return onSnapshot(q, (snapshot) => {
+      const requestsData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as WithdrawalRequest[];
+      setWithdrawalRequests(requestsData);
+      setTotalRequestPages(Math.ceil(snapshot.size / ITEMS_PER_PAGE));
+    }, (error) => {
+      console.error("Error fetching withdrawal requests:", error);
+      setError("Failed to load withdrawal requests.");
+      setLoading(false);
+    });
+  };
+
   useEffect(() => {
-    gsap.from(".withdrawal-table", { opacity: 0, y: -50, duration: 0.5, stagger: 0.1 });
-  }, []);
+    if (!loading) {
+      gsap.from(".withdrawal-table", { opacity: 0, y: -50, duration: 0.5, stagger: 0.1 });
+    }
+  }, [loading, withdrawals]);
 
   const handleWithdrawalPageChange = (page: number) => {
     setCurrentWithdrawalPage(page);
@@ -209,24 +230,35 @@ const WithdrawalManagement = () => {
         <TableColumn>Status</TableColumn>
       </TableHeader>
       <TableBody>
-        {withdrawals.map((withdrawal) => (
-          <TableRow key={withdrawal.id}>
-            <TableCell>{withdrawal.withdrawalId || "N/A"}</TableCell>
-            <TableCell>{withdrawal.userEmail}</TableCell>
-            <TableCell>{withdrawal.username}</TableCell>
-            <TableCell>${withdrawal.amount}</TableCell>
-            <TableCell>{formatDate(withdrawal.date)}</TableCell>
-            <TableCell>
-              <span className={`px-2 py-1 rounded-full text-xs ${
-                withdrawal.status === 'confirmed' 
-                  ? 'bg-green-500/20 text-green-500' 
-                  : 'bg-yellow-500/20 text-yellow-500'
-              }`}>
-                {withdrawal.status}
-              </span>
-            </TableCell>
+        {withdrawals.length === 0 ? (
+          <TableRow>
+            <TableCell>{""}</TableCell>
+            <TableCell>{""}</TableCell>
+            <TableCell>{"No withdrawals found."}</TableCell>
+            <TableCell>{""}</TableCell>
+            <TableCell>{""}</TableCell>
+            <TableCell>{""}</TableCell>
           </TableRow>
-        ))}
+        ) : (
+          withdrawals.map((withdrawal) => (
+            <TableRow key={withdrawal.id}>
+              <TableCell>{withdrawal.withdrawalId || "N/A"}</TableCell>
+              <TableCell>{withdrawal.userEmail}</TableCell>
+              <TableCell>{withdrawal.username}</TableCell>
+              <TableCell>${withdrawal.amount}</TableCell>
+              <TableCell>{formatDate(withdrawal.date)}</TableCell>
+              <TableCell>
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  withdrawal.status === 'confirmed' 
+                    ? 'bg-green-500/20 text-green-500' 
+                    : 'bg-yellow-500/20 text-yellow-500'
+                }`}>
+                  {withdrawal.status}
+                </span>
+              </TableCell>
+            </TableRow>
+          ))
+        )}
       </TableBody>
     </Table>
     <Pagination
@@ -260,46 +292,59 @@ const WithdrawalManagement = () => {
         <TableColumn>Actions</TableColumn>
       </TableHeader>
       <TableBody>
-        {withdrawalRequests.map((request) => (
-          <TableRow key={request.id}>
-            <TableCell>{request.withdrawalId}</TableCell>
-            <TableCell>{request.userEmail}</TableCell>
-            <TableCell>{request.username}</TableCell>
-            <TableCell>${request.amount}</TableCell>
-            <TableCell>{formatDate(request.date)}</TableCell>
-            <TableCell>
-              <span className={`px-2 py-1 rounded-full text-xs ${
-                request.status === 'confirmed' 
-                  ? 'bg-green-500/20 text-green-500' 
-                  : 'bg-yellow-500/20 text-yellow-500'
-              }`}>
-                {request.status}
-              </span>
-            </TableCell>
-            <TableCell className="max-w-[200px] truncate">{request.address}</TableCell>
-            <TableCell>
-              {request.status === "pending" ? (
-                <Button
-                  size="sm"
-                  color="primary"
-                  onClick={() => handleConfirmWithdrawal(request)}
-                  className="bg-primary hover:bg-primary/80"
-                >
-                  Confirm
-                </Button>
-              ) : request.status === "confirmed" ? (
-                <Button
-                  size="sm"
-                  color="warning"
-                  onClick={() => handleRevertWithdrawal(request.withdrawalId)}
-                  className="bg-warning hover:bg-warning/80"
-                >
-                  Revert
-                </Button>
-              ) : null}
-            </TableCell>
+        {withdrawalRequests.length === 0 ? (
+          <TableRow>
+            <TableCell>{""}</TableCell>
+            <TableCell>{""}</TableCell>
+            <TableCell>{""}</TableCell>
+            <TableCell>{"No withdrawal requests found."}</TableCell>
+            <TableCell>{""}</TableCell>
+            <TableCell>{""}</TableCell>
+            <TableCell>{""}</TableCell>
+            <TableCell>{""}</TableCell>
           </TableRow>
-        ))}
+        ) : (
+          withdrawalRequests.map((request) => (
+            <TableRow key={request.id}>
+              <TableCell>{request.withdrawalId}</TableCell>
+              <TableCell>{request.userEmail}</TableCell>
+              <TableCell>{request.username}</TableCell>
+              <TableCell>${request.amount}</TableCell>
+              <TableCell>{formatDate(request.date)}</TableCell>
+              <TableCell>
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  request.status === 'confirmed' 
+                    ? 'bg-green-500/20 text-green-500' 
+                    : 'bg-yellow-500/20 text-yellow-500'
+                }`}>
+                  {request.status}
+                </span>
+              </TableCell>
+              <TableCell className="max-w-[200px] truncate">{request.address}</TableCell>
+              <TableCell>
+                {request.status === "pending" ? (
+                  <Button
+                    size="sm"
+                    color="primary"
+                    onClick={() => handleConfirmWithdrawal(request)}
+                    className="bg-primary hover:bg-primary/80"
+                  >
+                    Confirm
+                  </Button>
+                ) : request.status === "confirmed" ? (
+                  <Button
+                    size="sm"
+                    color="warning"
+                    onClick={() => handleRevertWithdrawal(request.withdrawalId)}
+                    className="bg-warning hover:bg-warning/80"
+                  >
+                    Revert
+                  </Button>
+                ) : null}
+              </TableCell>
+            </TableRow>
+          ))
+        )}
       </TableBody>
     </Table>
     <Pagination
