@@ -55,6 +55,8 @@ type WithdrawalRequest = {
   userId: string; 
 }
 
+const ITEMS_PER_PAGE = 50;
+
 const WithdrawalManagement = () => {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [withdrawalRequests, setWithdrawalRequests] = useState<
@@ -232,7 +234,7 @@ const WithdrawalManagement = () => {
       initialPage={1}
       page={currentWithdrawalPage}
       onChange={handleWithdrawalPageChange}
-      className="flex justify-center"
+      className="flex justify-center mt-4"
     />
   </div>
 
@@ -305,7 +307,7 @@ const WithdrawalManagement = () => {
       initialPage={1}
       page={currentRequestPage}
       onChange={handleRequestPageChange}
-      className="flex justify-center"
+      className="flex justify-center mt-4"
     />
   </div>
     </div>

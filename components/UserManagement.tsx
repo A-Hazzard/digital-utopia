@@ -16,6 +16,7 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
+  Pagination,
 } from "@nextui-org/react";
 import {
   collection,
@@ -27,6 +28,8 @@ import {
   updateDoc,
   where,
   writeBatch,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
@@ -40,6 +43,8 @@ type User = {
   isAdmin: boolean;
 }
 
+const ITEMS_PER_PAGE = 50;
+
 const UserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +52,8 @@ const UserManagement = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isMakingAdmin, setIsMakingAdmin] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
@@ -55,7 +62,12 @@ const UserManagement = () => {
       }
     });
 
-    const usersQuery = query(collection(db, "users"));
+    const usersQuery = query(
+      collection(db, "users"),
+      orderBy("createdAt", "desc"),
+      limit(ITEMS_PER_PAGE)
+    );
+    
     const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
       const usersData = snapshot.docs.map((doc) => ({
         uid: doc.id,
@@ -65,6 +77,7 @@ const UserManagement = () => {
         isAdmin: doc.data().isAdmin !== undefined ? doc.data().isAdmin : false,
       })) as User[];
       setUsers(usersData);
+      setTotalPages(Math.ceil(snapshot.size / ITEMS_PER_PAGE));
       setLoading(false);
     });
 
@@ -72,7 +85,7 @@ const UserManagement = () => {
       unsubscribeAuth();
       unsubscribeUsers();
     };
-  }, []);
+  }, [currentPage]);
 
   const handleToggleDisable = async (
     userId: string,
@@ -245,6 +258,10 @@ const UserManagement = () => {
     }
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   if (loading) {
     return <Spinner size="lg" />;
   }
@@ -317,6 +334,14 @@ const UserManagement = () => {
       </TableBody>
     </Table>
   </div>
+
+  <Pagination
+    total={totalPages}
+    initialPage={1}
+    page={currentPage}
+    onChange={handlePageChange}
+    className="flex justify-center mt-4"
+  />
 
   <Modal
     closeButton

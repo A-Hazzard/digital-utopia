@@ -10,9 +10,10 @@ import {
   TableCell,
   TableColumn,
   TableHeader,
-  TableRow
+  TableRow,
+  Pagination
 } from "@nextui-org/react";
-import { collection, doc, getDoc, onSnapshot, orderBy, query, runTransaction, Timestamp, updateDoc } from "firebase/firestore";
+import { collection, doc, getDoc, limit, onSnapshot, orderBy, query, runTransaction, Timestamp, updateDoc } from "firebase/firestore";
 import { gsap } from "gsap";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -26,14 +27,22 @@ type Deposit = {
   createdAt: Timestamp;
 };
 
+const ITEMS_PER_PAGE = 50;
+
 const DepositManagement = () => {
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
     const depositsCollection = collection(db, "deposits");
-    const q = query(depositsCollection, orderBy("createdAt", "desc"));
+    const q = query(
+      depositsCollection,
+      orderBy("createdAt", "desc"),
+      limit(ITEMS_PER_PAGE)
+    );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const depositsData = snapshot.docs.map((doc) => ({
@@ -41,6 +50,7 @@ const DepositManagement = () => {
         ...doc.data(),
       })) as Deposit[];
       setDeposits(depositsData);
+      setTotalPages(Math.ceil(snapshot.size / ITEMS_PER_PAGE));
       setLoading(false);
     }, (err) => {
       setError("Failed to fetch deposits: " + err.message);
@@ -49,7 +59,7 @@ const DepositManagement = () => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [currentPage]);
 
   useEffect(() => {
     gsap.from(".deposit-table", { opacity: 0, y: -50, duration: 0.5, stagger: 0.1 });
@@ -117,6 +127,10 @@ const DepositManagement = () => {
       setError("Failed to update deposit status");
       toast.error("Failed to update deposit status");
     }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   if (loading) {
@@ -202,6 +216,13 @@ const DepositManagement = () => {
           )}
         </TableBody>
       </Table>
+      <Pagination
+        total={totalPages}
+        initialPage={1}
+        page={currentPage}
+        onChange={handlePageChange}
+        className="flex justify-center mt-4"
+      />
     </div>
     </div>
   );

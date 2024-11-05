@@ -19,17 +19,19 @@ import {
   DropdownItem,
   DropdownTrigger,
   DropdownMenu,
+  Pagination,
 } from "@nextui-org/react";
 import {
   addDoc,
   collection,
-  DocumentData,
   getDocs,
   query,
   where,
   onSnapshot,
   doc,
   updateDoc,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
@@ -59,6 +61,8 @@ type SortConfig = {
   direction: 'asc' | 'desc';
 };
 
+const ITEMS_PER_PAGE = 50;
+
 const InvoiceManagement = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [newInvoice, setNewInvoice] = useState<NewInvoice>({
@@ -80,6 +84,8 @@ const InvoiceManagement = () => {
     amountRange: "",
   });
   const [sortConfig, setSortConfig] = useState<SortConfig>({ field: '', direction: 'asc' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -88,25 +94,19 @@ const InvoiceManagement = () => {
       setLoading(true);
       try {
         const invoicesCollection = collection(db, "invoices");
-        unsubscribe = onSnapshot(invoicesCollection, (snapshot) => {
-          const invoicesData: Invoice[] = snapshot.docs.map((doc) => {
-            const data = doc.data() as DocumentData;
-            return {
-              id: doc.id,
-              invoiceNumber: data.invoiceNumber,
-              description: data.description,
-              amount: parseFloat(data.amount) || 0,
-              date: data.date,
-              status: data.status,
-              userId: data.userId,
-              userEmail: data.userEmail,
-              createdAt: data.createdAt,
-              username: data.username,
-              country: data.country,
-              userName: data.username,
-            };
-          });
+        const q = query(
+          invoicesCollection,
+          orderBy("createdAt", "desc"),
+          limit(ITEMS_PER_PAGE)
+        );
+        
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          const invoicesData = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as Invoice[];
           setInvoices(invoicesData);
+          setTotalPages(Math.ceil(snapshot.size / ITEMS_PER_PAGE));
           setLoading(false);
         });
       } catch (err) {
@@ -117,13 +117,12 @@ const InvoiceManagement = () => {
 
     setupSubscription();
 
-    // Cleanup subscription on unmount
     return () => {
       if (unsubscribe) {
         unsubscribe();
       }
     };
-  }, []);
+  }, [currentPage]);
 
   const handleAddInvoice = async () => {
     // Validation
@@ -421,6 +420,10 @@ const InvoiceManagement = () => {
     </div>
   );
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 text-light">
       <ToastContainer />
@@ -568,7 +571,7 @@ const InvoiceManagement = () => {
                 <TableRow key={invoice.id}>
                   <TableCell className="font-semibold text-light">{invoice.invoiceNumber}</TableCell>
                   <TableCell>{invoice.description}</TableCell>
-                  <TableCell className="px-4">${invoice.amount.toFixed(2)}</TableCell>
+                  <TableCell className="px-4">${invoice.amount}</TableCell>
                   <TableCell className="px-4">{formatDate(invoice.createdAt)}</TableCell>
                   <TableCell className="px-4">
                     <span className={`px-2 py-1 rounded-full text-xs ${
@@ -596,6 +599,13 @@ const InvoiceManagement = () => {
             )}
           </TableBody>
         </Table>
+        <Pagination
+          total={totalPages}
+          initialPage={1}
+          page={currentPage}
+          onChange={handlePageChange}
+          className="flex justify-center mt-4"
+        />
       </div>
     </div>
   );
