@@ -32,6 +32,7 @@ import {
   updateDoc,
   orderBy,
   limit,
+  getDoc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
@@ -306,11 +307,41 @@ const InvoiceManagement = () => {
 
   const handleMarkAsPaid = async (invoiceId: string) => {
     try {
+      // Get the invoice data first
       const invoiceRef = doc(db, "invoices", invoiceId);
+      const invoiceDoc = await getDoc(invoiceRef);
+      const invoiceData = invoiceDoc.data();
+
+      if (!invoiceData) {
+        toast.error("Invoice data not found");
+        return;
+      }
+
+      // Update the invoice status
       await updateDoc(invoiceRef, {
         status: "paid"
       });
-      toast.success("Invoice marked as paid");
+
+      // Send confirmation email to the user
+      const emailResponse = await fetch('/api/sendClientInvoiceConfirmationEmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userEmail: invoiceData.userEmail,
+          invoiceNumber: invoiceData.invoiceNumber,
+          amount: invoiceData.amount
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        console.error('Failed to send confirmation email');
+        toast.warning("Invoice marked as paid but email notification failed");
+        return;
+      }
+
+      toast.success("Invoice marked as paid and notification sent");
     } catch (err) {
       console.error("Error updating invoice:", err);
       toast.error("Failed to update invoice status");

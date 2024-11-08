@@ -29,7 +29,7 @@ Digital Utopia is a community-driven platform that aims to help users:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/A-Hazzard/digital-utopia.git
+   git clone https://github.com/kalemmentore868/digital-utopia.git
    cd digital-utopia
    ```
 
@@ -40,7 +40,7 @@ Digital Utopia is a community-driven platform that aims to help users:
    pnpm install
    ```
 
-3. Set up your Firebase configuration in `lib/firebase.ts`.
+3. Set up your Firebase configuration env variables in `lib/firebase.ts` and 'nodemailer' env variables in `.env`.
 
 4. Run the development server:
    ```bash

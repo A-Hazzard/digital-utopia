@@ -1,7 +1,7 @@
 "use client";
 import { useUser } from "@/context/UserContext";
 import { auth, storage } from "@/lib/firebase";
-import { Avatar, Button, Input, Spinner } from "@nextui-org/react";
+import { Avatar, Button, Input, ModalBody, ModalHeader, ModalContent, Modal, Spinner, ModalFooter } from "@nextui-org/react";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -17,6 +17,18 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useRouter } from "next/navigation";
+import { EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  writeBatch,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function ProfileSettingsModal({
   onClose,
@@ -39,6 +51,10 @@ export default function ProfileSettingsModal({
   } = useUser();
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -244,6 +260,84 @@ export default function ProfileSettingsModal({
     newPassword !== confirmPassword ||
     !currentPassword;
 
+  const needsReauth = () => {
+    const user = auth.currentUser;
+    if (!user?.metadata.lastSignInTime) return true;
+    
+    const lastSignIn = new Date(user.metadata.lastSignInTime);
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    
+    return lastSignIn < fiveMinutesAgo;
+  };
+
+  const handleDeleteAccount = async () => {
+    const user = auth.currentUser;
+    if (!user?.email) {
+      toast.error("No user found");
+      return;
+    }
+
+    try {
+      // Check if reauth is needed
+      if (needsReauth()) {
+        const credential = EmailAuthProvider.credential(user.email, deletePassword);
+        await reauthenticateWithCredential(user, credential);
+      }
+
+      // Delete user data from collections
+      const batch = writeBatch(db);
+      const collections = [
+        "users",
+        "profits",
+        "trades",
+        "invoices",
+        "deposits",
+        "withdrawals",
+        "withdrawalRequests",
+        "wallets",
+      ];
+
+      for (const collectionName of collections) {
+        // Delete by userEmail
+        const q1 = query(
+          collection(db, collectionName),
+          where("userEmail", "==", user.email)
+        );
+        const querySnapshot1 = await getDocs(q1);
+        querySnapshot1.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+
+        // Delete by email
+        const q2 = query(
+          collection(db, collectionName),
+          where("email", "==", user.email)
+        );
+        const querySnapshot2 = await getDocs(q2);
+        querySnapshot2.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+
+        // Delete document with email as ID
+        const docRef = doc(db, collectionName, user.email);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          batch.delete(docRef);
+        }
+      }
+
+      await batch.commit();
+
+      // Delete the user account
+      await user.delete();
+      
+      toast.success("Account deleted successfully");
+      router.push("/login");
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      setDeleteError("Failed to delete account. Please check your password and try again.");
+    }
+  };
 
   if (loading) {
     return (
@@ -386,8 +480,78 @@ export default function ProfileSettingsModal({
               Update Password
             </Button>
           </form>
+
+          <hr className="border-gray my-6" />
+
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold mb-4">Danger Zone</h3>
+            <Button
+              className="bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-light w-full"
+              onClick={() => setIsDeleteModalOpen(true)}
+            >
+              Delete Account
+            </Button>
+          </div>
         </div>
       </div>
+
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeletePassword("");
+          setDeleteError("");
+        }}
+        classNames={{
+          base: "bg-darker border border-readonly/30",
+          header: "border-b border-readonly/30",
+          body: "text-light py-6",
+          footer: "border-t border-readonly/30"
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <h2 className="text-xl font-bold text-light">Delete Account</h2>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-light mb-4">
+              Are you sure you want to delete your account? This action cannot be undone.
+            </p>
+            <Input
+              type="password"
+              label="Confirm your password"
+              placeholder="Enter your password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              className="mb-2"
+              classNames={{
+                input: "text-light",
+                label: "text-light"
+              }}
+            />
+            {deleteError && <p className="text-red-500 text-sm">{deleteError}</p>}
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="light"
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setDeletePassword("");
+                setDeleteError("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-red-500 text-light"
+              onClick={handleDeleteAccount}
+              disabled={!deletePassword}
+            >
+              Delete Account
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 }

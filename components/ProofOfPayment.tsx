@@ -43,6 +43,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
   const userEmail = auth.currentUser?.email;
   const MIN_TRANSACTION_ID_LENGTH = 10;
   const TRANSACTION_ID_REGEX = React.useMemo(() => /^[a-zA-Z0-9]{10,}$/, []);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
     const isTransactionIdValid =
@@ -140,6 +141,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
 
         await sendDepositEmail(depositData);
         setMessage("Deposit Request Submitted! Funds will show up within 24 to 48 hours.");
+        setIsSubmitted(true);
       } else if (purpose === "invoice" && userEmail && amount) {
         await sendInvoiceEmail({
           userEmail,
@@ -149,6 +151,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
         });
 
         setMessage("Invoice Submission Submitted! Approval will be given within 24 to 48 hours.");
+        setIsSubmitted(true);
       }
     } catch (error: unknown) {
       console.error("Error confirming deposit:", error);
@@ -157,6 +160,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
       } else {
         setMessage("An unexpected error occurred. Please try again.");
       }
+      setIsSubmitted(false);
     } finally {
       setLoading(false);
     }
@@ -311,24 +315,30 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
         </div>
       </div>
       <div className="flex justify-between mt-4">
-        <Button className="bg-transparent text-light" onClick={onBack}>
+        <Button 
+          className="bg-transparent text-light" 
+          onClick={onBack}
+          disabled={isSubmitted}
+        >
           Back
         </Button>
         <Button
           className={`${
-            isConfirmDisabled || depositStatus === "pending"
+            isConfirmDisabled || depositStatus === "pending" || isSubmitted
               ? "bg-gray text-light cursor-not-allowed"
               : "bg-orange"
           } text-light`}
           onClick={handleConfirmDeposit}
-          disabled={isConfirmDisabled || loading || depositStatus === "pending"}
+          disabled={isConfirmDisabled || loading || depositStatus === "pending" || isSubmitted}
         >
           {depositStatus === "pending"
             ? "Awaiting Confirmation"
+            : isSubmitted
+            ? "Submitted"
             : "Confirm Deposit"}
         </Button>
       </div>
-      {depositStatus === "pending" && (
+      {depositStatus === "pending" && !isSubmitted && (
         <div className="mt-4">
           <Button
             className="bg-red-600 text-white"
@@ -338,7 +348,13 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
           </Button>
         </div>
       )}
-      {message && <p className="text-green-500">{message}</p>}
+      {message && (
+        <p className={`${
+          message.includes("Submitted!") ? "text-green-500" : "text-red-500"
+        }`}>
+          {message}
+        </p>
+      )}
     </div>
   );
 };

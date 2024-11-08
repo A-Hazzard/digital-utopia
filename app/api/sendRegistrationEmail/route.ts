@@ -1,15 +1,10 @@
-import nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 import { NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.ADMIN_EMAIL,
-    pass: process.env.ADMIN_EMAIL_PASS,
-  },
-});
+// Initialize SendGrid with your API key
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
 const sendSignUpEmail = async (userData: { displayName: string; email: string }) => {
   const logoPath = path.join(process.cwd(), 'public', 'logo.png');
@@ -20,35 +15,45 @@ const sendSignUpEmail = async (userData: { displayName: string; email: string })
   }
 
   const userMailOptions = {
-    from: process.env.ADMIN_EMAIL,
+    from: {
+      email: process.env.ADMIN_EMAIL!,
+      name: 'Digital Utopia'
+    },
     to: userData.email,
     subject: 'Welcome to Digital Utopia!',
     html: createEmailTemplate(userData.displayName),
     attachments: [
       {
         filename: 'logo.png',
-        path: logoPath,
-        cid: 'logo',
-      },
-    ],
+        type: 'image/png',
+        content_id: 'unique-logo-id',
+        content: fs.readFileSync(logoPath).toString('base64'),
+        disposition: 'inline'
+      }
+    ]
   };
 
   const adminMailOptions = {
-    from: process.env.ADMIN_EMAIL,
-    to: process.env.ADMIN_EMAIL,
+    from: {
+      email: process.env.ADMIN_EMAIL!,
+      name: 'Digital Utopia'
+    },
+    to: process.env.ADMIN_SECONDARY_EMAIL!,
     subject: "New User Registration",
     html: createAdminNotificationTemplate(userData.displayName, userData.email),
     attachments: [
       {
-        filename: "logo.png",
-        path: logoPath,
-        cid: "logo",
-      },
-    ],
+        filename: 'logo.png',
+        type: 'image/png',
+        content_id: 'unique-logo-id',
+        content: fs.readFileSync(logoPath).toString('base64'),
+        disposition: 'inline'
+      }
+    ]
   };
 
-  await transporter.sendMail(userMailOptions);
-  await transporter.sendMail(adminMailOptions);
+  await sgMail.send(userMailOptions);
+  await sgMail.send(adminMailOptions);
 };
 
 export async function POST(req: Request) {
@@ -75,7 +80,7 @@ const createEmailTemplate = (displayName: string) => {
     <body style="font-family: 'Montserrat', sans-serif; margin: 0; padding: 0; background-color: #393E46; color: #eeeeee;">
         <div style="width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #16171a; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);">
             <div style="text-align: center; padding: 20px 0;">
-                <img src="cid:logo" alt="Digital Utopia Logo" aria-label="Digital Utopia Logo" style="width: 150px;">
+                <img src="cid:unique-logo-id" alt="Digital Utopia Logo" aria-label="Digital Utopia Logo" style="width: 150px;">
             </div>
             <div style="padding: 20px; background-color: #141010; border-radius: 8px;">
                 <h1>Welcome to Digital Utopia!</h1>
@@ -107,7 +112,7 @@ const createAdminNotificationTemplate = (displayName: string, email: string) => 
     <body style="font-family: 'Montserrat', sans-serif; margin: 0; padding: 0; background-color: #393E46; color: #eeeeee;">
         <div style="width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #16171a; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);">
             <div style="text-align: center; padding: 20px 0;">
-                <img src="cid:logo" alt="Digital Utopia Logo" aria-label="Digital Utopia Logo" style="width: 150px;">
+                <img src="cid:unique-logo-id" alt="Digital Utopia Logo" aria-label="Digital Utopia Logo" style="width: 150px;">
             </div>
             <div style="padding: 20px; background-color: #141010; border-radius: 8px;">
                 <h1>New User Registration</h1>

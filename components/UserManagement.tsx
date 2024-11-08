@@ -136,73 +136,6 @@ const UserManagement = () => {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this user? This action cannot be undone."
-      )
-    ) {
-      try {
-        setLoading(true);
-        const batch = writeBatch(db);
-        const userToDelete = users.find((user) => user.uid === userId);
-
-        if (!userToDelete || !userToDelete.email) {
-          throw new Error("User not found or email is missing");
-        }
-
-        batch.delete(doc(db, "users", userId));
-
-        const collections = [
-          "users",
-          "profits",
-          "trades",
-          "invoices",
-          "deposits",
-          "withdrawals",
-          "withdrawalRequests",
-          "wallets",
-        ];
-
-        for (const collectionName of collections) {
-          const q1 = query(
-            collection(db, collectionName),
-            where("userEmail", "==", userToDelete.email)
-          );
-          const querySnapshot1 = await getDocs(q1);
-          querySnapshot1.forEach((doc) => {
-            batch.delete(doc.ref);
-          });
-
-          const q2 = query(
-            collection(db, collectionName),
-            where("email", "==", userToDelete.email)
-          );
-          const querySnapshot2 = await getDocs(q2);
-          querySnapshot2.forEach((doc) => {
-            batch.delete(doc.ref);
-          });
-
-          const docRef = doc(db, collectionName, userToDelete.email);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            batch.delete(docRef);
-          }
-        }
-
-        await batch.commit();
-
-        setUsers(users.filter((user) => user.uid !== userId));
-        toast.success("User and associated data deleted successfully");
-      } catch (error) {
-        console.error("Error deleting user and associated data:", error);
-        toast.error("Failed to delete user and associated data");
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
   const handleAdminToggle = async (user: User) => {
     setSelectedUser(user);
     setIsMakingAdmin(!user.isAdmin); 
@@ -348,13 +281,6 @@ const UserManagement = () => {
                         onClick={() => handleToggleDisable(user.uid, user.isDisabled)}
                       >
                         {user.isDisabled ? "Enable" : "Disable"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="bg-red-500/20 text-red-500"
-                        onClick={() => handleDeleteUser(user.uid)}
-                      >
-                        Delete
                       </Button>
                       <Button
                         size="sm"

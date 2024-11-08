@@ -1,15 +1,9 @@
+import sgMail from '@sendgrid/mail';
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
 import path from 'path';
 import fs from 'fs';
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.ADMIN_EMAIL,
-    pass: process.env.ADMIN_EMAIL_PASS,
-  },
-});
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
 export async function POST(req: Request) {
   const invoiceData = await req.json();
@@ -36,25 +30,29 @@ const sendClientInvoiceConfirmation = async (invoiceData: {
   const logoPath = path.join(process.cwd(), 'public', 'logo.png');
 
   if (!fs.existsSync(logoPath)) {
-    console.error(`Logo file not found at path: ${logoPath}`);
     throw new Error('Logo file not found');
   }
 
   const mailOptions = {
-    from: process.env.ADMIN_EMAIL,
+    from: {
+      email: process.env.ADMIN_EMAIL!,
+      name: 'Digital Utopia'
+    },
     to: invoiceData.userEmail,
     subject: "Invoice Payment Confirmation",
     html: createClientInvoiceConfirmationTemplate(invoiceData),
     attachments: [
       {
-        filename: "logo.png",
-        path: logoPath,
-        cid: "logo",
-      },
-    ],
+        content: fs.readFileSync(logoPath).toString('base64'),
+        filename: 'logo.png',
+        type: 'image/png',
+        disposition: 'inline',
+        content_id: 'logo'
+      }
+    ]
   };
 
-  await transporter.sendMail(mailOptions);
+  await sgMail.send(mailOptions);
 };
 
 const createClientInvoiceConfirmationTemplate = (invoiceData: {

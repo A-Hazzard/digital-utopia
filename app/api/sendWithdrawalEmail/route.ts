@@ -1,15 +1,9 @@
+import sgMail from '@sendgrid/mail';
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
 import path from "path";
 import fs from "fs";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.ADMIN_EMAIL,
-    pass: process.env.ADMIN_EMAIL_PASS,
-  },
-});
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
 export async function POST(req: Request) {
   const withdrawData = await req.json();
@@ -44,20 +38,25 @@ const sendWithdrawNotification = async (withdrawData: {
   }
 
   const adminMailOptions = {
-    from: process.env.ADMIN_EMAIL,
-    to: process.env.ADMIN_EMAIL,
+    from: {
+      email: process.env.ADMIN_EMAIL!,
+      name: 'Digital Utopia'
+    },
+    to: process.env.ADMIN_SECONDARY_EMAIL!,
     subject: "New Withdrawal Request",
     html: createWithdrawNotificationTemplate(withdrawData),
     attachments: [
       {
-        filename: "logo.png",
-        path: logoPath,
-        cid: "logo",
-      },
-    ],
+        content: fs.readFileSync(logoPath).toString('base64'),
+        filename: 'logo.png',
+        type: 'image/png',
+        disposition: 'inline',
+        content_id: 'logo'
+      }
+    ]
   };
 
-  await transporter.sendMail(adminMailOptions);
+  await sgMail.send(adminMailOptions);
 };
 
 const createWithdrawNotificationTemplate = (withdrawData: {

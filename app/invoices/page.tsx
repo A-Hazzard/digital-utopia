@@ -26,7 +26,6 @@ const InvoicesPage = () => {
   const [statusFilters, setStatusFilters] = useState<{ [key: string]: boolean }>({
     paid: false,
     pending: false,
-    overdue: false,
   });
 
   const titleRef = useRef(null);
@@ -64,12 +63,33 @@ const InvoicesPage = () => {
         invoiceNumber: data.invoiceNumber || "",
         description: data.description || "",
         amount: parseFloat(data.amount) || 0,
-        date: data.date, 
+        date: data.date,
         status: data.status || "",
         createdAt: data.createdAt,
-      } as Invoice; 
+      } as Invoice;
     });
-    setInvoicesData(invoices);
+
+    // Sort invoices: pending first, then paid
+    const sortedInvoices = invoices.sort((a, b) => {
+      // Define status priority
+      const statusPriority: { [key: string]: number } = {
+        pending: 0,
+        paid: 1,
+      };
+
+      // Compare status priority
+      const priorityA = statusPriority[a.status.toLowerCase()] ?? 999;
+      const priorityB = statusPriority[b.status.toLowerCase()] ?? 999;
+
+      // If status priority is different, sort by priority
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      // If status is the same, sort by date (newest first)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    setInvoicesData(sortedInvoices);
     setLoading(false);
   };
 
@@ -125,12 +145,6 @@ const InvoicesPage = () => {
                     onChange={() => handleStatusChange('pending')}
                   >
                     Pending
-                  </Checkbox>
-                  <Checkbox
-                    isSelected={statusFilters.overdue}
-                    onChange={() => handleStatusChange('overdue')}
-                  >
-                    Overdue
                   </Checkbox>
                 </div>
               </Card>

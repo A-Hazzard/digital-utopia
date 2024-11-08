@@ -6,15 +6,27 @@ import {
 } from "firebase/auth";
 
 export const sendSignInLink = async (email: string) => {
+  const currentDomain = window.location.origin;
+  
   const actionCodeSettings = {
-    url:
-      process.env.NODE_ENV === "development"
-        ? "http://localhost:3000/login"
-        : "https://digital-utopia.vercel.app/login",
+    url: `${currentDomain}/login`,
     handleCodeInApp: true,
   };
 
   try {
+    const validDomains = [
+      "https://www.digitalutopia.app",
+      "https://digitalutopia.app",
+      "https://www.digital-utopia.vercel.app",
+      "https://digital-utopia.vercel.app",
+      "http://localhost:3000",
+      "localhost:3000"
+    ];
+    
+    if (!validDomains.includes(currentDomain)) {
+      throw new Error("Invalid domain for authentication");
+    }
+
     await sendSignInLinkToEmail(auth, email, actionCodeSettings);
     window.localStorage.setItem("emailForSignIn", email);
     alert("Check your email for the sign-in link!");
@@ -35,3 +47,4 @@ export const completeSignIn = async (email: string) => {
     }
   }
 };
+

@@ -61,6 +61,7 @@ function Dashboard() {
   );
   const [hasPendingDeposit, setHasPendingDeposit] = useState(false);
   const [pendingDepositId, setPendingDepositId] = useState<string | null>(null);
+  const [hasPendingInvoice, setHasPendingInvoice] = useState(false);
  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -85,6 +86,7 @@ function Dashboard() {
             checkConfirmedInvoice(user.email);
             listenToPendingWithdrawals(user.email);
             listenToPendingDeposits(user.email);
+            listenToPendingInvoices(user.email);
             setLoading(false);
           }
         } else {
@@ -231,12 +233,27 @@ function Dashboard() {
     });
   };
 
+  const listenToPendingInvoices = (userEmail: string | null) => {
+    if (!userEmail) return;
+
+    const invoicesCollection = collection(db, "invoices");
+    const q = query(
+      invoicesCollection,
+      where("userEmail", "==", userEmail),
+      where("status", "==", "pending")
+    );
+
+    return onSnapshot(q, (querySnapshot) => {
+      setHasPendingInvoice(!querySnapshot.empty);
+    });
+  };
+
   const handleOpenDepositModal = () => {
-    if (hasConfirmedInvoice && !hasPendingDeposit) {
+    if (hasConfirmedInvoice && !hasPendingDeposit && !hasPendingInvoice) {
       setDepositModalOpen(true);
     } else {
       toast.error(
-        "Please pay your monthly subscription via the invoices page before depositing funds or resolve your pending deposit."
+        "Please pay your monthly subscription and any pending invoices before depositing funds or resolve your pending deposit."
       );
     }
   };
@@ -246,11 +263,11 @@ function Dashboard() {
   };
 
   const handleOpenWithdrawModal = () => {
-    if (hasConfirmedInvoice && !hasPendingWithdrawal) {
+    if (hasConfirmedInvoice && !hasPendingWithdrawal && !hasPendingInvoice) {
       setWithdrawModalOpen(true);
     } else {
       toast.error(
-        "Please pay your monthly subscription via the invoices page before withdrawing funds."
+        "Please pay your monthly subscription and any pending invoices before withdrawing funds."
       );
     }
   };
@@ -375,13 +392,13 @@ function Dashboard() {
 
         <div className="flex flex-col lg:flex-row justify-center lg:justify-end gap-4 lg:gap-2 md:w-5/12">
           <Button
-            className={`flex py-4 items-center gap-2 ${
-              hasConfirmedInvoice && !hasPendingDeposit
-                ? "bg-orange text-light"
-                : "bg-gray text-dark cursor-not-allowed"
+            className={`flex items-center gap-2 px-6 py-4 min-w-[180px] justify-center ${
+              hasConfirmedInvoice && !hasPendingDeposit && !hasPendingInvoice
+                ? "bg-orange text-light hover:bg-orange/90"
+                : "bg-gray text-dark opacity-70"
             }`}
             onClick={handleOpenDepositModal}
-            disabled={hasPendingDeposit}
+            disabled={!hasConfirmedInvoice || hasPendingDeposit || hasPendingInvoice}
           >
             <Image
               src="/plusButton.svg"
@@ -394,13 +411,13 @@ function Dashboard() {
           </Button>
           <div className="flex flex-col">
             <Button
-              className={`flex p-4 lg:w-full items-center gap-2 ${
-                hasConfirmedInvoice && !hasPendingWithdrawal
-                  ? "bg-orange text-light"
-                  : "bg-gray text-dark cursor-not-allowed"
+              className={`flex items-center gap-2 px-6 py-4 min-w-[180px] justify-center ${
+                hasConfirmedInvoice && !hasPendingWithdrawal && !hasPendingInvoice
+                  ? "bg-orange text-light hover:bg-orange/90"
+                  : "bg-gray text-dark opacity-70"
               }`}
               onClick={handleOpenWithdrawModal}
-              disabled={!hasConfirmedInvoice || hasPendingWithdrawal}
+              disabled={!hasConfirmedInvoice || hasPendingWithdrawal || hasPendingInvoice}
             >
               <Image
                 src="/minusButton.svg"
@@ -411,9 +428,11 @@ function Dashboard() {
               />
               Withdraw Funds
             </Button>
-            {!hasConfirmedInvoice && (
+            {!hasConfirmedInvoice || hasPendingInvoice && (
               <p className="text-red-500 text-sm mt-2">
-                Please pay your monthly subscription via the invoices page before depositing or withdrawing funds.
+                {hasPendingInvoice 
+                  ? "You have pending invoices. Please pay them before depositing or withdrawing funds."
+                  : "Please pay your monthly subscription via the invoices page before depositing or withdrawing funds."}
               </p>
             )}
             {hasPendingWithdrawal && (
@@ -422,7 +441,7 @@ function Dashboard() {
                   You have a pending withdrawal request. Please wait for it to be confirmed before making another request.
                 </p>
                 <Button
-                  className="bg-red-600 text-white mt-2"
+                  className="bg-red-600 text-white hover:bg-red-700 mt-2 px-6 py-3"
                   onClick={handleCancelWithdrawal}
                 >
                   Cancel Withdrawal
@@ -435,7 +454,7 @@ function Dashboard() {
                   You have a pending deposit request. Please wait for it to be confirmed before making another deposit.
                 </p>
                 <Button
-                  className="bg-red-600 text-white mt-2"
+                  className="bg-red-600 text-white hover:bg-red-700 mt-2 px-6 py-3"
                   onClick={handleCancelDeposit} 
                 >
                   Cancel Deposit
@@ -445,7 +464,7 @@ function Dashboard() {
           </div>
         </div>
       </div>
-      <hr className="border-gray" />
+      <hr className="border-gray my-4" />
 
       <h2 className="text-light text-xl my-4 font-bold">Your Profits</h2>
 
