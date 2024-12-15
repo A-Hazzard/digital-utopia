@@ -2,8 +2,9 @@ import sgMail from '@sendgrid/mail';
 import { NextResponse } from "next/server";
 import path from 'path';
 import fs from 'fs';
+import { DepositData } from '@/types/deposits';
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!)
 
 export async function POST(req: Request) {
   const depositData = await req.json();
@@ -22,18 +23,9 @@ export async function POST(req: Request) {
   }
 }
 
-type DepositData = {
-  userId: string;
-  userEmail: string;
-  username: string;
-  transactionId: string;
-  receiptURL: string;
-  amount: number;
-}
-
 const sendDepositNotification = async (depositData: DepositData) => {
   const logoPath = path.join(process.cwd(), 'public', 'logo.png');
-
+  console.log(depositData)
   if (!fs.existsSync(logoPath)) {
     throw new Error('Logo file not found');
   }

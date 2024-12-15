@@ -16,6 +16,7 @@ import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import { auth, db, storage } from "../lib/firebase";
+import { DepositData } from "@/types/deposits";
 
 type ProofOfPaymentProps = {
   onBack: () => void;
@@ -123,22 +124,19 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
         const depositAmount = amount || 0;
         const depositId = await getNextDepositId();
 
-        const depositData = {
+        const depositData: DepositData = {
           userId,
-          userEmail,
+          userEmail: userEmail || "",
+          username: auth.currentUser?.displayName || "Unknown",
           transactionId: depositId,
           receiptURL,
           amount: depositAmount,
-          username: auth.currentUser?.displayName || "Unknown",
-          createdAt: new Date(),
-          status: "pending",
         };
 
         await setDoc(
           doc(db, "deposits", depositData.transactionId),
           depositData
         );
-
         await sendDepositEmail(depositData);
         setMessage("Deposit Request Submitted! Funds will show up within 24 to 48 hours.");
         setIsSubmitted(true);
@@ -193,11 +191,7 @@ const ProofOfPayment: React.FC<ProofOfPaymentProps> = ({
     }
   };
 
-  const sendDepositEmail = async (depositData: {
-    userId: string;
-    transactionId: string;
-    receiptURL: string;
-  }) => {
+  const sendDepositEmail = async (depositData: DepositData) => {
     try {
       const response = await fetch("/api/sendDepositEmail", {
         method: "POST",
