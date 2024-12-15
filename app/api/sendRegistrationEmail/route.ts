@@ -87,7 +87,7 @@ const createEmailTemplate = (displayName: string) => {
                 <p style="color: #eeeeee;">Hi ${displayName},</p>
                 <p style="color: #eeeeee;">Thank you for registering with us. We are excited to have you on board!</p>
                 <p style="color: #eeeeee;">To get started, please click the button below:</p>
-                <a href="https://digital-utopia.vercel.app/" style="display: inline-block; padding: 10px 20px; background-color: #ff5722; color: #eeeeee; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px;">Get Started</a>
+                <a href="https://digitalutopia.app/" style="display: inline-block; padding: 10px 20px; background-color: #ff5722; color: #eeeeee; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px;">Get Started</a>
                 <div style="height: 1px; background-color: #B5B5B5; margin: 20px 0;"></div>
                 <p style="color: #eeeeee;">If you have any questions, feel free to reach out to our support team.</p>
             </div>

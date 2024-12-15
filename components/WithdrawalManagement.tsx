@@ -154,8 +154,8 @@ const WithdrawalManagement = () => {
     );
   };
 
-  const handleConfirmWithdrawal = async (request: WithdrawalRequest) => {
-    await handleUpdateStatus(request.id, request.withdrawalId, "confirmed", true);
+  const handleConfirmWithdrawal = async (requestData: WithdrawalRequest) => {
+    await handleUpdateStatus(requestData, true)
   };
 
   const handleRevertWithdrawal = async (withdrawalId: string) => {

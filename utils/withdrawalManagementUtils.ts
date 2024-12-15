@@ -170,25 +170,27 @@ export const fetchMoreWithdrawalRequests = async (
     toast.error("Error fetching more withdrawal requests. Please try again.");
   }
 };
-
-export const handleUpdateStatus = async (
-  requestId: string,
+/*
+ requestId: string,
   withdrawalId: string,
   newStatus: "confirmed" | "pending",
   isConfirmation: boolean
-) => {
+*/
+export const handleUpdateStatus = async (_requestData: WithdrawalRequest, isConfirmed: boolean) => {
   try {
-    const requestRef = doc(db, "withdrawalRequests", requestId);
+    console.log("Request ID:", _requestData.id, "Withdrawal ID:", _requestData.withdrawalId)
+    const requestRef = doc(db, "withdrawalRequests", _requestData.id);
     const requestDoc = await getDoc(requestRef);
 
     if (!requestDoc.exists()) {
       throw new Error("Request not found");
     }
+    // const requestData = requestDoc.data() as WithdrawalRequest;
 
-    const requestData = requestDoc.data() as WithdrawalRequest;
+    await confirmWithdrawal(_requestData)
 
     await runTransaction(db, async (transaction) => {
-      const withdrawalRef = doc(db, "withdrawals", withdrawalId);
+      const withdrawalRef = doc(db, "withdrawals", _requestData.withdrawalId);
       const withdrawalDoc = await transaction.get(withdrawalRef);
 
       if (!withdrawalDoc.exists()) {
@@ -196,9 +198,9 @@ export const handleUpdateStatus = async (
       }
 
       const withdrawalData = withdrawalDoc.data();
-
-      if (isConfirmation) {
-        const profitRef = doc(db, "profits", requestData.userEmail);
+      console.log("WithdrawalData", withdrawalData)
+      if (isConfirmed) {
+        const profitRef = doc(db, "profits", _requestData.userEmail);
         const profitDoc = await transaction.get(profitRef);
 
         if (!profitDoc.exists()) {
@@ -206,36 +208,36 @@ export const handleUpdateStatus = async (
         }
 
         const currentProfit = profitDoc.data().profit || 0;
-        transaction.update(profitRef, { profit: currentProfit - requestData.amount });
+        transaction.update(profitRef, { profit: currentProfit - _requestData.amount });
       }
 
-      transaction.update(withdrawalRef, { status: newStatus });
-      transaction.update(requestRef, { status: newStatus });
+      transaction.update(withdrawalRef, { status: "confirmed" });
+      transaction.update(requestRef, { status: "confirmed" });
 
       const withdrawalDataWithStatus = {
         ...withdrawalData,
-        status: newStatus,
-        withdrawalId: withdrawalId,
+        status: "confirmed",
+        withdrawalId: _requestData.withdrawalId,
       };
 
       transaction.set(withdrawalRef, withdrawalDataWithStatus);
     });
 
-    toast.success(`Withdrawal ${isConfirmation ? "confirmed" : "updated"} successfully`);
+    toast.success(`Withdrawal ${isConfirmed ? "confirmed" : "updated"} successfully`);
   } catch (error) {
     console.error("Error updating withdrawal status:", error);
     toast.error("Failed to update withdrawal status");
   }
 };
 
-const deductFromUserWallet = async (userId: string, amount: number) => {
-  const userDocRef = doc(db, "users", userId);
+const deductFromUserWallet = async (userEmail: string, amount: number) => {
+  const walletDocRef = doc(db, "wallets", userEmail);
   try {
-    const userDoc = await getDoc(userDocRef);
-    const currentBalance = userDoc.data()?.balance;
+    const walletDoc = await getDoc(walletDocRef);
+    const currentBalance = walletDoc.data()?.balance;
 
     if (currentBalance >= amount) {
-      await updateDoc(userDocRef, { balance: currentBalance - amount });
+      await updateDoc(walletDocRef, { balance: currentBalance - amount });
       toast.success("Amount deducted from user wallet.");
     } else {
       throw new Error("Insufficient balance.");
@@ -323,7 +325,7 @@ export const confirmWithdrawal = async (requestData: WithdrawalRequest) => {
     doc(db, "withdrawals", requestData.withdrawalId),
     withdrawalData
   );
-  await deductFromUserWallet(requestData.userId, requestData.amount);
+  // await deductFromUserWallet(requestData.userEmail, requestData.amount);
 };
 
 export const revertWithdrawal = async (withdrawalId: string) => {
