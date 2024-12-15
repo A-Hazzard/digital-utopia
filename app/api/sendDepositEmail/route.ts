@@ -25,7 +25,6 @@ export async function POST(req: Request) {
 
 const sendDepositNotification = async (depositData: DepositData) => {
   const logoPath = path.join(process.cwd(), 'public', 'logo.png');
-  console.log(depositData)
   if (!fs.existsSync(logoPath)) {
     throw new Error('Logo file not found');
   }
