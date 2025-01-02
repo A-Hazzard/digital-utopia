@@ -29,7 +29,7 @@ Digital Utopia is a community-driven platform that aims to help users:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/kalemmentore868/digital-utopia.git
+   git clone https://github.com/A-Hazzard/digital-utopia.git
    cd digital-utopia
    ```
 
