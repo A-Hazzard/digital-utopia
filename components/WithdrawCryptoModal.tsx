@@ -25,9 +25,6 @@ type WithdrawCryptoModalProps = {
   onClose: () => void;
 }
 
-type Trade = {
-  amount: number;
-}
 
 const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
   onClose,
@@ -52,12 +49,8 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
       const q = query(tradesCollection, where("userEmail", "==", userEmail));
       const tradesSnapshot = await getDocs(q);
 
-      const tradesData = tradesSnapshot.docs.map((doc) => doc.data() as Trade);
-      const totalProfit = tradesData.reduce(
-        (acc, trade) =>
-          acc + (typeof trade.amount === "number" ? trade.amount : 0),
-        0
-      );
+      const tradesData = tradesSnapshot.docs.map((doc) => doc.data());
+      const totalProfit = tradesData.reduce((acc, trade) => acc + trade.amount, 0);
       setAvailableBalance(totalProfit);
     } catch (error) {
       console.error("Error fetching total profits:", error);
@@ -87,22 +80,6 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
       }
     });
   }, [userEmail]);
-
-  useEffect(() => {
-    fetchTotalProfits();
-    const unsubscribe = listenToPendingWithdrawals();
-    return () => unsubscribe();
-  }, [fetchTotalProfits, listenToPendingWithdrawals]);
-
-  useEffect(() => {
-    const isValidAddress = validateTRC20Address(address);
-    const numericAmount = parseFloat(amount.replace(/,/g, ""));
-    const isValidAmount =
-      !isNaN(numericAmount) &&
-      numericAmount > 0 &&
-      numericAmount <= availableBalance;
-    setIsWithdrawEnabled(isValidAddress && isValidAmount && isAddressConfirmed);
-  }, [address, amount, isAddressConfirmed, availableBalance]);
 
   const handleConfirmAddress = () => {
     if (validateTRC20Address(address)) {
@@ -189,6 +166,23 @@ const WithdrawCryptoModal: React.FC<WithdrawCryptoModalProps> = ({
       body: JSON.stringify(cancellationData),
     });
   };
+
+  useEffect(() => {
+    fetchTotalProfits();
+    const unsubscribe = listenToPendingWithdrawals();
+    return () => unsubscribe();
+  }, [fetchTotalProfits, listenToPendingWithdrawals]);
+
+  useEffect(() => {
+    const isValidAddress = validateTRC20Address(address);
+    const numericAmount = parseFloat(amount.replace(/,/g, ""));
+    const isValidAmount =
+      !isNaN(numericAmount) &&
+      numericAmount > 0 &&
+      numericAmount <= availableBalance;
+    setIsWithdrawEnabled(isValidAddress && isValidAmount && isAddressConfirmed);
+  }, [address, amount, isAddressConfirmed, availableBalance]);
+
 
   return (
     <>
